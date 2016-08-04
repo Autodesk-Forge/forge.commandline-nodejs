@@ -10,18 +10,23 @@
 [![Data-Management](https://img.shields.io/badge/Data%20Management-v2-green.svg)](http://developer-autodesk.github.io/)
 [![OSS](https://img.shields.io/badge/OSS-v2-green.svg)](http://developer-autodesk.github.io/)
 [![Model-Derivative](https://img.shields.io/badge/Model%20Derivative-v2-green.svg)](http://developer-autodesk.github.io/)
-[![Viewer](https://img.shields.io/badge/Forge%20Viewer-v2.10-green.svg)](http://developer-autodesk.github.io/)
+[![Viewer](https://img.shields.io/badge/Forge%20Viewer-v2.9-green.svg)](http://developer-autodesk.github.io/)
 
 
-# forge-oauth2
-Asynchronous Node.js library for the Autodesk Forge oAuth2 implementation
+# forge.commandline-nodejs
+
+<b>Note:</b> For using this sample, you need a valid oAuth credential for the translation / extraction portion.
+Visit this [page](https://developer.autodesk.com) for instructions to get on-board.
+
+
+Demonstrates the Autodesk Forge API authorisation and translation process using a Node.js console application.
 
 
 ## Installation
 
-#### npm
+Download this project and install dependencies
 ```shell
-npm install forge-oauth2 --save
+npm install
 ```
 
 #### For browser
