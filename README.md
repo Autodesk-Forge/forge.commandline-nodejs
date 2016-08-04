@@ -12,109 +12,82 @@
 [![Model-Derivative](https://img.shields.io/badge/Model%20Derivative-v2-green.svg)](http://developer-autodesk.github.io/)
 [![Viewer](https://img.shields.io/badge/Forge%20Viewer-v2.9-green.svg)](http://developer-autodesk.github.io/)
 
-
 # forge.commandline-nodejs
 
-<b>Note:</b> For using this sample, you need a valid oAuth credential for the translation / extraction portion.
+
+<b>Note:</b> For using this sample, you need a valid oAuth credential.
 Visit this [page](https://developer.autodesk.com) for instructions to get on-board.
 
 
 Demonstrates the Autodesk Forge API authorisation and translation process using a Node.js console application.
 
 
-## Installation
+## Description
 
-Download this project and install dependencies
-```shell
-npm install
-```
+This sample exercises the Node.js engine as a command line utility to  demonstrate the Forge OAuth application authorisation process and the Model Derivative API mentioned in the Quick Start guide.
 
-#### For browser
-The library also works in the browser environment via npm and [browserify](http://browserify.org/). After following
-the above steps with Node.js and installing browserify with `npm install -g browserify`,
-perform the following (assuming *main.js* is your entry file):
+In order to make use of this sample, you need to register your consumer key, of course:
+* https://developer.autodesk.com > My Apps
 
-```shell
-browserify main.js > bundle.js
-```
-
-Then include *bundle.js* in the HTML pages.
+This provides the credentials to supply while calling the Forge WEB service API endpoints.
 
 
-## Getting Started
-Please follow the [installation](#installation) instruction and execute the following JS code:
+## Dependencies
 
-This libray can either use callbacks ot Promises. Do not provide a callback parameter to use Promises.
-
-#### callback version
-```javascript
-var ForgeOauth2 =require ('forge-oauth2') ;
-
-var api =new ForgeOauth2.InformationalApi()
-
-var callback =function (error, data, response) {
-  if ( error ) {
-    console.error (error) ;
-  } else {
-    console.log ('API called successfully. Returned data: ' + data) ;
-  }
-};
-api.aboutMe(callback) ;
-
-```
-
-#### Promise version
-```javascript
-var ForgeOauth2 =require ('forge-oauth2') ;
-
-var api =new ForgeOauth2.InformationalApi()
-
-api.aboutMe().then (function (data) {
-  console.log ('API called successfully. Returned data: ' + data) ;
-}, function (error) {
-  console.error (error) ;
-}) ;
-
-```
+Node.js and NPM
 
 
-## Documentation for API Endpoints
+## Setup/Usage Instructions
 
-All URIs are relative to *https://developer.api.autodesk.com/*
+  1. Install Node.js on your computer.
+  2. Download (fork, or clone) this project.
+  3. Install Node.js dependency modules:<br />
+     ```
+     npm install
+     ```
+  4. Request your consumer key/secret key from [https://developer.autodesk.com](https://developer.autodesk.com).
+  5. Set 2 environement variables CLIENT_ID / CLIENT_SECRET, or edit the forge-cb.js and forge-promise.js files and use the consumer key/secret key as values. 
+  
+The 2 scripts provide quick help information for the commands and arguments. Use the --help to see it.
 
-Class | Method | HTTP request | Description
------------- | ------------- | ------------- | -------------
-*ForgeOauth2.InformationalApi* | [**aboutMe**](docs/InformationalApi.md#aboutMe) | **GET** /userprofile/v1/users/@me | GET users/@me
-*ForgeOauth2.ThreeLeggedApi* | [**authorize**](docs/ThreeLeggedApi.md#authorize) | **GET** /authentication/v1/authorize | GET authorize
-*ForgeOauth2.ThreeLeggedApi* | [**gettoken**](docs/ThreeLeggedApi.md#gettoken) | **POST** /authentication/v1/gettoken | POST gettoken
-*ForgeOauth2.ThreeLeggedApi* | [**refreshtoken**](docs/ThreeLeggedApi.md#refreshtoken) | **POST** /authentication/v1/refreshtoken | POST refreshtoken
-*ForgeOauth2.TwoLeggedApi* | [**authenticate**](docs/TwoLeggedApi.md#authenticate) | **POST** /authentication/v1/authenticate | POST authenticate
+A typical workflow is (replace -cb by -promise if you want to use promises vs callbacks):
 
+    # Do authentication.
+    node forge-cb.js auth
 
+    # Create a bucket. Bucket name must be lower case and valid characters.
+    node forge-cb.js my_bucket_name
 
-## Documentation for Models
+    # Upload a model.
+    node forge-cb.js upload samples/Au.obj
 
- - [ForgeOauth2.Bearer](docs/Bearer.md)
- - [ForgeOauth2.OAuthError](docs/OAuthError.md)
- - [ForgeOauth2.UserProfile](docs/UserProfile.md)
+    # Register the model to get it translated.
+    node forge-cb.js translate Au.obj
 
+    # Wait until the translation completes.
+    # Translation is complete when it reaches 'success - 100%'
+    node forge-cb.js translateProgress Au.obj
 
+    # Retrieve preview image.
+    node forge-cb.js thumbnail Au.obj Au.png
 
-## Documentation for Authorization
+    # Create an HTML page with your URN and a read-only access token.
+    node forge-cb.js html Au.obj Au.html
 
- All endpoints do not require authorization.
+Note your access token and bucket name are saved in the data folder to be used as default by the scripts, but you can edit them as you wish.
 
+Bucket information (JSON replies) returned by the system is stored in the data folder as well.
 
-
-## Documentation & Support
-For more information, please visit [https://developer.autodesk.com/en/docs/oauth/v2/](https://developer.autodesk.com/en/docs/oauth/v2/)
-
-For support, please use [http://stackoverflow.com/questions/tagged/autodesk-forge+oauth](http://stackoverflow.com/questions/tagged/autodesk-forge+oauth)
-
---------
 
 ## License
 
-This sample is licensed under the terms of the [MIT License](http://opensource.org/licenses/MIT). Please see the [LICENSE](LICENSE) file for full details.
+This sample is licensed under the terms of the [MIT License](http://opensource.org/licenses/MIT). 
+Please see the [LICENSE](LICENSE) file for full details.
 
 
+## Written by
+
+Cyrille Fauvel <br />
+Forge Partner Development <br />
+http://developer.autodesk.com/ <br />
+http://around-the-corner.typepad.com <br />
