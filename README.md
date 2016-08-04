@@ -21,6 +21,9 @@ Visit this [page](https://developer.autodesk.com) for instructions to get on-boa
 
 Demonstrates the Autodesk Forge API authorisation and translation process using a Node.js console application.
 
+* both 2 legged and 3 legged
+* support both callback and promises
+
 
 ## Description
 
@@ -53,7 +56,7 @@ The 2 scripts provide quick help information for the commands and arguments. Use
 A typical workflow is (replace -cb by -promise if you want to use promises vs callbacks):
 
     # Do authentication.
-    node forge-cb.js auth
+    node forge-cb.js 2legged
 
     # Create a bucket. Bucket name must be lower case and valid characters.
     node forge-cb.js my_bucket_name

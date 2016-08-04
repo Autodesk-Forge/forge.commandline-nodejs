@@ -32,6 +32,7 @@ var program =require ('commander') ;
 var moment =require ('moment') ;
 var async =require ('async') ;
 var ejs =require ('ejs') ;
+var opn =require ('opn') ;
 
 var fs =require ('fs') ;
 var url =require ('url') ;
@@ -39,6 +40,7 @@ var path =require ('path') ;
 
 var clientId =process.env.CLIENT_ID || 'your_client_id' ;
 var clientSecret =process.env.CLIENT_SECRET || 'your_client_secret' ;
+var mycallback =process.env.CALLBACK || 'http://localhost:3006/oauth' ;
 
 var grantType ='client_credentials' ; // {String} Must be ``client_credentials``
 var opts ={ 'scope': 'data:read data:write data:create data:search bucket:create bucket:read bucket:update bucket:delete' } ;
@@ -54,12 +56,71 @@ var ossObjects =new ForgeOSS.ObjectsApi () ;
 var md =new ForgeModelDerivative.DerivativesApi () ;
 
 program
-	.command ('auth')
-	.description ('get an access token (no argument)')
+	.command ('2legged')
+	.description ('get an application access token (2 legged)')
 	.action (function (options) {
 		oauthExec ()
             //.then (function () {}) ;
 	}) ;
+
+program
+    .command ('3legged')
+    .description ('get an user access token (3 legged)')
+    .arguments ('[code]')
+    .action (function (code, options) {
+        var oa3Legged =new ForgeOAuth.ThreeLeggedApi () ;
+        if ( !code || code === '' ) {
+            var opts ={
+                'scope': "data:read",
+                'client_id': clientId,
+                'response_type': 'code',
+                'redirect_uri': mycallback
+            } ;
+            var st =Object.keys (opts).map (function (value, key) {
+                return (value + '=' + encodeURIComponent (opts [value])) ;
+            }) ;
+            st =st.join ('&') ;
+            opn (ForgeOAuth.ApiClient.instance.basePath + '/authentication/v1/authorize' + '?' + st, { app: [ 'google chrome'/*, '--incognito'*/ ] }) ;
+            console.log('Wait for the browser to return a code and run this script again with the code as parameter...') ;
+            return ;
+        } else {
+            oa3Legged.gettoken (clientId, clientSecret, 'authorization_code', code, mycallback)
+                .then (function (data) {
+                    var token =data.token_type + ' ' + data.access_token ;
+                    console.log ('Your new 3-legged access token is: ' + token) ;
+                    var dt =moment ().add (data.expires_in, 'seconds') ;
+                    console.log ('Expires at: ' + dt.format ('MM/DD/YYYY, hh:mm:ss a')) ;
+                    fs.writeFile (__dirname + '/data/access_token', token, function (err) {
+                        if ( err )
+                            return (console.error ('Failed to create access_token file')) ;
+                    }) ;
+                    token =data.token_type + ' ' + data.refresh_token ;
+                    fs.writeFile (__dirname + '/data/refresh_token', token, function (err) {
+                        if ( err )
+                            return (console.error ('Failed to create refresh_token file')) ;
+                    }) ;
+                })
+                .catch (function (error) {
+                    if ( errorHandler (error, 'Failed to get your token', false) )
+                        return (fs.unlink (__dirname + '/data/access_token')) ;
+                }) ;
+        }
+    }) ;
+program
+    .command ('aboutme')
+    .description ('3legged aboutme information')
+    .action (function (options) {
+        console.log ('About Me!...') ;
+        access_token()
+            .then (function (access_token) {
+                ForgeOAuth.ApiClient.instance.authentications ['oauth2_access_code'].accessToken =access_token ;
+                var oa3Info =new ForgeOAuth.InformationalApi () ;
+                return (oa3Info.aboutMe ()) ;
+            })
+            .then (function (data) {
+                console.log (JSON.stringify (data, null, 4)) ;
+            }) ;
+    }) ;
 program
 	.command ('buckets')
 	.description ('list local/server buckets')
@@ -584,9 +645,13 @@ return ; // End of script
 
 function usage() {
 	console.log (" \
-  viewerAPI command [arg] \n\
-    auth \n\
-        - get an access token (no argument) \n\
+  forge-promise command [arg] \n\
+    2legged \n\
+        - get an application access token (2 legged) \n\
+    3legged [code] \n\
+        - get an user access token (3 legged) \n\
+    aboutme \n\
+        - 3legged aboutme information \n\
     buckets [[-s] [limit] [index]] \n\
         - list local buckets \n\
           -s / --server : list buckets on the server \n\

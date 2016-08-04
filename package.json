@@ -23,12 +23,13 @@
     "async": "^1.5.2",
     "commander": "^2.9.0",
     "ejs": "^2.4.2",
+    "forge-data-management": "^2.0.2",
+    "forge-model-derivative": "^2.0.2",
+    "forge-oauth2": "^1.0.2",
+    "forge-oss": "^2.0.2",
     "moment": "^2.13.0",
-    "promise": "^7.1.1",
-    "forge-oauth2": "^1.0.1",
-    "forge-data-management": "^2.0.1",
-    "forge-oss": "^2.0.1",
-    "forge-model-derivative": "^2.0.1"
+    "opn": "^4.0.2",
+    "promise": "^7.1.1"
   },
   "devDependencies": {}
 }
