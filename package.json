@@ -1,0 +1,34 @@
+{
+  "name": "forge.commandline-nodejs",
+  "version": "1.0.0",
+  "description": "Node.js command line tool demonstrating the Forge API",
+  "homepage": "https://developer.autodesk.com/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/autodesk-forge/forge.commandline-nodejs"
+  },
+  "bugs": {
+    "url": "https://github.com/autodesk-forge/forge.commandline-nodejs/issues"
+  },
+  "author": "Cyrille Fauvel <cyrille@autodesk.com>",
+  "contributors": [
+    "Cyrille Fauvel <cyrille@autodesk.com>"
+  ],
+  "license": "MIT",
+  "main": "forge-cb.js",
+  "scripts": {
+    "test": "./node_modules/mocha/bin/mocha --recursive"
+  },
+  "dependencies": {
+    "async": "^1.5.2",
+    "commander": "^2.9.0",
+    "ejs": "^2.4.2",
+    "moment": "^2.13.0",
+    "promise": "^7.1.1",
+    "forge-oauth2": "^1.0.1",
+    "forge-data-management": "^2.0.1",
+    "forge-oss": "^2.0.1",
+    "forge-model-derivative": "^2.0.1"
+  },
+  "devDependencies": {}
+}
