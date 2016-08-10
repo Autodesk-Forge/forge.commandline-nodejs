@@ -289,7 +289,7 @@ program
 		var bucketKey =readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
-		var fileKey =fileKey (file) ;
+		var fileKey =makeKey (file) ;
 		fs.stat (file, function (err, stats) {
 			if ( err )
 				return (console.log (error.message)) ;
@@ -324,7 +324,7 @@ program
 		pieces =pieces || 2 ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
-		var fileKey =fileKey (file) ;
+		var fileKey =makeKey (file) ;
 		fs.stat (file, function (err, stats) {
 			if ( err )
 				return (console.log (error.message)) ;
@@ -803,7 +803,7 @@ function checkBucketKey (name) {
 	return (result) ;
 }
 
-function fileKey (file) {
+function makeKey (file) {
 	var filename =path.basename (file) ;
 	return (filename) ;
 }
