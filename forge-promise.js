@@ -308,6 +308,7 @@ program
 		var bucketKey =readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
+		var fileKey =fileKey (file) ;
 		fs.stat (file, function (err, stats) {
 			if ( err )
 				return (console.log (error.message)) ;
@@ -318,12 +319,12 @@ program
 					return (console.log ('Error reading file')) ;
                 access_token ()
                     .then (function (/*access_token*/) {
-                        return (ossObjects.uploadObject (bucketKey, fileKey (file), size, body, {})) ;
+                        return (ossObjects.uploadObject (bucketKey, fileKey, size, body, {})) ;
                     })
                     .then (function (data) {
-                        fs.writeFile (__dirname + '/data/' + bucketKey + '.' + fileKey (file) + '.json', JSON.stringify (data, null, 4), function (err) {
+                        fs.writeFile (__dirname + '/data/' + bucketKey + '.' + fileKey + '.json', JSON.stringify (data, null, 4), function (err) {
 							if ( err )
-								return (console.error ('Failed to create ' + bucketKey + '.' + file + '.json file')) ;
+								return (console.error ('Failed to create ' + bucketKey + '.' + fileKey + '.json file')) ;
 						}) ;
 						console.log ('Upload successful') ;
 						console.log ('ID: ' + data.objectId) ;
@@ -345,6 +346,7 @@ program
         var bucketKey =readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
+		var fileKey =fileKey (file) ;
 		fs.stat (file, function (err, stats) {
 			if ( err )
 				return (console.log (error.message)) ;
@@ -376,6 +378,10 @@ program
                                     callback () ;
 									if ( response.statusCode === 202 )
 										return (console.log ('Partial upload accepted')) ;
+                                    fs.writeFile (__dirname + '/data/' + bucketKey + '.' + fileKey + '.json', JSON.stringify (data, null, 4), function (err) {
+                                        if ( err )
+                                            return (console.error ('Failed to create ' + bucketKey + '.' + fileKey + '.json file')) ;
+                                    }) ;
 									console.log ('Upload successful') ;
 									console.log ('ID: ' + data.objectId) ;
 									console.log ('URN: ' + new Buffer (data.objectId).toString ('base64')) ;

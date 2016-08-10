@@ -289,6 +289,7 @@ program
 		var bucketKey =readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
+		var fileKey =fileKey (file) ;
 		fs.stat (file, function (err, stats) {
 			if ( err )
 				return (console.log (error.message)) ;
@@ -298,12 +299,12 @@ program
 				if ( error )
 					return (console.log ('Error reading file')) ;
 				access_token (function (/*access_token*/) {
-                    ossObjects.uploadObject (bucketKey, fileKey (file), size, body, {}, function (error, data, response) {
+                    ossObjects.uploadObject (bucketKey, fileKey, size, body, {}, function (error, data, response) {
 						errorHandler (error, data, 'Failed to upload file') ;
                         httpErrorHandler (response, 'Failed to upload file') ;
-                        fs.writeFile (__dirname + '/data/' + bucketKey + '.' + fileKey (file) + '.json', JSON.stringify (data, null, 4), function (err) {
+                        fs.writeFile (__dirname + '/data/' + bucketKey + '.' + fileKey + '.json', JSON.stringify (data, null, 4), function (err) {
 							if ( err )
-								return (console.error ('Failed to create ' + bucketKey + '.' + file + '.json file')) ;
+								return (console.error ('Failed to create ' + bucketKey + '.' + fileKey + '.json file')) ;
 						}) ;
 						console.log ('Upload successful') ;
 						console.log ('ID: ' + data.objectId) ;
@@ -323,6 +324,7 @@ program
 		pieces =pieces || 2 ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
+		var fileKey =fileKey (file) ;
 		fs.stat (file, function (err, stats) {
 			if ( err )
 				return (console.log (error.message)) ;
@@ -346,7 +348,7 @@ program
 							// For resumable (large files), make sure to renew the token first
 							//access_token (function (/*access_token*/) {
 							oauthExec (function (accessToken) {
-                                ossObjects.uploadChunk (bucketKey, fileKey (file), length, range, sessionId, buffer, {}, function (error, data, response) {
+                                ossObjects.uploadChunk (bucketKey, fileKey, length, range, sessionId, buffer, {}, function (error, data, response) {
 									if ( errorHandler (error, data, 'Failed to upload partial file', false) )
 										return (callback (error)) ;
                                     if ( response.statusCode !== 202 && httpErrorHandler (response, 'Failed to upload partial file', false) )
@@ -354,6 +356,10 @@ program
                                     callback () ;
 									if ( response.statusCode === 202 )
 										return (console.log ('Partial upload accepted')) ;
+                                    fs.writeFile (__dirname + '/data/' + bucketKey + '.' + fileKey + '.json', JSON.stringify (data, null, 4), function (err) {
+                                        if ( err )
+                                            return (console.error ('Failed to create ' + bucketKey + '.' + fileKey + '.json file')) ;
+                                    }) ;
 									console.log ('Upload successful') ;
 									console.log ('ID: ' + data.objectId) ;
 									console.log ('URN: ' + new Buffer (data.objectId).toString ('base64')) ;
