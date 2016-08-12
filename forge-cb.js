@@ -303,7 +303,7 @@ program
 			console.log ('Uploading file: ' + file) ;
 			access_token (function (/*access_token*/) {
 				var readStream =fs.createReadStream (file) ;
-				ossObjects.uploadObject (bucketKey, file, size, readStream, {}, function (error, data, response) {
+				ossObjects.uploadObject (bucketKey, fileKey, size, readStream, {}, function (error, data, response) {
 					errorHandler (error, data, 'Failed to upload file') ;
 					httpErrorHandler (response, 'Failed to upload file') ;
 					fs.writeFile (__dirname + '/data/' + bucketKey + '.' + fileKey + '.json', JSON.stringify (data, null, 4), function (err) {
