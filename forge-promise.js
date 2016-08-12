@@ -24,7 +24,7 @@
 // July 2016
 //
 var ForgeOAuth =require('forge-oauth2') ;
-var ForgeOSS =require('forge-oss') ;
+var ForgeOSS =require ('forge-oss') ;
 var ForgeDataManagement =require ('forge-data-management') ;
 var ForgeModelDerivative =require ('forge-model-derivative') ;
 
@@ -62,7 +62,6 @@ program
 		oauthExec ()
             //.then (function () {}) ;
 	}) ;
-
 program
     .command ('3legged')
     .description ('get an user access token (3 legged)')
@@ -80,7 +79,13 @@ program
                 return (value + '=' + encodeURIComponent (opts [value])) ;
             }) ;
             st =st.join ('&') ;
-            opn (ForgeOAuth.ApiClient.instance.basePath + '/authentication/v1/authorize' + '?' + st, { app: [ 'google chrome'/*, '--incognito'*/ ] }) ;
+            opn (
+				ForgeOAuth.ApiClient.instance.basePath + '/authentication/v1/authorize' + '?' + st//,
+				/*{ app: [
+					'google chrome',
+					'--incognito'
+				] }*/
+			) ;
             console.log('Wait for the browser to return a code and run this script again with the code as parameter...') ;
             return ;
         } else {
@@ -308,33 +313,30 @@ program
 		var bucketKey =readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
-		var fileKey =fileKey (file) ;
+		var fileKey =makeKey (file) ;
 		fs.stat (file, function (err, stats) {
 			if ( err )
 				return (console.log (error.message)) ;
 			var size =stats.size ;
 			console.log ('Uploading file: ' + file) ;
-			fs.readFile (file, function (error, body) {
-				if ( error )
-					return (console.log ('Error reading file')) ;
-                access_token ()
-                    .then (function (/*access_token*/) {
-                        return (ossObjects.uploadObject (bucketKey, fileKey, size, body, {})) ;
-                    })
-                    .then (function (data) {
-                        fs.writeFile (__dirname + '/data/' + bucketKey + '.' + fileKey + '.json', JSON.stringify (data, null, 4), function (err) {
-							if ( err )
-								return (console.error ('Failed to create ' + bucketKey + '.' + fileKey + '.json file')) ;
-						}) ;
-						console.log ('Upload successful') ;
-						console.log ('ID: ' + data.objectId) ;
-						console.log ('URN: ' + new Buffer (data.objectId).toString ('base64')) ;
-						console.log ('Location: ' + data.location) ;
-                    })
-                    .catch (function (error) {
-                        errorHandler (error, 'Failed to upload file') ;
-                    }) ;
-			}) ;
+			access_token ()
+				.then (function (/*access_token*/) {
+					var readStream =fs.createReadStream (file) ;
+					return (ossObjects.uploadObject (bucketKey, fileKey, size, readStream, {})) ;
+				})
+				.then (function (data) {
+					fs.writeFile (__dirname + '/data/' + bucketKey + '.' + fileKey + '.json', JSON.stringify (data, null, 4), function (err) {
+						if ( err )
+							return (console.error ('Failed to create ' + bucketKey + '.' + fileKey + '.json file')) ;
+					}) ;
+					console.log ('Upload successful') ;
+					console.log ('ID: ' + data.objectId) ;
+					console.log ('URN: ' + new Buffer (data.objectId).toString ('base64')) ;
+					console.log ('Location: ' + data.location) ;
+				})
+				.catch (function (error) {
+					errorHandler (error, 'Failed to upload file') ;
+				}) ;
 		}) ;
 	}) ;
 program
@@ -343,7 +345,7 @@ program
 	.arguments ('<file> <pieces>')
 	.action (function (file, pieces) {
 		pieces =pieces || 2 ;
-        var bucketKey =readBucketKey () ;
+		var bucketKey =readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
 		var fileKey =makeKey (file) ;
@@ -352,60 +354,57 @@ program
 				return (console.log (error.message)) ;
 			var size =stats.size ;
 			var pieceSz =parseInt (size / pieces) ;
-			var modSz=size % pieces ;
+			var modSz =size % pieces ;
 			if ( modSz )
 				pieces++ ;
 			console.log ('Uploading file: ' + file + ' in ' + pieces + ' pieces') ;
-			fs.open (file, 'r', function (status, fd) {
-				if ( status )
-					return (console.error (status.message)) ;
-				var piecesMap =Array.apply (null, { length: pieces }).map (Number.call, Number) ;
-				var sessionId =Math.random ().toString (36).replace (/[^a-z]+/g, '').substr (0, 12) ;
-				var buffer =new Buffer (pieceSz) ;
-				async.eachLimit (piecesMap, 1,
-					function (i, callback) {
-						fs.read (fd, buffer, 0, pieceSz, i * pieceSz, function (err, length) {
-							var range ="bytes " + (i * pieceSz) + "-" + (i * pieceSz + length - 1) + "/" + size ;
-							console.log ('Loading ' + range) ;
-							// For resumable (large files), make sure to renew the token first
-							//access_token (function () {
-							oauthExec (function (accessToken) {
-                                ossObjects.uploadChunk (bucketKey, fileKey, length, range, sessionId, buffer, {}, function (error, data, response) {
-									if ( errorHandler (error, data, 'Failed to upload partial file', false) )
-										return (callback (error)) ;
-                                    if ( response.statusCode !== 202 && httpErrorHandler (response, 'Failed to upload partial file', false) )
-                                        return (callback (response.statusCode)) ;
-                                    callback () ;
-									if ( response.statusCode === 202 )
-										return (console.log ('Partial upload accepted')) ;
-                                    fs.writeFile (__dirname + '/data/' + bucketKey + '.' + fileKey + '.json', JSON.stringify (data, null, 4), function (err) {
-                                        if ( err )
-                                            return (console.error ('Failed to create ' + bucketKey + '.' + fileKey + '.json file')) ;
-                                    }) ;
-									console.log ('Upload successful') ;
-									console.log ('ID: ' + data.objectId) ;
-									console.log ('URN: ' + new Buffer (data.objectId).toString ('base64')) ;
-									console.log ('Location: ' + data.location) ;
-								}) ;
+			var piecesMap =Array.apply (null, { length: pieces }).map (Number.call, Number) ;
+			var sessionId =Math.random ().toString (36).replace (/[^a-z]+/g, '').substr (0, 12) ;
+			async.eachLimit (piecesMap, 1,
+				function (i, callback) {
+					var start =i * pieceSz ;
+					var end =Math.min (size, (i + 1) * pieceSz) - 1 ;
+					var range ="bytes " + start + "-" + end + "/" + size ;
+					var length =end - start + 1 ;
+					console.log ('Loading ' + range) ;
+					// For resumable (large files), make sure to renew the token first
+					//access_token (function () {
+					oauthExec ()
+						.then (function (accessToken) {
+							var readStream =fs.createReadStream (file, { 'start': start, 'end': end }) ;
+							return (ossObjects.uploadChunk (bucketKey, fileKey, length, range, sessionId, readStream, {})) ;
+						})
+						.then (function (data) {
+							callback () ;
+							if ( data === undefined )
+								return (console.log ('Partial upload accepted')) ;
+							fs.writeFile (__dirname + '/data/' + bucketKey + '.' + fileKey + '.json', JSON.stringify (data, null, 4), function (err) {
+								if ( err )
+									return (console.error ('Failed to create ' + bucketKey + '.' + fileKey + '.json file')) ;
 							}) ;
-						}) ;
-					},
-					function (err) {
-						if ( err )
-							return (console.error ('Failed to upload file')) ;
-					}
-				) ;
-			}) ;
+							console.log ('Upload successful') ;
+							console.log ('ID: ' + data.objectId) ;
+							console.log ('URN: ' + new Buffer (data.objectId).toString ('base64')) ;
+							console.log ('Location: ' + data.location) ;
+						})
+						.catch (function (error) {
+							errorHandler (error, 'Failed to upload file') ;
+						})
+					;
+				}) ;
 		}) ;
 	}) ;
 program
 	.command ('download')
 	.description ('download the file from OSS')
 	.arguments ('<fileKey> <outputFile>')
-	.action (function (fileKey, outputFile) {
+	.option ('-f, --file', 'fileKey respresent the final objectKey on OSS vs a local fileKey')
+	.action (function (fileKey, outputFile, options) {
 		var bucketKey =readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
+		if ( options.file )
+			fileKey =readFileKey (bucketKey, fileKey) ;
 		console.log ('Downloading file: ' + fileKey) ;
 		access_token (function () {
 			var wstream =fs.createWriteStream (outputFile) ;
@@ -764,7 +763,7 @@ function access_token () {
     return (new Promise (function (_resolve, _reject) {
         fs.readFile (__dirname + '/data/access_token', 'utf-8', function (err, data) {
             if ( err )
-                return ;
+                return (_reject (err)) ;
             var accessToken =data.split (' ') [1] ;
             api_access_token (accessToken)
                 .then (function (data) {
@@ -871,6 +870,16 @@ function checkBucketKey (name) {
 function makeKey (file) {
 	var filename =path.basename (file) ;
 	return (filename) ;
+}
+
+function readFileKey (bucketKey, fileKey) {
+	try {
+		var details =fs.readFileSync (__dirname + '/data/' + bucketKey + '.' + fileKey + '.json', 'utf-8') ;
+		details =JSON.parse (details) ;
+		return (details.objectKey) ;
+	} catch ( e ) {
+	}
+	return (fileKey) ;
 }
 
 function URN (bucketKey, fileKey) {

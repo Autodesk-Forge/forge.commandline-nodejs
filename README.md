@@ -1,7 +1,7 @@
 
 [![build status](https://api.travis-ci.org/cyrillef/models.autodesk.io.png)](https://travis-ci.org/cyrillef/models.autodesk.io)
-[![Node.js](https://img.shields.io/badge/Node.js-5.11.1-blue.svg)](https://nodejs.org/)
-[![npm](https://img.shields.io/badge/npm-3.9.3-blue.svg)](https://www.npmjs.com/)
+[![Node.js](https://img.shields.io/badge/Node.js-6.3.1-blue.svg)](https://nodejs.org/)
+[![npm](https://img.shields.io/badge/npm-3.10.3-blue.svg)](https://www.npmjs.com/)
 ![Platforms](https://img.shields.io/badge/platform-windows%20%7C%20osx%20%7C%20linux-lightgray.svg)
 [![License](http://img.shields.io/:license-mit-blue.svg)](http://opensource.org/licenses/MIT)
 
@@ -49,7 +49,11 @@ Node.js and NPM
      npm install
      ```
   4. Request your consumer key/secret key from [https://developer.autodesk.com](https://developer.autodesk.com).
-  5. Set 2 environement variables CLIENT_ID / CLIENT_SECRET, or edit the forge-cb.js and forge-promise.js files and use the consumer key/secret key as values. 
+  5. Set 2 environment variables CLIENT_ID / CLIENT_SECRET, or edit the forge-cb.js and forge-promise.js files
+     and replace the placeholders by the consumer key/secret keys.
+  6. *Note* for the 3 legged command: while registering your keys, make sure that the callback you define for your
+     callback (or redirect_uri) match the one in the scripts (mycallback variable in forge-cb.js and forge-promise.js).
+     Default is : http://localhost:3006/oauth
   
 The 2 scripts provide quick help information for the commands and arguments. Use the --help to see it.
 
@@ -59,7 +63,7 @@ A typical workflow is (replace -cb by -promise if you want to use promises vs ca
     node forge-cb.js 2legged
 
     # Create a bucket. Bucket name must be lower case and valid characters.
-    node forge-cb.js my_bucket_name
+    node forge-cb.js bucketCreate my_bucket_name
 
     # Upload a model.
     node forge-cb.js upload samples/Au.obj
@@ -79,7 +83,7 @@ A typical workflow is (replace -cb by -promise if you want to use promises vs ca
 
 Note your access token and bucket name are saved in the data folder to be used as default by the scripts, but you can edit them as you wish.
 
-Bucket information (JSON replies) returned by the system is stored in the data folder as well.
+Bucket information (JSON replies) returned by the system are stored in the data folder as well.
 
 
 ## License

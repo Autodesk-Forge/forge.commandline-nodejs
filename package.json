@@ -15,21 +15,25 @@
     "Cyrille Fauvel <cyrille@autodesk.com>"
   ],
   "license": "MIT",
+  "engines": {
+	"node": ">= 6.3.1",
+	"npm": ">= 3.10.7"
+  },
   "main": "forge-cb.js",
   "scripts": {
     "test": "./node_modules/mocha/bin/mocha --recursive"
   },
   "dependencies": {
-    "async": "^1.5.2",
-    "commander": "^2.9.0",
-    "ejs": "^2.4.2",
-    "forge-data-management": "^2.0.2",
-    "forge-model-derivative": "^2.0.2",
-    "forge-oauth2": "^1.0.2",
-    "forge-oss": "^2.0.2",
-    "moment": "^2.13.0",
-    "opn": "^4.0.2",
-    "promise": "^7.1.1"
+    "async": "*",
+    "commander": "*",
+    "ejs": "*",
+    "forge-data-management": "*",
+    "forge-model-derivative": "*",
+    "forge-oauth2": "*",
+    "forge-oss": "*",
+    "moment": "*",
+    "opn": "*",
+    "promise": "*"
   },
   "devDependencies": {}
 }
