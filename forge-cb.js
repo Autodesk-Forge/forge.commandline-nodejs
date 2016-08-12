@@ -182,6 +182,40 @@ program
 		}
 	}) ;
 program
+	.command ('bucketCreate')
+	.description ('create a new bucket,; default Type is transient, values can be transient/temporary/permanent')
+	.arguments ('<bucketKey> [type]')
+	.option ('-r, --region <region>', 'region: US or EMEA [string, default: US]')
+	.action (function (bucketKey, type, options) {
+		if ( !checkBucketKey (bucketKey) )
+			return ;
+		type =type || 'transient' ;
+		var region =options.region || 'US' ;
+		console.log ('Create bucket: ' + bucketKey) ;
+		access_token (function (/*access_token*/) {
+			var opts ={
+				"bucketKey": bucketKey,
+				"policyKey": type
+			} ;
+			var headers ={
+				'xAdsRegion': region
+			} ;
+			ossBuckets.createBucket (opts, headers, function (error, data, response) {
+				errorHandler (error, data, 'Failed to create bucket') ;
+				httpErrorHandler (response, 'Failed to create bucket') ;
+				fs.writeFile (__dirname + '/data/bucket', bucketKey, function (err) {
+					if ( err )
+						return (console.error ('Failed to create bucket file')) ;
+				}) ;
+				fs.writeFile (__dirname + '/data/' + bucketKey + '.bucket.json', JSON.stringify (data, null, 4), function (err) {
+					if ( err )
+						return (console.error ('Failed to create ' + bucketKey + '.bucket.json file')) ;
+				}) ;
+				console.log ('bucket created') ;
+			}) ;
+		}) ;
+	}) ;
+program
 	.command ('bucketCheck')
 	.description ('check bucket validity, outputs the expiration; date/time for this bucket; if no parameter use the current bucket')
 	.arguments ('[bucketKey]')
@@ -231,40 +265,6 @@ program
 					var startAt =url_parts.query.startAt ;
 					console.log ('Your next search index is: ' + startAt) ;
 				}
-			}) ;
-		}) ;
-	}) ;
-program
-	.command ('bucketCreate')
-	.description ('create a new bucket,; default Type is transient, values can be transient/temporary/permanent')
-	.arguments ('<bucketKey> [type]')
-	.option ('-r, --region <region>', 'region: US or EMEA [string, default: US]')
-	.action (function (bucketKey, type, options) {
-		if ( !checkBucketKey (bucketKey) )
-			return ;
-		type =type || 'transient' ;
-		var region =options.region || 'US' ;
-		console.log ('Create bucket: ' + bucketKey) ;
-		access_token (function (/*access_token*/) {
-			var opts ={
-				"bucketKey": bucketKey,
-				"policyKey": type
-			} ;
-			var headers ={
-				'xAdsRegion': region
-			} ;
-            ossBuckets.createBucket (opts, headers, function (error, data, response) {
-				errorHandler (error, data, 'Failed to create bucket') ;
-                httpErrorHandler (response, 'Failed to create bucket') ;
-                fs.writeFile (__dirname + '/data/bucket', bucketKey, function (err) {
-					if ( err )
-						return (console.error ('Failed to create bucket file')) ;
-				}) ;
-				fs.writeFile (__dirname + '/data/' + bucketKey + '.bucket.json', JSON.stringify (data, null, 4), function (err) {
-					if ( err )
-						return (console.error ('Failed to create ' + bucketKey + '.bucket.json file')) ;
-				}) ;
-				console.log ('bucket created') ;
 			}) ;
 		}) ;
 	}) ;
@@ -430,6 +430,7 @@ program
 	.description ('translate the file for viewing')
 	.arguments ('<fileKey>')
 	.option ('-f, --file', 'fileKey represent the final objectKey on OSS vs a local fileKey')
+	.option ('-e, --entry <rootFile>', 'rootFile: which file to start from')
 	.action (function (fileKey, options) {
 		var bucketKey =readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
@@ -438,12 +439,13 @@ program
 			fileKey =readFileKey (bucketKey, fileKey) ;
 		console.log ('Request file to be translated') ;
 		var urn =URN (bucketKey, fileKey) ;
+		options.entry =options.entry || fileKey ;
 		access_token (function (/*access_token*/) {
 			var job ={
 				"input": {
 					"urn": urn,
-					"compressedUrn": false,
-					"rootFilename": fileKey
+					"compressedUrn": (path.extname (fileKey).toLowerCase () === '.zip'),
+					"rootFilename": options.entry
 				},
 				"output": {
 					"formats": [
@@ -514,10 +516,13 @@ program
 	.command ('metadata')
 	.description ('file metadata')
 	.arguments ('<fileKey>')
+	.option ('-f, --file', 'fileKey represent the final objectKey on OSS vs a local fileKey')
 	.action (function (fileKey, options) {
 		var bucketKey =readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
+		if ( options.file === undefined )
+			fileKey =readFileKey (bucketKey, fileKey) ;
 		console.log ('Getting file manifest') ;
 		var urn =URN (bucketKey, fileKey) ;
 		access_token (function (/*access_token*/) {
@@ -532,10 +537,13 @@ program
 	.command ('thumbnail')
 	.description ('get thumbnail')
 	.arguments ('<fileKey> <outputFile>')
+	.option ('-f, --file', 'fileKey represent the final objectKey on OSS vs a local fileKey')
 	.action (function (fileKey, outputFile, options) {
 		var bucketKey =readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
+		if ( options.file === undefined )
+			fileKey =readFileKey (bucketKey, fileKey) ;
 		console.log ('Getting file thumbnail') ;
 		var urn =URN (bucketKey, fileKey) ;
 		access_token (function (/*access_token*/) {
@@ -579,6 +587,8 @@ program
 		var bucketKey =readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
+		if ( options.file === undefined )
+			fileKey =readFileKey (bucketKey, fileKey) ;
 		console.log ('Deleting manifest for ' + fileKey) ;
 		var urn =URN (bucketKey, fileKey) ;
 		access_token (function (/*access_token*/) {
@@ -593,10 +603,13 @@ program
 	.command ('html')
 	.description ('generate default html page')
 	.arguments ('<fileKey> <outputFile>')
+	.option ('-f, --file', 'fileKey represent the final objectKey on OSS vs a local fileKey')
 	.action (function (fileKey, outputFile, options) {
 		var bucketKey =readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
+		if ( options.file === undefined )
+			fileKey =readFileKey (bucketKey, fileKey) ;
 		console.log ('Creating file: ' + outputFile) ;
 		var urn =URN (bucketKey, fileKey) ;
         oauthExecForRead (function (access_token) {
@@ -632,12 +645,12 @@ function usage() {
         - get an user access token (3 legged) \n\
     aboutme \n\
         - 3legged aboutme information \n\
-    buckets [[-s] [limit] [index]] \n\
+    buckets [-s [-a <startAt>] [-l <limit>] [-r <region>]] \n\
         - list local buckets \n\
           -s / --server : list buckets on the server \n\
-             limit: <optional=10> how many to return \n\
-             index: <optional=0> where to start in the list \n\
-             ex: -s 10 30 -> will return the 30th to the 39th items \n\
+          -a / --startAt <startAt> : where to start in the list [string, default: none] \n\
+		  -l / --limit <limit> : how many to return [integer, default: 10] \n\
+		  -r / --region <region> : US or EMEA [string, default: US] \n\
     bucket [<Name>] \n\
         - set or get the current bucket \n\
     bucketCreate <Name> [<Type>] \n\
@@ -648,48 +661,50 @@ function usage() {
         - check bucket validity, outputs the expiration \n\
           date/time for this bucket \n\
           if no parameter use the current bucket \n\
-    bucketItems [<Name>] \n\
+    bucketItems [<Name>] [-a <startAt>] [-l <limit>] [-r <region>] \n\
         - list items in a given bucket \n\
-          required to be in the API white list to use this API \n\
           if no parameter use the current bucket \n\
+          -a / --startAt <startAt> : where to start in the list [string, default: none] \n\
+		  -l / --limit <limit> : how many to return [integer, default: 10] \n\
+		  -r / --region <region> : US or EMEA [string, default: US] \n\
     bucketDelete [<Name>] \n\
         - delete a given bucket \n\
           if no parameter delete the current bucket \n\
-    upload [-h] <File> \n\
+    upload <File> \n\
         - upload a file in the current bucket \n\
-        -h for list of supported format \n\
     resumable <File> <Pieces> \n\
         - upload a file in multiple pieces (i.e. resumables) \n\
-    download [-f] <FileKey> <OutputFile> \n\
+    download <FileKey> <OutputFile> \n\
         - download the file from OSS \n\
-          -f, --file', 'fileKey represent the final objectKey on OSS vs a local fileKey \n\
-    objectDetails [-f] <FileKey> \n\
+          -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
+    objectDetails <FileKey> \n\
         - file information \n\
-          -f, --file', 'fileKey represent the final objectKey on OSS vs a local fileKey \n\
-    translate [-f] <FileKey> \n\
+           -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
+    translate <FileKey> \n\
         - translate the file for viewing \n\
-          -f, --file', 'fileKey represent the final objectKey on OSS vs a local fileKey \n\
-    translateProgress [-f] <FileKey> \n\
+          -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
+          -e / --entry <rootFile> : which file to start from \n\
+    translateProgress <FileKey> \n\
         - file translation progress \n\
-          -f, --file', 'fileKey represent the final objectKey on OSS vs a local fileKey \n\
-    manifest [-f] <FileKey> \n\
+          -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
+    manifest <FileKey> \n\
         - urn manifest \n\
-          -f, --file', 'fileKey represent the final objectKey on OSS vs a local fileKey \n\
-    metadata [-f] <FileKey> \n\
+          -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
+    metadata <FileKey> \n\
         - urn metadata \n\
-          -f, --file', 'fileKey represent the final objectKey on OSS vs a local fileKey \n\
-    thumbnail [-f] <FileKey> \n\
+          -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
+    thumbnail <FileKey> \n\
         - get thumbnail \n\
-          -f, --file', 'fileKey represent the final objectKey on OSS vs a local fileKey \n\
-    deleteManifest [-f] <FileKey> \n\
+          -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
+    deleteManifest <FileKey> \n\
         - delete the manifest and all its translated output files (derivatives). \n\
-          -f, --file', 'fileKey represent the final objectKey on OSS vs a local fileKey \n\
-    deleteFile [-f] <FileKey> \n\
+          -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
+    deleteFile <FileKey> \n\
         - delete the source file from the bucket \n\
-          -f, --file', 'fileKey represent the final objectKey on OSS vs a local fileKey \n\
-    html [-f] <FileKey> \n\
+          -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
+    html <FileKey> \n\
         - generate default html page \n\
-          -f, --file', 'fileKey represent the final objectKey on OSS vs a local fileKey \n\
+          -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
 	") ;
 }
 
