@@ -88,7 +88,7 @@ program
             console.log('Wait for the browser to return a code and run this script again with the code as parameter...') ;
             return ;
         } else {
-            oa3Legged.gettoken (clientId, clientSecret, 'authorization_code', code, 'http://localhost:3006/oauth', function (error, data, response) {
+            oa3Legged.gettoken (clientId, clientSecret, 'authorization_code', code, mycallback, function (error, data, response) {
                 if ( errorHandler (error, data, 'Failed to get your token', false) )
                     return (fs.unlink (__dirname + '/data/access_token')) ;
                 if ( httpErrorHandler (response, 'Failed to get your token', false) )
