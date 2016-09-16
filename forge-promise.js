@@ -38,9 +38,10 @@ var fs =require ('fs') ;
 var url =require ('url') ;
 var path =require ('path') ;
 
-var clientId =process.env.CLIENT_ID || 'your_client_id' ;
-var clientSecret =process.env.CLIENT_SECRET || 'your_client_secret' ;
-var mycallback =process.env.CALLBACK || 'http://localhost:3006/oauth' ;
+var clientId =process.env.FORGE_CLIENT_ID || 'your_client_id' ;
+var clientSecret =process.env.FORGE_CLIENT_SECRET || 'your_client_secret' ;
+var PORT =process.env.PORT || '3006' ;
+var mycallback =process.env.FORGE_CALLBACK || ('http://localhost:' + PORT + '/oauth') ;
 
 var grantType ='client_credentials' ; // {String} Must be ``client_credentials``
 var opts ={ 'scope': 'data:read data:write data:create data:search bucket:create bucket:read bucket:update bucket:delete' } ;
@@ -171,7 +172,7 @@ program
 	.command ('bucket')
 	.description ('set or get the current bucket')
 	.arguments ('[bucketKey]')
-	.action (function (bucketKey) {
+	.action (function (bucketKey, options) {
 		if ( bucketKey && bucketKey !== '' ) {
 			if ( !checkBucketKey (bucketKey) )
 				return ;
@@ -228,7 +229,7 @@ program
 	.command ('bucketCheck')
 	.description ('check bucket validity, outputs the expiration; date/time for this bucket; if no parameter use the current bucket')
 	.arguments ('[bucketKey]')
-	.action (function (bucketKey) {
+	.action (function (bucketKey, options) {
 		bucketKey =bucketKey || readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
@@ -287,7 +288,7 @@ program
 	.command ('bucketDelete')
 	.description ('delete a given bucket; if no parameter delete the current bucket')
 	.arguments ('[bucketKey]')
-	.action (function (bucketKey) {
+	.action (function (bucketKey, options) {
 		bucketKey =bucketKey || readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
@@ -309,7 +310,7 @@ program
 	.command ('upload')
 	.description ('upload a file in the current bucket')
 	.arguments ('<file>')
-	.action (function (file) {
+	.action (function (file, options) {
 		var bucketKey =readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
@@ -343,7 +344,7 @@ program
 	.command ('resumable')
 	.description ('upload a file in multiple pieces (i.e. resumables)')
 	.arguments ('<file> <pieces>')
-	.action (function (file, pieces) {
+	.action (function (file, pieces, options) {
 		pieces =pieces || 2 ;
 		var bucketKey =readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
@@ -424,7 +425,7 @@ program
 	.description ('file information')
 	.arguments ('<fileKey>')
 	.option ('-f, --file', 'fileKey represent the final objectKey on OSS vs a local fileKey')
-	.action (function (fileKey) {
+	.action (function (fileKey, options) {
 		var bucketKey =readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
@@ -452,7 +453,7 @@ program
 	.arguments ('<fileKey>')
 	.option ('-f, --file', 'fileKey represent the final objectKey on OSS vs a local fileKey')
 	.option ('-e, --entry <rootFile>', 'rootFile: which file to start from')
-	.action (function (fileKey) {
+	.action (function (fileKey, options) {
 		var bucketKey =readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
@@ -499,7 +500,7 @@ program
 	.description ('file translation progress')
 	.arguments ('<fileKey>')
 	.option ('-f, --file', 'fileKey represent the final objectKey on OSS vs a local fileKey')
-	.action (function (fileKey) {
+	.action (function (fileKey, options) {
 		var bucketKey =readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
@@ -523,7 +524,7 @@ program
 	.description ('file manifest')
 	.arguments ('<fileKey>')
 	.option ('-f, --file', 'fileKey represent the final objectKey on OSS vs a local fileKey')
-	.action (function (fileKey) {
+	.action (function (fileKey, options) {
 		var bucketKey =readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
@@ -547,7 +548,7 @@ program
 	.description ('file metadata')
 	.arguments ('<fileKey>')
 	.option ('-f, --file', 'fileKey represent the final objectKey on OSS vs a local fileKey')
-	.action (function (fileKey) {
+	.action (function (fileKey, options) {
 		var bucketKey =readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
@@ -571,7 +572,7 @@ program
 	.description ('get thumbnail')
 	.arguments ('<fileKey> <outputFile>')
 	.option ('-f, --file', 'fileKey represent the final objectKey on OSS vs a local fileKey')
-	.action (function (fileKey, outputFile) {
+	.action (function (fileKey, outputFile, options) {
 		var bucketKey =readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
@@ -597,7 +598,7 @@ program
 	.description ('delete the source file from the bucket')
 	.arguments ('<fileKey>')
 	.option ('-f, --file', 'fileKey represent the final objectKey on OSS vs a local fileKey')
-	.action (function (fileKey) {
+	.action (function (fileKey, options) {
 		var bucketKey =readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
@@ -620,7 +621,7 @@ program
 	.description ('delete the manifest and all its translated output files (derivatives)')
 	.arguments ('<fileKey>')
 	.option ('-f, --file', 'fileKey represent the final objectKey on OSS vs a local fileKey')
-	.action (function (fileKey) {
+	.action (function (fileKey, options) {
 		var bucketKey =readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
@@ -644,7 +645,7 @@ program
 	.description ('generate default html page')
 	.arguments ('<fileKey> <outputFile>')
 	.option ('-f, --file', 'fileKey represent the final objectKey on OSS vs a local fileKey')
-	.action (function (fileKey, outputFile) {
+	.action (function (fileKey, outputFile, options) {
 		var bucketKey =readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
@@ -743,7 +744,7 @@ function usage() {
     deleteFile <FileKey> \n\
         - delete the source file from the bucket \n\
           -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
-    html <FileKey> \n\
+    html <FileKey> <OutputFile> \n\
         - generate default html page \n\
           -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
 	") ;

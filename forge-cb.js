@@ -38,9 +38,10 @@ var fs =require ('fs') ;
 var url =require ('url') ;
 var path =require ('path') ;
 
-var clientId =process.env.CLIENT_ID || 'your_client_id' ;
-var clientSecret =process.env.CLIENT_SECRET || 'your_client_secret' ;
-var mycallback =process.env.CALLBACK || 'http://localhost:3006/oauth' ;
+var clientId =process.env.FORGE_CLIENT_ID || 'your_client_id' ;
+var clientSecret =process.env.FORGE_CLIENT_SECRET || 'your_client_secret' ;
+var PORT =process.env.PORT || '3006' ;
+var mycallback =process.env.FORGE_CALLBACK || ('http://localhost:' + PORT + '/oauth') ;
 
 var grantType ='client_credentials' ; // {String} Must be ``client_credentials``
 var opts ={ 'scope': 'data:read data:write data:create data:search bucket:create bucket:read bucket:update bucket:delete' } ;
@@ -165,7 +166,7 @@ program
 	.command ('bucket')
 	.description ('set or get the current bucket')
 	.arguments ('[bucketKey]')
-	.action (function (bucketKey) {
+	.action (function (bucketKey, options) {
 		if ( bucketKey && bucketKey !== '' ) {
 			if ( !checkBucketKey (bucketKey) )
 				return ;
@@ -221,7 +222,7 @@ program
 	.arguments ('[bucketKey]')
 	.action (function (bucketKey) {
 		bucketKey =bucketKey || readBucketKey () ;
-		if ( !checkBucketKey (bucketKey) )
+		if ( !checkBucketKey (bucketKey, options) )
 			return ;
 		console.log ('Getting bucket details') ;
 		access_token (function (/*access_token*/) {
@@ -272,7 +273,7 @@ program
 	.command ('bucketDelete')
 	.description ('delete a given bucket; if no parameter delete the current bucket')
 	.arguments ('[bucketKey]')
-	.action (function (bucketKey) {
+	.action (function (bucketKey, options) {
 		bucketKey =bucketKey || readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
@@ -291,7 +292,7 @@ program
 	.command ('upload')
 	.description ('upload a file in the current bucket')
 	.arguments ('<file>')
-	.action (function (file) {
+	.action (function (file, options) {
 		var bucketKey =readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
@@ -322,7 +323,7 @@ program
 	.command ('resumable')
 	.description ('upload a file in multiple pieces (i.e. resumables)')
 	.arguments ('<file> <pieces>')
-	.action (function (file, pieces) {
+	.action (function (file, pieces, options) {
 		var bucketKey =readBucketKey () ;
 		pieces =pieces || 2 ;
 		if ( !checkBucketKey (bucketKey) )
@@ -702,7 +703,7 @@ function usage() {
     deleteFile <FileKey> \n\
         - delete the source file from the bucket \n\
           -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
-    html <FileKey> \n\
+    html <FileKey> <OutputFile> \n\
         - generate default html page \n\
           -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
 	") ;

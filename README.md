@@ -27,7 +27,8 @@ Demonstrates the Autodesk Forge API authorisation and translation process using 
 
 ## Description
 
-This sample exercises the Node.js engine as a command line utility to  demonstrate the Forge OAuth application authorisation process and the Model Derivative API mentioned in the Quick Start guide.
+This sample exercises the Node.js engine as a command line utility to  demonstrate the Forge OAuth application
+authorisation process and the Model Derivative API mentioned in the Quick Start guide.
 
 In order to make use of this sample, you need to register your consumer key, of course:
 * https://developer.autodesk.com > My Apps
@@ -49,8 +50,8 @@ Node.js and NPM
      npm install
      ```
   4. Request your consumer key/secret key from [https://developer.autodesk.com](https://developer.autodesk.com).
-  5. Set 2 environment variables CLIENT_ID / CLIENT_SECRET, or edit the forge-cb.js and forge-promise.js files
-     and replace the placeholders by the consumer key/secret keys.
+  5. Set 2 environment variables FORGE_CLIENT_ID / FORGE_CLIENT_SECRET, or edit the forge-cb.js and forge-promise.js
+     files and replace the placeholders by the consumer key/secret keys.
   6. *Note* for the 3 legged command: while registering your keys, make sure that the callback you define for your
      callback (or redirect_uri) match the one in the scripts (mycallback variable in forge-cb.js and forge-promise.js).
      Default is : http://localhost:3006/oauth
@@ -81,7 +82,8 @@ A typical workflow is (replace -cb by -promise if you want to use promises vs ca
     # Create an HTML page with your URN and a read-only access token.
     node forge-cb.js html Au.obj Au.html
 
-Note your access token and bucket name are saved in the data folder to be used as default by the scripts, but you can edit them as you wish.
+Note your access token and bucket name are saved in the data folder to be used as default by the scripts, but you can
+edit them as you wish.
 
 Bucket information (JSON replies) returned by the system are stored in the data folder as well.
 
