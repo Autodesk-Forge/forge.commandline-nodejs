@@ -9,33 +9,55 @@
 <body onload="initialize()">
 <div id="viewer" style="position:absolute; width:90%; height:90%;"></div>
 <script>
+	function authMe () { return ('<%= access_token %>') ; }
+
 	function initialize () {
-		var options ={ "document" : "urn:<%= urn %>" } ;
-		var viewerElement =document.getElementById ("viewer") ;
+		var options ={
+			'document' : "urn:<%= urn %>",
+			'env': 'AutodeskProduction',
+			'getAccessToken': authMe
+		} ;
+		var viewerElement =document.getElementById ('viewer') ;
 		//var viewer =new Autodesk.Viewing.Viewer3D (viewerElement, {}) ; / No toolbar
 		var viewer =new Autodesk.Viewing.Private.GuiViewer3D (viewerElement, {}) ; // With toolbar
 		Autodesk.Viewing.Initializer (options, function () {
 			viewer.initialize () ;
-			loadDocument (viewer, "<%= access_token %>", options.document) ;
+			loadDocument (viewer, options.document) ;
 		}) ;
 	}
-	function loadDocument (viewer, auth, documentId) {
+	function loadDocument (viewer, documentId) {
 		// Find the first 3d geometry and load that.
 		Autodesk.Viewing.Document.load (
-			documentId, auth,
+			documentId,
 			function (doc) { // onLoadCallback
 				var geometryItems =[] ;
 				geometryItems =Autodesk.Viewing.Document.getSubItemsWithProperties (
 					doc.getRootItem (),
-					{ "type" : "geometry", "role" : "3d" },
+					{ 'type' : 'geometry', 'role' : '3d' },
 					true
 				) ;
+				if ( geometryItems.length <= 0 ) {
+					geometryItems =Autodesk.Viewing.Document.getSubItemsWithProperties (
+						doc.getRootItem (),
+						{ 'type': 'geometry', 'role': '2d' },
+						true
+					) ;
+				}
 				if ( geometryItems.length > 0 )
-					viewer.load (doc.getViewablePath (geometryItems [0])) ;
+					viewer.load (
+						doc.getViewablePath (geometryItems [0])//,
+						//null, null, null,
+						//doc.acmSessionId /*session for DM*/
+					) ;
 			},
 			function (errorMsg) { // onErrorCallback
 				alert("Load Error: " + errorMsg) ;
-			}
+			}//,
+			//{
+            //	'oauth2AccessToken': authMee (),
+            //	'x-ads-acm-namespace': 'WIPDM',
+            //	'x-ads-acm-check-groups': 'true',
+        	//}
 		) ;
 	}
 </script>
