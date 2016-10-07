@@ -299,7 +299,7 @@ program
 		var fileKey =makeKey (file) ;
 		fs.stat (file, function (err, stats) {
 			if ( err )
-				return (console.log (error.message)) ;
+				return (console.log (err.message)) ;
 			var size =stats.size ;
 			console.log ('Uploading file: ' + file) ;
 			access_token (function (/*access_token*/) {
