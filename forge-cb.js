@@ -63,67 +63,67 @@ program
 		oauthExec () ;
 	}) ;
 program
-    .command ('3legged')
-    .description ('get an user access token (3 legged)')
-    .arguments ('[code]')
-    .action (function (code, options) {
-        var oa3Legged =new ForgeOAuth.ThreeLeggedApi () ;
-        if ( !code || code === '' ) {
-            var opts ={
-                'scope': "data:read",
-                'client_id': clientId,
-                'response_type': 'code',
-                'redirect_uri': mycallback
-            } ;
-            var st =Object.keys (opts).map (function (value, key) {
-                return (value + '=' + encodeURIComponent (opts [value])) ;
-            }) ;
-            st =st.join ('&') ;
-            opn (
+	.command ('3legged')
+	.description ('get an user access token (3 legged)')
+	.arguments ('[code]')
+	.action (function (code, options) {
+		var oa3Legged =new ForgeOAuth.ThreeLeggedApi () ;
+		if ( !code || code === '' ) {
+			var opts ={
+				'scope': "data:read",
+				'client_id': clientId,
+				'response_type': 'code',
+				'redirect_uri': mycallback
+			} ;
+			var st =Object.keys (opts).map (function (value, key) {
+				return (value + '=' + encodeURIComponent (opts [value])) ;
+			}) ;
+			st =st.join ('&') ;
+			opn (
 				ForgeOAuth.ApiClient.instance.basePath + '/authentication/v1/authorize' + '?' + st//,
 				/*{ app: [
 					'google chrome',
 					'--incognito'
 				] }*/
 			) ;
-            console.log('Wait for the browser to return a code and run this script again with the code as parameter...') ;
-            return ;
-        } else {
-            oa3Legged.gettoken (clientId, clientSecret, 'authorization_code', code, mycallback, function (error, data, response) {
-                if ( errorHandler (error, data, 'Failed to get your token', false) )
-                    return (fs.unlink (__dirname + '/data/access_token')) ;
-                if ( httpErrorHandler (response, 'Failed to get your token', false) )
-                    return (fs.unlink (__dirname + '/data/access_token')) ;
+			console.log('Wait for the browser to return a code and run this script again with the code as parameter...') ;
+			return ;
+		} else {
+			oa3Legged.gettoken (clientId, clientSecret, 'authorization_code', code, mycallback, function (error, data, response) {
+				if ( errorHandler (error, data, 'Failed to get your token', false) )
+					return (fs.unlink (__dirname + '/data/access_token')) ;
+				if ( httpErrorHandler (response, 'Failed to get your token', false) )
+					return (fs.unlink (__dirname + '/data/access_token')) ;
 
-                var token =data.token_type + ' ' + data.access_token ;
-                console.log ('Your new 3-legged access token is: ' + token) ;
-                var dt =moment ().add (data.expires_in, 'seconds') ;
-                console.log ('Expires at: ' + dt.format ('MM/DD/YYYY, hh:mm:ss a')) ;
-                fs.writeFile (__dirname + '/data/access_token', token, function (err) {
-                    if ( err )
-                        return (console.error ('Failed to create access_token file')) ;
-                }) ;
-                token =data.token_type + ' ' + data.refresh_token ;
-                fs.writeFile (__dirname + '/data/refresh_token', token, function (err) {
-                    if ( err )
-                        return (console.error ('Failed to create refresh_token file')) ;
-                }) ;
-            }) ;
-        }
-    }) ;
+				var token =data.token_type + ' ' + data.access_token ;
+				console.log ('Your new 3-legged access token is: ' + token) ;
+				var dt =moment ().add (data.expires_in, 'seconds') ;
+				console.log ('Expires at: ' + dt.format ('MM/DD/YYYY, hh:mm:ss a')) ;
+				fs.writeFile (__dirname + '/data/access_token', token, function (err) {
+					if ( err )
+						return (console.error ('Failed to create access_token file')) ;
+				}) ;
+				token =data.token_type + ' ' + data.refresh_token ;
+				fs.writeFile (__dirname + '/data/refresh_token', token, function (err) {
+					if ( err )
+						return (console.error ('Failed to create refresh_token file')) ;
+				}) ;
+			}) ;
+		}
+	}) ;
 program
-    .command ('3legged aboutme information')
-    .description ('3legged aboutme')
-    .action (function (options) {
-        console.log ('About Me!...') ;
-        access_token (function (access_token) {
-            ForgeOAuth.ApiClient.instance.authentications ['oauth2_access_code'].accessToken =access_token ;
-            var oa3Info =new ForgeOAuth.InformationalApi () ;
-            oa3Info.aboutMe (function (error, data, response) {
-                console.log (JSON.stringify (data, null, 4)) ;
-            }) ;
-        }) ;
-    }) ;
+	.command ('aboutme')
+	.description ('3legged aboutme information')
+	.action (function (options) {
+		console.log ('About Me!...') ;
+		access_token (function (access_token) {
+			ForgeOAuth.ApiClient.instance.authentications ['oauth2_access_code'].accessToken =access_token ;
+			var oa3Info =new ForgeOAuth.InformationalApi () ;
+			oa3Info.aboutMe (function (error, data, response) {
+				console.log (JSON.stringify (data, null, 4)) ;
+			}) ;
+		}) ;
+	}) ;
 program
 	.command ('buckets')
 	.description ('list local/server buckets')
@@ -139,9 +139,9 @@ program
 			var opts ={ 'limit': limit, 'startAt': startAt, 'region': region } ;
 			console.log ('Listing from ' + startAt + ' to ' + limit) ;
 			access_token (function (/*access_token*/) {
-                ossBuckets.getBuckets (opts, function (error, data, response) {
+				ossBuckets.getBuckets (opts, function (error, data, response) {
 					errorHandler (error, data, 'Failed to access buckets list') ;
-                    httpErrorHandler (response, 'Failed to access buckets list') ;
+					httpErrorHandler (response, 'Failed to access buckets list') ;
 					//console.log (prettyjson.render (data, {})) ;
 					console.log (JSON.stringify (data, null, 4)) ;
 					if ( !data.hasOwnProperty ('next') || !data.next ) {
@@ -226,10 +226,10 @@ program
 			return ;
 		console.log ('Getting bucket details') ;
 		access_token (function (/*access_token*/) {
-            ossBuckets.getBucketDetails (bucketKey, function (error, data, response) {
+			ossBuckets.getBucketDetails (bucketKey, function (error, data, response) {
 				errorHandler (error, data, 'Failed to access bucket details') ;
-                httpErrorHandler (response, 'Failed to access bucket details') ;
-                if ( data.policyKey === 'transient' ) // 24 hours
+				httpErrorHandler (response, 'Failed to access bucket details') ;
+				if ( data.policyKey === 'transient' ) // 24 hours
 					console.log ('bucket content will expire after: 24 hours') ;
 				else if ( data.policyKey === 'temporary' ) // 30 days
 					console.log ('bucket content will expire after: 30 days') ;
@@ -255,10 +255,10 @@ program
 			var startAt =options.startAt || null ;
 			var region =options.region || 'US' ;
 			var opts ={ 'limit': limit, 'startAt': startAt, 'region': region } ;
-            ossObjects.getObjects (bucketKey, opts, function (error, data, response) {
+			ossObjects.getObjects (bucketKey, opts, function (error, data, response) {
 				errorHandler (error, data, 'Failed to access buckets list') ;
-                httpErrorHandler (response, 'Failed to access buckets list') ;
-                console.log (JSON.stringify (data, null, 4)) ;
+				httpErrorHandler (response, 'Failed to access buckets list') ;
+				console.log (JSON.stringify (data, null, 4)) ;
 				if ( !data.hasOwnProperty ('next') ) {
 					console.log ('Your search is complete, no more items to list') ;
 				} else {
@@ -279,10 +279,10 @@ program
 			return ;
 		console.log ('Delete bucket: ' + bucketKey) ;
 		access_token (function (/*access_token*/) {
-            ossBuckets.deleteBucket (bucketKey, function (error, data, response) {
+			ossBuckets.deleteBucket (bucketKey, function (error, data, response) {
 				errorHandler (error, data, 'Failed to delete bucket', false) ;
-                httpErrorHandler (response, 'Failed to delete bucket', false) ;
-                fs.unlink (__dirname + '/data/bucket') ;
+				httpErrorHandler (response, 'Failed to delete bucket', false) ;
+				fs.unlink (__dirname + '/data/bucket') ;
 				fs.unlink (__dirname + '/data/' + bucketKey + '.bucket.json') ;
 				console.log ('bucket deleted') ;
 			}) ;
@@ -391,14 +391,14 @@ program
 		console.log ('Downloading file: ' + fileKey) ;
 		access_token (function (/*access_token*/) {
 			var wstream =fs.createWriteStream (outputFile) ;
-            ossObjects.getObject (
+			ossObjects.getObject (
 				bucketKey, fileKey,
 				{ /*'acceptEncoding': 'text/plain'*/ },
 				function (error, data, response) {
 					errorHandler (error, data, 'Failed to download file') ;
-                    httpErrorHandler (response, 'Failed to download file') ;
-                    console.log ('Download successful') ;
-                })
+					httpErrorHandler (response, 'Failed to download file') ;
+					console.log ('Download successful') ;
+				})
 				.pipe (wstream) ;
 		}) ;
 	}) ;
@@ -415,10 +415,10 @@ program
 			fileKey =readFileKey (bucketKey, fileKey) ;
 		console.log ('Getting details for file: ' + fileKey) ;
 		access_token (function (/*access_token*/) {
-            ossObjects.getObjectDetails (bucketKey, fileKey, {}, function (error, data, response) {
+			ossObjects.getObjectDetails (bucketKey, fileKey, {}, function (error, data, response) {
 				errorHandler (error, data, 'Failed to download file') ;
-                httpErrorHandler (response, 'Failed to download file') ;
-                console.log (JSON.stringify (data, null, 4)) ;
+				httpErrorHandler (response, 'Failed to download file') ;
+				console.log (JSON.stringify (data, null, 4)) ;
 				fs.writeFile (__dirname + '/data/' + bucketKey + '.' + fileKey + '.json', JSON.stringify (data, null, 4), function (err) {
 					if ( err )
 						return (console.error ('Failed to create ' + bucketKey + '.' + file + '.json file')) ;
@@ -465,8 +465,8 @@ program
 			var bForce =true ;
 			md.translate (job, { 'xAdsForce': bForce }, function (error, data, response) {
 				errorHandler (error, data, 'Failed to register file for translation') ;
-                httpErrorHandler (response, 'Failed to register file for translation') ;
-                console.log ('Registration successfully submitted.') ;
+				httpErrorHandler (response, 'Failed to register file for translation') ;
+				console.log ('Registration successfully submitted.') ;
 				console.log (JSON.stringify (data, null, 4)) ;
 			}) ;
 		}) ;
@@ -487,7 +487,7 @@ program
 		access_token (function (/*access_token*/) {
 			md.getManifest (urn, {}, function (error, data, response) {
 				errorHandler (error, data, 'Failed to get file manifest') ;
-                httpErrorHandler (response, 'Failed to get file manifest') ;
+				httpErrorHandler (response, 'Failed to get file manifest') ;
 				console.log ('Request: ' + data.status + ' (' + data.progress + ')') ;
 			}) ;
 		}) ;
@@ -508,8 +508,8 @@ program
 		access_token (function (/*access_token*/) {
 			md.getManifest (urn, {}, function (error, data, response) {
 				errorHandler (error, data, 'Failed to get file manifest') ;
-                httpErrorHandler (response, 'Failed to get file manifest') ;
-                console.log (JSON.stringify (data, null, 4)) ;
+				httpErrorHandler (response, 'Failed to get file manifest') ;
+				console.log (JSON.stringify (data, null, 4)) ;
 			}) ;
 		}) ;
 	}) ;
@@ -524,13 +524,13 @@ program
 			return ;
 		if ( options.file === undefined )
 			fileKey =readFileKey (bucketKey, fileKey) ;
-		console.log ('Getting file manifest') ;
+		console.log ('Getting file metadata') ;
 		var urn =URN (bucketKey, fileKey) ;
 		access_token (function (/*access_token*/) {
 			md.getMetadata (urn, {}, function (error, data, response) {
-				errorHandler (error, data, 'Failed to get file manifest') ;
-                httpErrorHandler (response, 'Failed to get file manifest') ;
-                console.log (JSON.stringify (data, null, 4)) ;
+				errorHandler (error, data, 'Failed to get file metadata') ;
+				httpErrorHandler (response, 'Failed to get file metadata') ;
+				console.log (JSON.stringify (data, null, 4)) ;
 			}) ;
 		}) ;
 	}) ;
@@ -554,9 +554,9 @@ program
 				{ width: 400, height: 400 }, // width: 400, height: 400
 				function (error, data, response) {
 					errorHandler (error, data, 'Failed to get file thumbnail') ;
-                    httpErrorHandler (response, 'Failed to get file thumbnail') ;
-                    console.log ('Thumbnail downloaded successfully') ;
-                })
+					httpErrorHandler (response, 'Failed to get file thumbnail') ;
+					console.log ('Thumbnail downloaded successfully') ;
+				})
 				.pipe (wstream) ;
 		}) ;
 	}) ;
@@ -573,10 +573,10 @@ program
 			fileKey =readFileKey (bucketKey, fileKey) ;
 		console.log ('Deleting file ' + fileKey) ;
 		access_token (function (/*access_token*/) {
-            ossObjects.deleteObject (bucketKey, fileKey, function (error, data, response) {
+			ossObjects.deleteObject (bucketKey, fileKey, function (error, data, response) {
 				errorHandler (error, data, 'Failed to delete file') ;
-                httpErrorHandler (response, 'Failed to delete file') ;
-                console.log ('File deleted') ;
+				httpErrorHandler (response, 'Failed to delete file') ;
+				console.log ('File deleted') ;
 			}) ;
 		}) ;
 	}) ;
@@ -595,8 +595,8 @@ program
 		access_token (function (/*access_token*/) {
 			md.deleteManifest (urn, function (error, data, response) {
 				errorHandler (error, data, 'Failed to delete manifest') ;
-                httpErrorHandler (response, 'Failed to delete manifest') ;
-                console.log ('Manifest deleted') ;
+				httpErrorHandler (response, 'Failed to delete manifest') ;
+				console.log ('Manifest deleted') ;
 			}) ;
 		}) ;
 	}) ;
@@ -613,7 +613,7 @@ program
 			fileKey =readFileKey (bucketKey, fileKey) ;
 		console.log ('Creating file: ' + outputFile) ;
 		var urn =URN (bucketKey, fileKey) ;
-        oauthExecForRead (function (access_token) {
+		oauthExecForRead (function (access_token) {
 			var data ={ 'urn': urn, 'access_token': access_token } ;
 			ejs.renderFile (__dirname + '/views/index.ejs', data, {}, function (err, str) {
 				fs.writeFile (outputFile, str, function (err) {
@@ -640,102 +640,102 @@ return ; // End of script
 function usage() {
 	console.log (" \
   forge-cb command [arg] \n\
-    2legged \n\
-        - get an application access token (2 legged) \n\
-    3legged [code] \n\
-        - get an user access token (3 legged) \n\
-    aboutme \n\
-        - 3legged aboutme information \n\
-    buckets [-s [-a <startAt>] [-l <limit>] [-r <region>]] \n\
-        - list local buckets \n\
-          -s / --server : list buckets on the server \n\
-          -a / --startAt <startAt> : where to start in the list [string, default: none] \n\
+	2legged \n\
+		- get an application access token (2 legged) \n\
+	3legged [code] \n\
+		- get an user access token (3 legged) \n\
+	aboutme \n\
+		- 3legged aboutme information \n\
+	buckets [-s [-a <startAt>] [-l <limit>] [-r <region>]] \n\
+		- list local buckets \n\
+		  -s / --server : list buckets on the server \n\
+		  -a / --startAt <startAt> : where to start in the list [string, default: none] \n\
 		  -l / --limit <limit> : how many to return [integer, default: 10] \n\
 		  -r / --region <region> : US or EMEA [string, default: US] \n\
-    bucket [<Name>] \n\
-        - set or get the current bucket \n\
-    bucketCreate <Name> [<Type>] \n\
-        - create a new bucket, \n\
-          default Type is transient, values can be \n\
-          transient/temporary/permanent \n\
-    bucketCheck [<Name>] \n\
-        - check bucket validity, outputs the expiration \n\
-          date/time for this bucket \n\
-          if no parameter use the current bucket \n\
-    bucketItems [<Name>] [-a <startAt>] [-l <limit>] [-r <region>] \n\
-        - list items in a given bucket \n\
-          if no parameter use the current bucket \n\
-          -a / --startAt <startAt> : where to start in the list [string, default: none] \n\
+	bucket [<Name>] \n\
+		- set or get the current bucket \n\
+	bucketCreate <Name> [<Type>] \n\
+		- create a new bucket, \n\
+		  default Type is transient, values can be \n\
+		  transient/temporary/permanent \n\
+	bucketCheck [<Name>] \n\
+		- check bucket validity, outputs the expiration \n\
+		  date/time for this bucket \n\
+		  if no parameter use the current bucket \n\
+	bucketItems [<Name>] [-a <startAt>] [-l <limit>] [-r <region>] \n\
+		- list items in a given bucket \n\
+		  if no parameter use the current bucket \n\
+		  -a / --startAt <startAt> : where to start in the list [string, default: none] \n\
 		  -l / --limit <limit> : how many to return [integer, default: 10] \n\
 		  -r / --region <region> : US or EMEA [string, default: US] \n\
-    bucketDelete [<Name>] \n\
-        - delete a given bucket \n\
-          if no parameter delete the current bucket \n\
-    upload <File> \n\
-        - upload a file in the current bucket \n\
-    resumable <File> <Pieces> \n\
-        - upload a file in multiple pieces (i.e. resumables) \n\
-    download <FileKey> <OutputFile> \n\
-        - download the file from OSS \n\
-          -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
-    objectDetails <FileKey> \n\
-        - file information \n\
-           -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
-    translate <FileKey> \n\
-        - translate the file for viewing \n\
-          -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
-          -e / --entry <rootFile> : which file to start from \n\
-    translateProgress <FileKey> \n\
-        - file translation progress \n\
-          -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
-    manifest <FileKey> \n\
-        - urn manifest \n\
-          -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
-    metadata <FileKey> \n\
-        - urn metadata \n\
-          -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
-    thumbnail <FileKey> \n\
-        - get thumbnail \n\
-          -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
-    deleteManifest <FileKey> \n\
-        - delete the manifest and all its translated output files (derivatives). \n\
-          -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
-    deleteFile <FileKey> \n\
-        - delete the source file from the bucket \n\
-          -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
-    html <FileKey> <OutputFile> \n\
-        - generate default html page \n\
-          -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
+	bucketDelete [<Name>] \n\
+		- delete a given bucket \n\
+		  if no parameter delete the current bucket \n\
+	upload <File> \n\
+		- upload a file in the current bucket \n\
+	resumable <File> <Pieces> \n\
+		- upload a file in multiple pieces (i.e. resumables) \n\
+	download <FileKey> <OutputFile> \n\
+		- download the file from OSS \n\
+		  -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
+	objectDetails <FileKey> \n\
+		- file information \n\
+		   -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
+	translate <FileKey> \n\
+		- translate the file for viewing \n\
+		  -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
+		  -e / --entry <rootFile> : which file to start from \n\
+	translateProgress <FileKey> \n\
+		- file translation progress \n\
+		  -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
+	manifest <FileKey> \n\
+		- urn manifest \n\
+		  -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
+	metadata <FileKey> \n\
+		- urn metadata \n\
+		  -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
+	thumbnail <FileKey> \n\
+		- get thumbnail \n\
+		  -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
+	deleteManifest <FileKey> \n\
+		- delete the manifest and all its translated output files (derivatives). \n\
+		  -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
+	deleteFile <FileKey> \n\
+		- delete the source file from the bucket \n\
+		  -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
+	html <FileKey> <OutputFile> \n\
+		- generate default html page \n\
+		  -f / --file : fileKey represent the final objectKey on OSS vs a local fileKey \n\
 	") ;
 }
 
 function oauthExecForRead (cb) {
-    //var oa3Legged =new ForgeOAuth.ThreeLeggedApi () ;
-    var oa2Legged =new ForgeOAuth.TwoLeggedApi () ;
-    //var oaInfo =new ForgeOAuth.InformationalApi () ;
-    oa2Legged.authenticate (clientId, clientSecret, grantType, optsViewer, function (error, data, response) {
-        errorHandler (error, data, 'Failed to get your viewer token') ;
-        httpErrorHandler (response, 'Failed to get your viewer token') ;
-        var token =data.token_type + ' ' + data.access_token ;
-        console.log ('Your viewer 2-legged access token is: ' + token) ;
-        var dt =moment ().add (data.expires_in, 'seconds') ;
-        console.log ('Expires at: ' + dt.format ('MM/DD/YYYY, hh:mm:ss a')) ;
+	//var oa3Legged =new ForgeOAuth.ThreeLeggedApi () ;
+	var oa2Legged =new ForgeOAuth.TwoLeggedApi () ;
+	//var oaInfo =new ForgeOAuth.InformationalApi () ;
+	oa2Legged.authenticate (clientId, clientSecret, grantType, optsViewer, function (error, data, response) {
+		errorHandler (error, data, 'Failed to get your viewer token') ;
+		httpErrorHandler (response, 'Failed to get your viewer token') ;
+		var token =data.token_type + ' ' + data.access_token ;
+		console.log ('Your viewer 2-legged access token is: ' + token) ;
+		var dt =moment ().add (data.expires_in, 'seconds') ;
+		console.log ('Expires at: ' + dt.format ('MM/DD/YYYY, hh:mm:ss a')) ;
 
-        if ( cb )
-            cb (data.access_token) ;
-    }) ;
+		if ( cb )
+			cb (data.access_token) ;
+	}) ;
 }
 
 function oauthExec (cb) {
 	//var oa3Legged =new ForgeOAuth.ThreeLeggedApi () ;
-    var oa2Legged =new ForgeOAuth.TwoLeggedApi () ;
-    //var oaInfo =new ForgeOAuth.InformationalApi () ;
-    oa2Legged.authenticate (clientId, clientSecret, grantType, opts, function (error, data, response) {
+	var oa2Legged =new ForgeOAuth.TwoLeggedApi () ;
+	//var oaInfo =new ForgeOAuth.InformationalApi () ;
+	oa2Legged.authenticate (clientId, clientSecret, grantType, opts, function (error, data, response) {
 		if ( errorHandler (error, data, 'Failed to get your token', false) )
 			return (fs.unlink (__dirname + '/data/access_token')) ;
-        if ( httpErrorHandler (response, 'Failed to get your token', false) )
-            return (fs.unlink (__dirname + '/data/access_token')) ;
-        var token =data.token_type + ' ' + data.access_token ;
+		if ( httpErrorHandler (response, 'Failed to get your token', false) )
+			return (fs.unlink (__dirname + '/data/access_token')) ;
+		var token =data.token_type + ' ' + data.access_token ;
 		console.log ('Your new 2-legged access token is: ' + token) ;
 		var dt =moment ().add (data.expires_in, 'seconds') ;
 		console.log ('Expires at: ' + dt.format ('MM/DD/YYYY, hh:mm:ss a')) ;
@@ -773,14 +773,14 @@ function api_access_token (accessToken, cb) {
 function errorHandler (error, data, msg, bExit) {
 	bExit =bExit == undefined ? true : bExit ;
 	msg =msg || '' ;
-    if ( error && error.code ) {
-        console.error (msg) ;
-        console.error (error.code) ;
-        if ( bExit )
-            process.exit (1) ;
-        return (true) ;
-    }
-    if ( error && error.status && error.message ) {
+	if ( error && error.code ) {
+		console.error (msg) ;
+		console.error (error.code) ;
+		if ( bExit )
+			process.exit (1) ;
+		return (true) ;
+	}
+	if ( error && error.status && error.message ) {
 		console.error (msg) ;
 		console.error (error.status + ': ' + error.message) ;
 		if ( error.response && error.response.text ) {
@@ -808,18 +808,18 @@ function errorHandler (error, data, msg, bExit) {
 }
 
 function httpErrorHandler (response, msg, bExit) {
-    bExit =bExit == undefined ? true : bExit ;
-    msg =msg || '' ;
-    if ( response.statusCode !== 200 ) {
-        console.error (msg) ;
-        console.error ('HTTP ' + response.statusCode + ' ' + response.statusMessage) ;
-        if ( response.body )
-            console.error (response.body) ;
-        if ( bExit )
-            process.exit (1) ;
-        return (true) ;
-    }
-    return (false) ;
+	bExit =bExit == undefined ? true : bExit ;
+	msg =msg || '' ;
+	if ( response.statusCode !== 200 ) {
+		console.error (msg) ;
+		console.error ('HTTP ' + response.statusCode + ' ' + response.statusMessage) ;
+		if ( response.body )
+			console.error (response.body) ;
+		if ( bExit )
+			process.exit (1) ;
+		return (true) ;
+	}
+	return (false) ;
 }
 
 function filterBucket (arr, criteria) {
@@ -831,12 +831,12 @@ function filterBucket (arr, criteria) {
 }
 
 function readBucketKey () {
-    try {
-        return (fs.readFileSync (__dirname + '/data/bucket', 'utf-8')) ;
-    } catch ( e ) {
-        console.error ('bucket file not found!') ;
-    }
-    return (false) ;
+	try {
+		return (fs.readFileSync (__dirname + '/data/bucket', 'utf-8')) ;
+	} catch ( e ) {
+		console.error ('bucket file not found!') ;
+	}
+	return (false) ;
 }
 
 function checkBucketKey (name) {
