@@ -190,7 +190,7 @@ program
 	}) ;
 program
 	.command ('bucketCreate')
-	.description ('create a new bucket,; default Type is transient, values can be transient/temporary/permanent')
+	.description ('create a new bucket,; default Type is transient, values can be transient/temporary/persistent')
 	.arguments ('<bucketKey> [type]')
 	.option ('-r, --region <region>', 'region: US or EMEA [string, default: US]')
 	.action (function (bucketKey, type, options) {

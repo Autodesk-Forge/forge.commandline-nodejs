@@ -31,3 +31,6 @@ bower_components/
 
 Thumbs.db
 .DS_Store
+
+# sample output file
+Au.html
