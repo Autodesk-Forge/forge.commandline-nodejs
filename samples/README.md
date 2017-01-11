@@ -5,10 +5,11 @@ Clone [forge.commandline-nodejs](https://github.com/Autodesk-Forge/forge.command
 ```
 /a/src/web/cyrille $ git clone https://github.com/Autodesk-Forge/forge.commandline-nodejs
 
-/a/src/web/cyrille $ cd forge.commandline-nodejs/
+/a/src/web/cyrille/forge.commandline-nodejs $ export FORGE_CLIENT_ID=PqZxxxxxxxxxxxxxxxxxxxxxxBE
 
-/a/src/web/cyrille/forge.commandline-nodejs $ echo $FORGE_CLIENT_ID
-PqZAGQ5dEW1yWASen9O1gENEFbtk8ABR
+/a/src/web/cyrille $ cd forge.commandline-nodejs $ export FORGE_CLIENT_SECRET=4fxxxxxxxEab
+
+/a/src/web/cyrille $ cd forge.commandline-nodejs $ export FORGE_CALLBACK=http://localhost:3006/oauth
 
 /a/src/web/cyrille/forge.commandline-nodejs $ npm install
 
