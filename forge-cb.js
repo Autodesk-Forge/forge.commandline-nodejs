@@ -657,7 +657,7 @@ function usage() {
 	bucketCreate <Name> [<Type>] \n\
 		- create a new bucket, \n\
 		  default Type is transient, values can be \n\
-		  transient/temporary/permanent \n\
+		  transient/temporary/persistent \n\
 	bucketCheck [<Name>] \n\
 		- check bucket validity, outputs the expiration \n\
 		  date/time for this bucket \n\
