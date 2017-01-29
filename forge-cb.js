@@ -660,7 +660,7 @@ function usage() {
 		- check bucket validity, outputs the expiration \n\
 		  date/time for this bucket \n\
 		  if no parameter use the current bucket \n\
-	bucketItems [<Name>] [-a <startAt>] [-l <limit>] [-r <region>] \n\
+	bucketItems [<Name>] [-a <startAt>] [-l <limit>] \n\
 		- list items in a given bucket \n\
 		  if no parameter use the current bucket \n\
 		  -a / --startAt <startAt> : where to start in the list [string, default: none] \n\
