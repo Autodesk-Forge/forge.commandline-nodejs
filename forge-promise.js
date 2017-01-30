@@ -256,7 +256,6 @@ program
 	.arguments('[bucketKey]')
 	.option ('-a, --startAt <startAt>', 'startAt: where to start in the list [string, default: none]')
 	.option ('-l, --limit <limit>', 'limit: how many to return [integer, default: 10]')
-	.option ('-r, --region <region>', 'region: US or EMEA [string, default: US]')
 	.action (function (bucketKey, options) {
 		bucketKey =bucketKey || readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
@@ -266,8 +265,7 @@ program
 			.then (function (/*access_token*/) {
 				var limit =options.limit || 10 ;
 				var startAt =options.startAt || null ;
-				var region =options.region || 'US' ;
-				var opts ={ 'limit': limit, 'startAt': startAt, 'region': region } ;
+				var opts ={ 'limit': limit, 'startAt': startAt } ;
 				return (ossObjects.getObjects (bucketKey, opts)) ;
 			})
 			.then (function (data) {
@@ -698,17 +696,16 @@ function usage() {
 	bucketCreate <Name> [<Type>] \n\
 		- create a new bucket, \n\
 		  default Type is transient, values can be \n\
-		  transient/temporary/permanent \n\
+		  transient/temporary/persistent \n\
 	bucketCheck [<Name>] \n\
 		- check bucket validity, outputs the expiration \n\
 		  date/time for this bucket \n\
 		  if no parameter use the current bucket \n\
-	bucketItems [<Name>] [-a <startAt>] [-l <limit>] [-r <region>] \n\
+	bucketItems [<Name>] [-a <startAt>] [-l <limit>] \n\
 		- list items in a given bucket \n\
 		  if no parameter use the current bucket \n\
 		  -a / --startAt <startAt> : where to start in the list [string, default: none] \n\
 		  -l / --limit <limit> : how many to return [integer, default: 10] \n\
-		  -r / --region <region> : US or EMEA [string, default: US] \n\
 	bucketDelete [<Name>] \n\
 		- delete a given bucket \n\
 		  if no parameter delete the current bucket \n\

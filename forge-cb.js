@@ -220,7 +220,7 @@ program
 	.command ('bucketCheck')
 	.description ('check bucket validity, outputs the expiration; date/time for this bucket; if no parameter use the current bucket')
 	.arguments ('[bucketKey]')
-	.action (function (bucketKey, options) {
+	.action (function (bucketKey) {
 		bucketKey =bucketKey || readBucketKey () ;
 		if ( !checkBucketKey (bucketKey) )
 			return ;
