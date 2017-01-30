@@ -220,9 +220,9 @@ program
 	.command ('bucketCheck')
 	.description ('check bucket validity, outputs the expiration; date/time for this bucket; if no parameter use the current bucket')
 	.arguments ('[bucketKey]')
-	.action (function (bucketKey) {
+	.action (function (bucketKey, options) {
 		bucketKey =bucketKey || readBucketKey () ;
-		if ( !checkBucketKey (bucketKey, options) )
+		if ( !checkBucketKey (bucketKey) )
 			return ;
 		console.log ('Getting bucket details') ;
 		access_token (function (/*access_token*/) {
@@ -460,6 +460,7 @@ program
 					]
 				}
 			} ;
+			console.log (job)
 			//var jobObj =new ForgeModelDerivativeApi.JobPayload () ;
 			//jobObj =ForgeModelDerivativeApi.JobPayload.constructFromObject (job, jobObj) ;
 			var bForce =true ;
