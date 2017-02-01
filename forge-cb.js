@@ -657,6 +657,7 @@ function usage() {
 		- create a new bucket, \n\
 		  default Type is transient, values can be \n\
 		  transient/temporary/persistent \n\
+		  -r / --region <region> : US or EMEA [string, default: US] \n\
 	bucketCheck [<Name>] \n\
 		- check bucket validity, outputs the expiration \n\
 		  date/time for this bucket \n\
