@@ -280,8 +280,8 @@ program
 			ossBuckets.deleteBucket (bucketKey, function (error, data, response) {
 				errorHandler (error, data, 'Failed to delete bucket', false) ;
 				httpErrorHandler (response, 'Failed to delete bucket', false) ;
-				fs.unlink (__dirname + '/data/bucket') ;
-				fs.unlink (__dirname + '/data/' + bucketKey + '.bucket.json') ;
+				fs.stat (__dirname + '/data/bucket', function (err, stat) { if ( err === null ) fs.unlink (__dirname + '/data/bucket') ; }) ;
+				fs.stat (__dirname + '/data/' + bucketKey + '.bucket.json', function (err, stat) { if ( err === null ) fs.unlink (__dirname + '/data/' + bucketKey + '.bucket.json') ; }) ;
 				console.log ('bucket deleted') ;
 			}) ;
 		}) ;

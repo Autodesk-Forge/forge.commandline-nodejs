@@ -296,8 +296,8 @@ program
 				return (ossBuckets.deleteBucket (bucketKey)) ;
 			})
 			.then (function (data) {
-				fs.unlink (__dirname + '/data/bucket') ;
-				fs.unlink (__dirname + '/data/' + bucketKey + '.bucket.json') ;
+				fs.stat (__dirname + '/data/bucket', function (err, stat) { if ( err === null ) fs.unlink (__dirname + '/data/bucket') ; }) ;
+				fs.stat (__dirname + '/data/' + bucketKey + '.bucket.json', function (err, stat) { if ( err === null ) fs.unlink (__dirname + '/data/' + bucketKey + '.bucket.json') ; }) ;
 				console.log ('bucket deleted') ;
 			})
 			.catch (function (error) {

@@ -2,64 +2,90 @@
 <html>
 <head>
 	<meta charset="UTF-8">
-	<script src="https://developer.api.autodesk.com/viewingservice/v1/viewers/three.min.css"></script>
-	<link rel="stylesheet" href="https://developer.api.autodesk.com/viewingservice/v1/viewers/style.min.css" />
-	<script src="https://developer.api.autodesk.com/viewingservice/v1/viewers/viewer3D.min.js"></script>
+	<meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
+	<meta content="width=device-width, initial-scale=1.0" name="viewport" />
+
+	<!-- Autodesk Forge Viewer -->
+	<link href="https://developer.api.autodesk.com/viewingservice/v1/viewers/style.min.css?v=v2.13.1" rel="stylesheet" />
+	<script src="https://developer.api.autodesk.com/viewingservice/v1/viewers/three.min.js?v=v2.13.1"></script>
+	<script src="https://developer.api.autodesk.com/viewingservice/v1/viewers/viewer3D.js?v=v2.13.1"></script>
 </head>
 <body onload="initialize()">
-<div id="viewer" style="position:absolute; width:90%; height:90%;"></div>
-<script>
-	function authMe () { return ('<%= access_token %>') ; }
+	<div id="viewer" style="position:absolute; width:90%; height:90%;"></div>
+	<script>
+		var urn ='<%= urn %>' ;
+		function getAccessToken (onGetAccessToken) {
+			onGetAccessToken ('<%= access_token %>', 82000) ;
+		}
 
-	function initialize () {
-		var options ={
-			'document' : "urn:<%= urn %>",
-			'env': 'AutodeskProduction',
-			'getAccessToken': authMe
-		} ;
-		var viewerElement =document.getElementById ('viewer') ;
-		//var viewer =new Autodesk.Viewing.Viewer3D (viewerElement, {}) ; / No toolbar
-		var viewer =new Autodesk.Viewing.Private.GuiViewer3D (viewerElement, {}) ; // With toolbar
-		Autodesk.Viewing.Initializer (options, function () {
-			viewer.initialize () ;
-			loadDocument (viewer, options.document) ;
-		}) ;
-	}
-	function loadDocument (viewer, documentId) {
-		// Find the first 3d geometry and load that.
-		Autodesk.Viewing.Document.load (
-			documentId,
-			function (doc) { // onLoadCallback
-				var geometryItems =[] ;
-				geometryItems =Autodesk.Viewing.Document.getSubItemsWithProperties (
-					doc.getRootItem (),
-					{ 'type' : 'geometry', 'role' : '3d' },
-					true
-				) ;
-				if ( geometryItems.length <= 0 ) {
-					geometryItems =Autodesk.Viewing.Document.getSubItemsWithProperties (
-						doc.getRootItem (),
-						{ 'type': 'geometry', 'role': '2d' },
-						true
-					) ;
-				}
-				if ( geometryItems.length > 0 )
-					viewer.load (
-						doc.getViewablePath (geometryItems [0])//,
-						//null, null, null,
-						//doc.acmSessionId /*session for DM*/
-					) ;
-			},
-			function (errorMsg) { // onErrorCallback
-				alert("Load Error: " + errorMsg) ;
-			}//,
-			//{
-            //	'oauth2AccessToken': authMee (),
-            //	'x-ads-acm-namespace': 'WIPDM',
-            //	'x-ads-acm-check-groups': 'true',
-        	//}
-		) ;
-	}
-</script>
+		var oDocument =null, oViewer =null ;
+		var oViews3D =null, oViews2D =null ;
+
+		function initialize () {
+			var options ={ 'getAccessToken': getAccessToken, 'env': 'AutodeskProduction' /*, 'accessToken': '' */ } ;
+			Autodesk.Viewing.Initializer (options, loadModel) ;
+		}
+
+		function loadModel () {
+			var pattern =/^(urn|https?):.*$/g ;
+			if ( !pattern.test (urn) )
+				urn ='urn:' + urn ;
+			pattern =/^(urn):.*$/g ;
+			if ( pattern.test (urn) )
+				Autodesk.Viewing.Document.load (urn, onDocumentLoaded, onError) ;
+			else
+				startViewer (urn, urn.replace (/[^\/]*$/, '')) ;
+		}
+
+		function onDocumentLoaded (doc) {
+			oDocument =doc ;
+			// Get all the 3D and 2D views (but keep in separate arrays so we can differentiate in the UI)
+			oViews3D =Autodesk.Viewing.Document.getSubItemsWithProperties (doc.getRootItem (), { 'type': 'geometry', 'role': '3d' }, true) ;
+			oViews2D =Autodesk.Viewing.Document.getSubItemsWithProperties (doc.getRootItem (), { 'type': 'geometry', 'role': '2d' }, true) ;
+			// Load up first a 3D view by default
+			var viewable =null ;
+			if ( oViews3D.length > 0 )
+				viewable =oViews3D [0] ;
+			else if ( oViews2D.length > 0 )
+				viewable =oViews2D [0] ;
+			else
+				return (alert ('ERROR: No 3D or 2D views found in this document!')) ;
+
+			startViewer (doc.getViewablePath (viewable), doc.getPropertyDbPath ()) ;
+		}
+
+		function startViewer (svfUrl, sharedPropertyDbPath) {
+			if ( oViewer )
+				return (loadModelInViewer (svfUrl, sharedPropertyDbPath)) ;
+
+			var modelOptions ={ sharedPropertyDbPath: sharedPropertyDbPath } ;
+			var viewerElement =document.getElementById ('viewer') ;
+			oViewer =new Autodesk.Viewing.Private.GuiViewer3D (viewerElement) ;
+			//var pattern =/^(urn):.*$/g ;
+			//if ( pattern.test (urn) ) {
+			oViewer.start (svfUrl, modelOptions, onModelLoaded, onError) ;
+			//} else {
+			//    oViewer.initialize () ;
+			//    oViewer.loadModel (svfUrl, modelOptions, onModelLoaded, onError) ;
+			//}
+			//oViewer.addEventListener (Autodesk.Viewing.TOOLBAR_CREATED_EVENT, onViewerToolbarCreated) ;
+			//oViewer.addEventListener (Autodesk.Viewing.GEOMETRY_LOADED_EVENT, onViewerGeometryLoaded) ;
+		}
+
+		function loadModelInViewer (svfUrl, sharedPropertyDbPath) {
+			oViewer.tearDown () ;
+			oViewer.setUp (oViewer.config) ;
+			var modelOptions ={ sharedPropertyDbPath: sharedPropertyDbPath } ;
+			oViewer.loadModel (svfUrl, modelOptions, onModelLoaded, onError) ;
+		}
+
+		function onModelLoaded (model) {
+		}
+
+		function onError (viewerErrorCode) {
+			alert ('Loading Error #' + viewerErrorCode) ;
+		}
+
+	</script>
 </body>
 </html>
