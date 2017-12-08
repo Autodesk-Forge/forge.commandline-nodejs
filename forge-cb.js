@@ -809,7 +809,7 @@ function errorHandler (error, data, msg, bExit) {
 function httpErrorHandler (response, msg, bExit) {
 	bExit =bExit == undefined ? true : bExit ;
 	msg =msg || '' ;
-	if ( response.statusCode !== 200 ) {
+	if ( response && response.statusCode !== 200 ) {
 		console.error (msg) ;
 		console.error ('HTTP ' + response.statusCode + ' ' + response.statusMessage) ;
 		if ( response.body )

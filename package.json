@@ -16,8 +16,8 @@
   ],
   "license": "MIT",
   "engines": {
-	"node": ">= 6.3.1",
-	"npm": ">= 3.10.7"
+    "node": ">= 6.3.1",
+    "npm": ">= 3.10.7"
   },
   "main": "forge-cb.js",
   "scripts": {
@@ -27,6 +27,7 @@
     "async": "*",
     "commander": "*",
     "ejs": "*",
+    "forge-apis": "^0.4.1",
     "forge-data-management": "*",
     "forge-model-derivative": "*",
     "forge-oauth2": "*",
