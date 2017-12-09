@@ -24,15 +24,18 @@
     "test": "./node_modules/mocha/bin/mocha --recursive"
   },
   "dependencies": {
+    "archiver": "*",
     "async": "*",
     "commander": "*",
     "ejs": "*",
-    "forge-apis": "^0.4.1",
+    "forge-apis": "*",
     "forge-data-management": "*",
     "forge-model-derivative": "*",
     "forge-oauth2": "*",
     "forge-oss": "*",
+    "mkdirp": "*",
     "moment": "*",
+    "node-zip": "*",
     "opn": "*",
     "promise": "*"
   },

@@ -190,13 +190,13 @@ program
 	}) ;
 program
 	.command ('bucketCreate')
-	.description ('create a new bucket,; default Type is transient, values can be transient/temporary/persistent')
+	.description ('create a new bucket,; default Type is persistent, values can be transient/temporary/persistent')
 	.arguments ('<bucketKey> [type]')
 	.option ('-r, --region <region>', 'region: US or EMEA [string, default: US]')
 	.action (function (bucketKey, type, options) {
 		if ( !checkBucketKey (bucketKey) )
 			return ;
-		type =type || 'transient' ;
+		type =type || 'persistent' ;
 		var region =options.region || 'US' ;
 		console.log ('Create bucket: ' + bucketKey) ;
 		access_token ()
@@ -270,7 +270,7 @@ program
 			})
 			.then (function (data) {
 				console.log (JSON.stringify (data, null, 4)) ;
-				if ( !data.hasOwnProperty ('next') ) {
+				if ( !data.hasOwnProperty ('next') || !data.next ) {
 					console.log ('Your search is complete, no more items to list') ;
 				} else {
 					var url_parts =url.parse (data.next, true) ;
@@ -695,7 +695,7 @@ function usage() {
 		- set or get the current bucket \n\
 	bucketCreate <Name> [<Type>] \n\
 		- create a new bucket, \n\
-		  default Type is transient, values can be \n\
+		  default Type is persistent, values can be \n\
 		  transient/temporary/persistent \n\
 		  -r / --region <region> : US or EMEA [string, default: US] \n\
 	bucketCheck [<Name>] \n\
