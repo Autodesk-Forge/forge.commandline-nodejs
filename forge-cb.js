@@ -38,6 +38,8 @@ var fs =require ('fs') ;
 var url =require ('url') ;
 var path =require ('path') ;
 
+var Bubble =require ('./bubble') ;
+
 var clientId =process.env.FORGE_CLIENT_ID || 'your_client_id' ;
 var clientSecret =process.env.FORGE_CLIENT_SECRET || 'your_client_secret' ;
 var PORT =process.env.PORT || '3006' ;
@@ -92,7 +94,7 @@ program
 			oa3Legged.gettoken (clientId, clientSecret, 'authorization_code', code, mycallback, function (error, data, response) {
 				if ( errorHandler (error, data, 'Failed to get your token', false) )
 					return (fs.unlink (__dirname + '/data/access_token')) ;
-				if ( httpErrorHandler (response, 'Failed to get your token', false) )
+				if ( httpErrorHandler (response || error, 'Failed to get your token', false) )
 					return (fs.unlink (__dirname + '/data/access_token')) ;
 
 				var token =data.token_type + ' ' + data.access_token ;
@@ -125,6 +127,61 @@ program
 		}) ;
 	}) ;
 program
+	.command ('inspect')
+	.description ('list server buckets and contents')
+	.option ('-s, --simple')
+	.action (function (options) {
+		var results =[] ;
+		access_token (function (/*access_token*/) {
+			var regions =[ 'US', 'EMEA' ] ;
+			//regions.map (function (region, index) {
+			async.eachLimit (regions, 10,
+				function (region, callbackRegion) {
+					var opts ={ 'limit': 100, 'startAt': null, 'region': region } ; // 100 is the maximum
+					callGetBucketsAll (results, opts, function (buckets) {
+						//console.log (JSON.stringify (results, null, 4)) ;
+						results =buckets ;
+						async.eachLimit (buckets, 10,
+							function (bucket, callback) {
+								var items =[] ;
+								var opts ={ 'limit': 100, 'startAt': null } ; // 100 is the maximum limit
+								callGetBucketItemsAll (items, bucket.bucketKey, opts, function (bucketContent) {
+									bucket.items =bucketContent ;
+									callback () ;
+								}) ;
+							},
+							function (err) {
+								if ( err )
+									return (console.error ('Failed to list files')) ;
+								//console.log (JSON.stringify (results, null, 4)) ;
+								callbackRegion () ;
+							}
+						) ;
+					}) ;
+				},
+				function (err) {
+					if ( err )
+						return (console.error ('Failed to list buckets/files')) ;
+					if ( options.simple === undefined ) {
+						console.log (JSON.stringify (results, null, 4)) ;
+					} else {
+						results.map (function (bucket) {
+							// https://stackoverflow.com/questions/9781218/how-to-change-node-jss-console-font-color
+							console.log ('\x1b[33m%s\x1b[0m', '- ' + bucket.bucketKey + ' [' + bucket.region + ']') ;
+							if ( bucket.items ) {
+								bucket.items.map (function (file) {
+									console.log ('\x1b[36m', '  ↳ ' + file.objectKey + ' [' + file.size + ' b]') ;
+								}) ;
+								console.log (' ') ;
+							}
+						}) ;
+					}
+				}
+			) ;
+		}) ;
+	}) ;
+
+program
 	.command ('buckets')
 	.description ('list local/server buckets')
 	.option ('-s, --server')
@@ -141,7 +198,7 @@ program
 			access_token (function (/*access_token*/) {
 				ossBuckets.getBuckets (opts, function (error, data, response) {
 					errorHandler (error, data, 'Failed to access buckets list') ;
-					httpErrorHandler (response, 'Failed to access buckets list') ;
+					httpErrorHandler (response || error, 'Failed to access buckets list') ;
 					//console.log (prettyjson.render (data, {})) ;
 					console.log (JSON.stringify (data, null, 4)) ;
 					if ( !data.hasOwnProperty ('next') || !data.next ) {
@@ -184,13 +241,13 @@ program
 	}) ;
 program
 	.command ('bucketCreate')
-	.description ('create a new bucket,; default Type is transient, values can be transient/temporary/persistent')
+	.description ('create a new bucket,; default Type is persistent, values can be transient/temporary/persistent')
 	.arguments ('<bucketKey> [type]')
 	.option ('-r, --region <region>', 'region: US or EMEA [string, default: US]')
 	.action (function (bucketKey, type, options) {
 		if ( !checkBucketKey (bucketKey) )
 			return ;
-		type =type || 'transient' ;
+		type =type || 'persistent' ;
 		var region =options.region || 'US' ;
 		console.log ('Create bucket: ' + bucketKey) ;
 		access_token (function (/*access_token*/) {
@@ -203,7 +260,7 @@ program
 			} ;
 			ossBuckets.createBucket (opts, headers, function (error, data, response) {
 				errorHandler (error, data, 'Failed to create bucket') ;
-				httpErrorHandler (response, 'Failed to create bucket') ;
+				httpErrorHandler (response || error, 'Failed to create bucket') ;
 				fs.writeFile (__dirname + '/data/bucket', bucketKey, function (err) {
 					if ( err )
 						return (console.error ('Failed to create bucket file')) ;
@@ -228,7 +285,7 @@ program
 		access_token (function (/*access_token*/) {
 			ossBuckets.getBucketDetails (bucketKey, function (error, data, response) {
 				errorHandler (error, data, 'Failed to access bucket details') ;
-				httpErrorHandler (response, 'Failed to access bucket details') ;
+				httpErrorHandler (response || error, 'Failed to access bucket details') ;
 				if ( data.policyKey === 'transient' ) // 24 hours
 					console.log ('bucket content will expire after: 24 hours') ;
 				else if ( data.policyKey === 'temporary' ) // 30 days
@@ -255,9 +312,9 @@ program
 			var opts ={ 'limit': limit, 'startAt': startAt } ;
 			ossObjects.getObjects (bucketKey, opts, function (error, data, response) {
 				errorHandler (error, data, 'Failed to access buckets list') ;
-				httpErrorHandler (response, 'Failed to access buckets list') ;
+				httpErrorHandler (response || error, 'Failed to access buckets list') ;
 				console.log (JSON.stringify (data, null, 4)) ;
-				if ( !data.hasOwnProperty ('next') ) {
+				if ( !data.hasOwnProperty ('next') || !data.next ) {
 					console.log ('Your search is complete, no more items to list') ;
 				} else {
 					var url_parts =url.parse (data.next, true) ;
@@ -279,7 +336,7 @@ program
 		access_token (function (/*access_token*/) {
 			ossBuckets.deleteBucket (bucketKey, function (error, data, response) {
 				errorHandler (error, data, 'Failed to delete bucket', false) ;
-				httpErrorHandler (response, 'Failed to delete bucket', false) ;
+				httpErrorHandler (response || error, 'Failed to delete bucket', false) ;
 				fs.stat (__dirname + '/data/bucket', function (err, stat) { if ( err === null ) fs.unlink (__dirname + '/data/bucket') ; }) ;
 				fs.stat (__dirname + '/data/' + bucketKey + '.bucket.json', function (err, stat) { if ( err === null ) fs.unlink (__dirname + '/data/' + bucketKey + '.bucket.json') ; }) ;
 				console.log ('bucket deleted') ;
@@ -304,7 +361,7 @@ program
 				var readStream =fs.createReadStream (file) ;
 				ossObjects.uploadObject (bucketKey, fileKey, size, readStream, {}, function (error, data, response) {
 					errorHandler (error, data, 'Failed to upload file') ;
-					httpErrorHandler (response, 'Failed to upload file') ;
+					httpErrorHandler (response || error, 'Failed to upload file') ;
 					fs.writeFile (__dirname + '/data/' + bucketKey + '.' + fileKey + '.json', JSON.stringify (data, null, 4), function (err) {
 						if ( err )
 							return (console.error ('Failed to create ' + bucketKey + '.' + fileKey + '.json file')) ;
@@ -352,6 +409,7 @@ program
 						ossObjects.uploadChunk (bucketKey, fileKey, length, range, sessionId, readStream, {}, function (error, data, response) {
 							if ( errorHandler (error, data, 'Failed to upload partial file', false) )
 								return (callback (error)) ;
+							response =response || error ;
 							if ( response.statusCode !== 202 && httpErrorHandler (response, 'Failed to upload partial file', false) )
 								return (callback (response.statusCode)) ;
 							callback () ;
@@ -394,12 +452,58 @@ program
 				{ /*'acceptEncoding': 'text/plain'*/ },
 				function (error, data, response) {
 					errorHandler (error, data, 'Failed to download file') ;
-					httpErrorHandler (response, 'Failed to download file') ;
+					httpErrorHandler (response || error, 'Failed to download file') ;
 					console.log ('Download successful') ;
 				})
 				.pipe (wstream) ;
 		}) ;
 	}) ;
+program
+	.command ('bubble')
+	.description ('download the bubble')
+	.arguments ('<urn> <outputDir>')
+	.action (function (urn, outputDir, options) {
+		console.log ('Downloading urn: ' + urn) ;
+		var _progress ={} ;
+		access_token (function (/*access_token*/) {
+			var obj =new Bubble.bubble (_progress) ;
+			obj.downloadBubble (urn, outputDir + '/', ForgeModelDerivative.ApiClient.instance.authentications ['oauth2_application'].accessToken)
+				.then (function (bubble) {
+					// Generate local html, and bat/sh files
+					console.log ('Generating local html, and bat/sh files') ;
+				//	return (Bubble.utils.GenerateStartupFiles (bubble, urn)) ;
+
+				})
+				// .then (function (bubble) {
+				// 	// Get Viewer files and dependencies
+				// 	console.log ('Downloading latest Forge Viewer version (core and dependencies)') ;
+				// 	return (Bubble.utils.AddViewerFiles (bubble, urn)) ;
+				// })
+				// .then (function (bubble) {
+				// 	// Generate zip file
+				// 	console.log ('Preparing ZIP file') ;
+				// 	var inDir =utils.path (outputDir + '/') ;
+				// 	var outZip =utils.extracted (identifier + '.zip') ;
+				// 	return (Bubble.utils.PackBubble (inDir, outZip)) ;
+				// })
+				// .then (function (outZipFilename) {
+				// 	_progress [identifier].msg ='Cleaning workspace and notifying listeners' ;
+				// 	Bubble.utils.NotifyPeopleOfSuccess (identifier, _locks [identifier])
+				// 		.then (function () {
+				// 			delete _locks [identifier] ;
+				// 			delete _progress [identifier] ;
+				// 		}) ;
+				// 	return (utils.rimraf (utils.path ('data/' + identifier))) ;
+				// })
+				.catch (function (error) {
+					if ( error.message == 'Bubble already extracted!' || error.message == 'Bubble already being extracted!' )
+						return ;
+					//utils.rimraf (utils.path ('data/' + identifier)) ;
+				})
+			;
+
+		}) ;
+	}) ;	
 program
 	.command ('objectDetails')
 	.description ('file information')
@@ -415,7 +519,7 @@ program
 		access_token (function (/*access_token*/) {
 			ossObjects.getObjectDetails (bucketKey, fileKey, {}, function (error, data, response) {
 				errorHandler (error, data, 'Failed to download file') ;
-				httpErrorHandler (response, 'Failed to download file') ;
+				httpErrorHandler (response || error, 'Failed to download file') ;
 				console.log (JSON.stringify (data, null, 4)) ;
 				fs.writeFile (__dirname + '/data/' + bucketKey + '.' + fileKey + '.json', JSON.stringify (data, null, 4), function (err) {
 					if ( err )
@@ -458,13 +562,13 @@ program
 					]
 				}
 			} ;
-			console.log (job)
+			console.log (JSON.stringify (job, null, 2)) ;
 			//var jobObj =new ForgeModelDerivativeApi.JobPayload () ;
 			//jobObj =ForgeModelDerivativeApi.JobPayload.constructFromObject (job, jobObj) ;
 			var bForce =true ;
 			md.translate (job, { 'xAdsForce': bForce }, function (error, data, response) {
 				errorHandler (error, data, 'Failed to register file for translation') ;
-				httpErrorHandler (response, 'Failed to register file for translation') ;
+				httpErrorHandler (response || error, 'Failed to register file for translation') ;
 				console.log ('Registration successfully submitted.') ;
 				console.log (JSON.stringify (data, null, 4)) ;
 			}) ;
@@ -486,7 +590,7 @@ program
 		access_token (function (/*access_token*/) {
 			md.getManifest (urn, {}, function (error, data, response) {
 				errorHandler (error, data, 'Failed to get file manifest') ;
-				httpErrorHandler (response, 'Failed to get file manifest') ;
+				httpErrorHandler (response || error, 'Failed to get file manifest') ;
 				console.log ('Request: ' + data.status + ' (' + data.progress + ')') ;
 			}) ;
 		}) ;
@@ -507,7 +611,33 @@ program
 		access_token (function (/*access_token*/) {
 			md.getManifest (urn, {}, function (error, data, response) {
 				errorHandler (error, data, 'Failed to get file manifest') ;
-				httpErrorHandler (response, 'Failed to get file manifest') ;
+				httpErrorHandler (response || error, 'Failed to get file manifest') ;
+				console.log (JSON.stringify (data, null, 4)) ;
+			}) ;
+		}) ;
+	}) ;
+program
+	.command ('manifest2')
+	.description ('file manifest')
+	.arguments ('<fileKey>')
+	.option ('-f, --file', 'fileKey represent the final objectKey on OSS vs a local fileKey')
+	.action (function (fileKey, options) {
+		var bucketKey =readBucketKey () ;
+		if ( !checkBucketKey (bucketKey) )
+			return ;
+		if ( options.file === undefined )
+			fileKey =readFileKey (bucketKey, fileKey) ;
+		console.log ('Getting file manifest') ;
+		var urn =URN (bucketKey, fileKey) ;
+		access_token (function (/*access_token*/) {
+			// md.getManifest (urn, {}, function (error, data, response) {
+			// 	errorHandler (error, data, 'Failed to get file manifest') ;
+			// 	httpErrorHandler (response || error, 'Failed to get file manifest') ;
+			// 	console.log (JSON.stringify (data, null, 4)) ;
+			// }) ;
+			getManifest (urn, function (error, data) {
+				errorHandler (error, data, 'Failed to get file manifest') ;
+				//httpErrorHandler (response || error, 'Failed to get file manifest') ;
 				console.log (JSON.stringify (data, null, 4)) ;
 			}) ;
 		}) ;
@@ -528,7 +658,28 @@ program
 		access_token (function (/*access_token*/) {
 			md.getMetadata (urn, {}, function (error, data, response) {
 				errorHandler (error, data, 'Failed to get file metadata') ;
-				httpErrorHandler (response, 'Failed to get file metadata') ;
+				httpErrorHandler (response || error, 'Failed to get file metadata') ;
+				console.log (JSON.stringify (data, null, 4)) ;
+			}) ;
+		}) ;
+	}) ;
+program
+	.command ('properties')
+	.description ('file metadata properties')
+	.arguments ('<fileKey> <guid>')
+	.option ('-f, --file', 'fileKey represent the final objectKey on OSS vs a local fileKey')
+	.action (function (fileKey, guid, options) {
+		var bucketKey =readBucketKey () ;
+		if ( !checkBucketKey (bucketKey) )
+			return ;
+		if ( options.file === undefined )
+			fileKey =readFileKey (bucketKey, fileKey) ;
+		console.log ('Getting file metadata - ' + guid) ;
+		var urn =URN (bucketKey, fileKey) ;
+		access_token (function (/*access_token*/) {
+			md.getModelviewProperties (urn, guid, {}, function (error, data, response) {
+				errorHandler (error, data, 'Failed to get file metadata properties') ;
+				httpErrorHandler (response || error, 'Failed to get file metadata properties') ;
 				console.log (JSON.stringify (data, null, 4)) ;
 			}) ;
 		}) ;
@@ -553,7 +704,7 @@ program
 				{ width: 400, height: 400 }, // width: 400, height: 400
 				function (error, data, response) {
 					errorHandler (error, data, 'Failed to get file thumbnail') ;
-					httpErrorHandler (response, 'Failed to get file thumbnail') ;
+					httpErrorHandler (response || error, 'Failed to get file thumbnail') ;
 					console.log ('Thumbnail downloaded successfully') ;
 				})
 				.pipe (wstream) ;
@@ -574,7 +725,7 @@ program
 		access_token (function (/*access_token*/) {
 			ossObjects.deleteObject (bucketKey, fileKey, function (error, data, response) {
 				errorHandler (error, data, 'Failed to delete file') ;
-				httpErrorHandler (response, 'Failed to delete file') ;
+				httpErrorHandler (response || error, 'Failed to delete file') ;
 				console.log ('File deleted') ;
 			}) ;
 		}) ;
@@ -594,7 +745,7 @@ program
 		access_token (function (/*access_token*/) {
 			md.deleteManifest (urn, function (error, data, response) {
 				errorHandler (error, data, 'Failed to delete manifest') ;
-				httpErrorHandler (response, 'Failed to delete manifest') ;
+				httpErrorHandler (response || error, 'Failed to delete manifest') ;
 				console.log ('Manifest deleted') ;
 			}) ;
 		}) ;
@@ -645,6 +796,9 @@ function usage() {
 		- get an user access token (3 legged) \n\
 	aboutme \n\
 		- 3legged aboutme information \n\
+	inspect \n\
+		- list buckets and their content \n\
+		  -s / --simple : simplified display \n\
 	buckets [-s [-a <startAt>] [-l <limit>] [-r <region>]] \n\
 		- list local buckets \n\
 		  -s / --server : list buckets on the server \n\
@@ -708,13 +862,67 @@ function usage() {
 	") ;
 }
 
+function callGetBucketsAll (results, opts, successCB, errorCB) {
+	ossBuckets.getBuckets (opts, function (error, data, response) {
+		errorHandler (error, data, 'Failed to access buckets list') ;
+		httpErrorHandler (response || error, 'Failed to access buckets list') ;
+		//results.push (data.items) ;
+		data.items.map (function (bucket) { bucket.region =opts.region ; }) ;
+		results =results.concat (data.items) ;
+		if ( !data.hasOwnProperty ('next') || !data.next ) {
+			if ( successCB )
+				successCB (results) ;
+		} else {
+			var url_parts =url.parse (data.next, true) ;
+			opts.startAt =url_parts.query.startAt ;
+			callGetBucketsAll (results, opts, successCB, errorCB) ;
+		}
+	}) ;
+}
+
+function callGetBucketItemsAll (results, bucketKey, opts, successCB, errorCB) {
+	ossObjects.getObjects (bucketKey, opts, function (error, data, response) {
+		errorHandler (error, data, 'Failed to access buckets list') ;
+		httpErrorHandler (response || error, 'Failed to access buckets list') ;
+		//results.push (data.items) ;
+		results =results.concat (data.items) ;
+		if ( !data.hasOwnProperty ('next') || !data.next ) {
+			if ( successCB )
+				successCB (results) ;
+		} else {
+			var url_parts =url.parse (data.next, true) ;
+			opts.startAt =url_parts.query.startAt ;
+			callGetBucketItemsAll (results, bucketKey, opts, successCB, errorCB) ;
+		}
+	}) ;
+}
+
+function getManifest (urn, callback) {
+	// Verify the required parameter 'urn' is set
+	if ( urn === undefined || urn === null )
+		return (callback (new Error ("Missing the required parameter 'urn' when calling getManifest"))) ;
+	ForgeModelDerivative.ApiClient.instance.callApi (
+		'/derivativeservice/v2/manifest/{urn}', 'GET',
+		{ 'urn': urn }, {},
+		{
+			/*'Accept-Encoding': 'gzip, deflate', */
+			'Authorization': 'Bearer ' + ForgeModelDerivative.ApiClient.instance.authentications ['oauth2_application'].accessToken
+		},
+		{}, null,
+		[], [ 'application/vnd.api+json', 'application/json' ], [], null,
+		function (err, manifest) {
+			callback (err, manifest) ;
+		}
+	) ;
+}
+
 function oauthExecForRead (cb) {
 	//var oa3Legged =new ForgeOAuth.ThreeLeggedApi () ;
 	var oa2Legged =new ForgeOAuth.TwoLeggedApi () ;
 	//var oaInfo =new ForgeOAuth.InformationalApi () ;
 	oa2Legged.authenticate (clientId, clientSecret, grantType, optsViewer, function (error, data, response) {
 		errorHandler (error, data, 'Failed to get your viewer token') ;
-		httpErrorHandler (response, 'Failed to get your viewer token') ;
+		httpErrorHandler (response || error, 'Failed to get your viewer token') ;
 		var token =data.token_type + ' ' + data.access_token ;
 		console.log ('Your viewer 2-legged access token is: ' + token) ;
 		var dt =moment ().add (data.expires_in, 'seconds') ;
@@ -732,7 +940,7 @@ function oauthExec (cb) {
 	oa2Legged.authenticate (clientId, clientSecret, grantType, opts, function (error, data, response) {
 		if ( errorHandler (error, data, 'Failed to get your token', false) )
 			return (fs.unlink (__dirname + '/data/access_token')) ;
-		if ( httpErrorHandler (response, 'Failed to get your token', false) )
+		if ( httpErrorHandler (response || error, 'Failed to get your token', false) )
 			return (fs.unlink (__dirname + '/data/access_token')) ;
 		var token =data.token_type + ' ' + data.access_token ;
 		console.log ('Your new 2-legged access token is: ' + token) ;
@@ -809,7 +1017,7 @@ function errorHandler (error, data, msg, bExit) {
 function httpErrorHandler (response, msg, bExit) {
 	bExit =bExit == undefined ? true : bExit ;
 	msg =msg || '' ;
-	if ( response.statusCode !== 200 ) {
+	if ( response && response.statusCode !== 200 ) {
 		console.error (msg) ;
 		console.error ('HTTP ' + response.statusCode + ' ' + response.statusMessage) ;
 		if ( response.body )

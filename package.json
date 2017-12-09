@@ -16,22 +16,26 @@
   ],
   "license": "MIT",
   "engines": {
-	"node": ">= 6.3.1",
-	"npm": ">= 3.10.7"
+    "node": ">= 6.3.1",
+    "npm": ">= 3.10.7"
   },
   "main": "forge-cb.js",
   "scripts": {
     "test": "./node_modules/mocha/bin/mocha --recursive"
   },
   "dependencies": {
+    "archiver": "^2.1.0",
     "async": "*",
     "commander": "*",
     "ejs": "*",
+    "forge-apis": "^0.4.1",
     "forge-data-management": "*",
     "forge-model-derivative": "*",
     "forge-oauth2": "*",
     "forge-oss": "*",
+    "mkdirp": "^0.5.1",
     "moment": "*",
+    "node-zip": "^1.1.1",
     "opn": "*",
     "promise": "*"
   },
