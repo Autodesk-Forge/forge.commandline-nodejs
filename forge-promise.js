@@ -375,7 +375,7 @@ program
 						})
 						.then (function (data) {
 							callback () ;
-							if ( data === undefined )
+							if ( data === undefined  || data === '' )
 								return (console.log ('Partial upload accepted')) ;
 							fs.writeFile (__dirname + '/data/' + bucketKey + '.' + fileKey + '.json', JSON.stringify (data, null, 4), function (err) {
 								if ( err )
