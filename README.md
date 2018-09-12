@@ -87,7 +87,7 @@ edit them as you wish.
 
 Bucket information (JSON replies) returned by the system are stored in the data folder as well.
 
-![thumbnail](/default.png)
+![thumbnail](/thumbnail.png)
 
 ## License
 
