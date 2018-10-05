@@ -503,7 +503,7 @@ program
 			;
 
 		}) ;
-	}) ;	
+	}) ;
 program
 	.command ('objectDetails')
 	.description ('file information')

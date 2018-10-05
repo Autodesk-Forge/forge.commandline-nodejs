@@ -26,9 +26,9 @@
   "dependencies": {
     "archiver": "^2.1.0",
     "async": "*",
-    "commander": "*",
+    "commander": "^2.18.0",
     "ejs": "*",
-    "forge-apis": "^0.4.1",
+    "forge-apis": "^0.4.4",
     "forge-data-management": "*",
     "forge-model-derivative": "*",
     "forge-oauth2": "*",
@@ -36,8 +36,8 @@
     "mkdirp": "^0.5.1",
     "moment": "*",
     "node-zip": "^1.1.1",
-    "opn": "*",
-    "promise": "*"
+    "opn": "^5.4.0",
+    "promise": "^8.0.2"
   },
   "devDependencies": {}
 }
