@@ -410,10 +410,10 @@ program
 							if ( errorHandler (error, data, 'Failed to upload partial file', false) )
 								return (callback (error)) ;
 							response =response || error ;
-							if ( response.statusCode !== 202 && httpErrorHandler (response, 'Failed to upload partial file', false) )
+							if ( response && response.statusCode !== 202 && httpErrorHandler (response, 'Failed to upload partial file', false) )
 								return (callback (response.statusCode)) ;
 							callback () ;
-							if ( response.statusCode === 202 )
+							if ( (response && response.statusCode === 202) || (error === null && data === '') )
 								return (console.log ('Partial upload accepted')) ;
 							fs.writeFile (__dirname + '/data/' + bucketKey + '.' + fileKey + '.json', JSON.stringify (data, null, 4), function (err) {
 								if ( err )
@@ -504,6 +504,7 @@ program
 
 		}) ;
 	}) ;
+
 program
 	.command ('objectDetails')
 	.description ('file information')
