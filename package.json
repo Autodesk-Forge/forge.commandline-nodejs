@@ -2,7 +2,7 @@
   "name": "forge.commandline-nodejs",
   "version": "3.0.0",
   "description": "Node.js command line tool demonstrating the Forge API",
-	"keywords": [
+  "keywords": [
     "Autodesk",
     "Forge",
     "Model Derivative",
@@ -12,7 +12,7 @@
     "BIM360",
     "command line",
     "tool"
-	],
+  ],
   "homepage": "https://forge.autodesk.com/",
   "repository": {
     "type": "git",
@@ -30,9 +30,9 @@
     "node": ">= 9.5.0",
     "npm": ">= 6.0.0"
   },
-	"cacheDirectories": [
-		"node_modules"
-	],
+  "cacheDirectories": [
+    "node_modules"
+  ],
   "main": "forge.js",
   "scripts": {
     "test": "./node_modules/mocha/bin/mocha --recursive"
@@ -50,7 +50,7 @@
     "uuid": "^3.2.1"
   },
   "devDependencies": {},
-	"prettier": {
-		"singleQuote": true
-	}
+  "prettier": {
+    "singleQuote": true
+  }
 }
