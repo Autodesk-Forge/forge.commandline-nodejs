@@ -65,7 +65,7 @@ A typical workflow is:
     node forge.js objects progress Au.obj
 
     # Create an HTML page with your URN and a read-only access token.
-    node forge-cb.js html urn:adsk.objects:os.object:my_bucket_name/Au.obj Au.obj.html
+    node forge.js html urn:adsk.objects:os.object:my_bucket_name/Au.obj Au.obj.html
 
 Note your access token and bucket name are saved in the data folder to be used as default by the scripts, but you can
 edit them as you wish.
