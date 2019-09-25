@@ -72,11 +72,11 @@ edit them as you wish.
 
 Bucket information (JSON replies) returned by the system are stored in the data folder as well.
 
-![thumbnail](/default.png)
+![thumbnail](/thumbnail.png)
 
 ## License
 
-This sample is licensed under the terms of the [MIT License](http://opensource.org/licenses/MIT). 
+This sample is licensed under the terms of the [MIT License](http://opensource.org/licenses/MIT).
 Please see the [LICENSE](LICENSE) file for full details.
 
 
