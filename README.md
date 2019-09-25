@@ -1,7 +1,5 @@
 
-[![build status](https://api.travis-ci.org/cyrillef/models.autodesk.io.png)](https://travis-ci.org/cyrillef/models.autodesk.io)
-[![Node.js](https://img.shields.io/badge/Node.js-6.3.1-blue.svg)](https://nodejs.org/)
-[![npm](https://img.shields.io/badge/npm-3.10.3-blue.svg)](https://www.npmjs.com/)
+[![Node.js](https://img.shields.io/badge/Node.js-10.16.0-blue.svg)](https://nodejs.org/)
 ![Platforms](https://img.shields.io/badge/platform-windows%20%7C%20osx%20%7C%20linux-lightgray.svg)
 [![License](http://img.shields.io/:license-mit-blue.svg)](http://opensource.org/licenses/MIT)
 
@@ -10,20 +8,16 @@
 [![Data-Management](https://img.shields.io/badge/Data%20Management-v1-green.svg)](http://developer-autodesk.github.io/)
 [![OSS](https://img.shields.io/badge/OSS-v2-green.svg)](http://developer-autodesk.github.io/)
 [![Model-Derivative](https://img.shields.io/badge/Model%20Derivative-v2-green.svg)](http://developer-autodesk.github.io/)
-[![Viewer](https://img.shields.io/badge/Forge%20Viewer-v3.3-green.svg)](http://developer-autodesk.github.io/)
+[![Viewer](https://img.shields.io/badge/Forge%20Viewer-v7.3-green.svg)](http://developer-autodesk.github.io/)
 
 # forge.commandline-nodejs
 
-
 <b>Note:</b> For using this sample, you need a valid oAuth credential.
-Visit this [page](https://developer.autodesk.com) for instructions to get on-board.
-
+Visit this [page](https://forge.autodesk.com) for instructions to get on-board.
 
 Demonstrates the Autodesk Forge API authorisation and translation process using a Node.js console application.
 
 * both 2 legged and 3 legged
-* support both callback and promises
-
 
 ## Description
 
@@ -31,15 +25,9 @@ This sample exercises the Node.js engine as a command line utility to  demonstra
 authorisation process and the Model Derivative API mentioned in the Quick Start guide.
 
 In order to make use of this sample, you need to register your consumer key, of course:
-* https://developer.autodesk.com > My Apps
+* https://forge.autodesk.com > My Apps
 
 This provides the credentials to supply while calling the Forge WEB service API endpoints.
-
-
-## Dependencies
-
-Node.js and NPM
-
 
 ## Setup/Usage Instructions
 
@@ -49,38 +37,35 @@ Node.js and NPM
      ```
      npm install
      ```
-  4. Request your consumer key/secret key from [https://developer.autodesk.com](https://developer.autodesk.com).
-  5. Set 2 environment variables FORGE_CLIENT_ID / FORGE_CLIENT_SECRET, or edit the forge-cb.js and forge-promise.js
-     files and replace the placeholders by the consumer key/secret keys.
+  4. Request your consumer key/secret key from [https://forge.autodesk.com](https://forge.autodesk.com).
+  5. Set 2 environment variables FORGE_CLIENT_ID / FORGE_CLIENT_SECRET, or edit the forge.js 
+     file and replace the placeholders by the consumer key/secret keys.
   6. *Note* for the 3 legged command: while registering your keys, make sure that the callback you define for your
-     callback (or redirect_uri) match the one in the scripts (mycallback variable in forge-cb.js and forge-promise.js).
+     callback (or redirect_uri) match the one in the scripts (mycallback variable in forge.js).
      Default is : http://localhost:3006/oauth
   
-The 2 scripts provide quick help information for the commands and arguments. Use the --help to see it.
+The utility provides help information for the commands and arguments. Use the --help to see it.
 
-A typical workflow is (replace -cb by -promise if you want to use promises vs callbacks):
+A typical workflow is:
 
     # Do authentication.
-    node forge-cb.js 2legged
+    node forge.js 2legged
 
     # Create a bucket. Bucket name must be lower case and valid characters.
-    node forge-cb.js bucketCreate my_bucket_name
+    node forge.js buckets new my_bucket_name
 
     # Upload a model.
-    node forge-cb.js upload samples/Au.obj
+    node forge.js objects put Au.obj
 
     # Register the model to get it translated.
-    node forge-cb.js translate Au.obj
+    node forge.js objects translate Au.obj
 
     # Wait until the translation completes.
     # Translation is complete when it reaches 'success - 100%'
-    node forge-cb.js translateProgress Au.obj
-
-    # Retrieve preview image.
-    node forge-cb.js thumbnail Au.obj Au.png
+    node forge.js objects progress Au.obj
 
     # Create an HTML page with your URN and a read-only access token.
-    node forge-cb.js html Au.obj Au.html
+    node forge-cb.js html urn:adsk.objects:os.object:my_bucket_name/Au.obj Au.obj.html
 
 Note your access token and bucket name are saved in the data folder to be used as default by the scripts, but you can
 edit them as you wish.

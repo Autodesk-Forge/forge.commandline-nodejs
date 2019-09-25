@@ -1,8 +1,19 @@
 {
   "name": "forge.commandline-nodejs",
-  "version": "1.0.0",
+  "version": "3.0.0",
   "description": "Node.js command line tool demonstrating the Forge API",
-  "homepage": "https://developer.autodesk.com/",
+	"keywords": [
+    "Autodesk",
+    "Forge",
+    "Model Derivative",
+    "Viewer",
+    "Bubble",
+    "OTG",
+    "BIM360",
+    "command line",
+    "tool"
+	],
+  "homepage": "https://forge.autodesk.com/",
   "repository": {
     "type": "git",
     "url": "https://github.com/autodesk-forge/forge.commandline-nodejs"
@@ -16,28 +27,30 @@
   ],
   "license": "MIT",
   "engines": {
-    "node": ">= 6.3.1",
-    "npm": ">= 3.10.7"
+    "node": ">= 9.5.0",
+    "npm": ">= 6.0.0"
   },
-  "main": "forge-cb.js",
+	"cacheDirectories": [
+		"node_modules"
+	],
+  "main": "forge.js",
   "scripts": {
     "test": "./node_modules/mocha/bin/mocha --recursive"
   },
   "dependencies": {
-    "archiver": "*",
-    "async": "*",
-    "commander": "*",
-    "ejs": "*",
-    "forge-apis": "*",
-    "forge-data-management": "*",
-    "forge-model-derivative": "*",
-    "forge-oauth2": "*",
-    "forge-oss": "*",
-    "mkdirp": "*",
-    "moment": "*",
-    "node-zip": "*",
-    "opn": "*",
-    "promise": "*"
+    "archiver": "^2.1.1",
+    "commander": "^2.15.1",
+    "ejs": "^2.6.1",
+    "forge-apis": "^0.4.1",
+    "mkdirp": "^0.5.1",
+    "moment": "^2.22.1",
+    "node-zip": "^1.1.1",
+    "opn": "^5.3.0",
+    "rimraf": "^2.6.2",
+    "uuid": "^3.2.1"
   },
-  "devDependencies": {}
+  "devDependencies": {},
+	"prettier": {
+		"singleQuote": true
+	}
 }

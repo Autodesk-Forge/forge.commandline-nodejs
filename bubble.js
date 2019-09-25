@@ -1,31 +1,37 @@
 //
-// Copyright (c) Autodesk, Inc. All rights reserved
+// Copyright (c) 2016 Autodesk, Inc.
 //
-// Permission to use, copy, modify, and distribute this software in
-// object code form for any purpose and without fee is hereby granted,
-// provided that the above copyright notice appears in all copies and
-// that both that copyright notice and the limited warranty and
-// restricted rights notice below appear in all supporting
-// documentation.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 //
-// AUTODESK PROVIDES THIS PROGRAM "AS IS" AND WITH ALL FAULTS.
-// AUTODESK SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTY OF
-// MERCHANTABILITY OR FITNESS FOR A PARTICULAR USE.  AUTODESK, INC.
-// DOES NOT WARRANT THAT THE OPERATION OF THE PROGRAM WILL BE
-// UNINTERRUPTED OR ERROR FREE.
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
 //
-// Forge Extractor
-// by Cyrille Fauvel - Autodesk Developer Network (ADN)
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 //
+// by Cyrille Fauvel
+// Autodesk Forge Partner Development
+//
+var ForgeAPI =require ('forge-apis') ;
 var zip =require ('node-zip') ;
-var fs =require ('fs') ;
-var zlib =require ('zlib') ;
-var mkdirp =require ('mkdirp') ;
-var path =require ('path') ;
 var archiver =require ('archiver') ;
 var ejs =require ('ejs') ;
+var mkdirp =require ('mkdirp') ;
 
-var ForgeSDK =require ('forge-apis') ;
+var fs =require ('fs') ;
+var zlib =require ('zlib') ;
+var path =require ('path') ;
+
 //var config =require ('./config') ;
 //var forgeToken =require ('./forge-token') ;
 //var utils =require ('./utils') ;
@@ -45,7 +51,7 @@ function bubble (progress) {
 	this.downloadBubble =function (urn, outPath, token) {
 		var self =this ;
 		if ( token ) {
-			self._token =new ForgeSDK.AuthClientTwoLegged ('__', '__', [ 'data:read' ]) ;
+			self._token =new ForgeAPI.AuthClientTwoLegged ('__', '__', [ 'data:read' ]) ;
 			self._token.setCredentials ({
 				'token_type': 'Bearer',
 				'expires_in': 1799,
@@ -400,7 +406,7 @@ function bubble (progress) {
 		// Verify the required parameter 'urn' is set
 		if ( urn === undefined || urn === null )
 			return (Promise.reject ("Missing the required parameter 'urn' when calling getManifest")) ;
-		var ModelDerivative =new ForgeSDK.DerivativesApi () ;
+		var ModelDerivative =new ForgeAPI.DerivativesApi () ;
 		return (ModelDerivative.apiClient.callApi (
 			'/derivativeservice/v2/manifest/{urn}', 'GET',
 			{ 'urn': urn }, {}, { /*'Accept-Encoding': 'gzip, deflate'*/ },
@@ -414,7 +420,7 @@ function bubble (progress) {
 		// Verify the required parameter 'urn' is set
 		if ( urn === undefined || urn === null )
 			return (Promise.reject ("Missing the required parameter 'urn' when calling downloadItem")) ;
-		var ModelDerivative =new ForgeSDK.DerivativesApi () ;
+		var ModelDerivative =new ForgeAPI.DerivativesApi () ;
 		return (ModelDerivative.apiClient.callApi (
 			'/derivativeservice/v2/derivatives/{urn}', 'GET',
 			{ 'urn': urn }, {}, { 'Accept-Encoding': 'gzip, deflate' },
@@ -465,7 +471,7 @@ function bubble (progress) {
 
 	this.getThumbnail =function (urn, guid, sz, outFile, callback) {
 		var self =this ;
-		var ModelDerivative =new ForgeSDK.DerivativesApi () ;
+		var ModelDerivative =new ForgeAPI.DerivativesApi () ;
 		//console.log ('Thumbnail URN: ', urn, 'GUID: ', guid) ;
 		//ModelDerivative.getThumbnail (urn, { width: sz, height: sz }, this._token, this._token.getCredentials ())
 		//	.then (function (thumbnail) {
@@ -635,7 +641,7 @@ var bubbleUtils ={
 	// DownloadViewerItem: function (uri, outPath, item) {
 	// 	uri +='?v=v' + (config ? config.viewerVersion : '2.17') ;
 	// 	return (new Promise (function (fulfill, reject) {
-	// 		var ModelDerivative =new ForgeSDK.DerivativesApi () ;
+	// 		var ModelDerivative =new ForgeAPI.DerivativesApi () ;
 	// 		ModelDerivative.apiClient.callApi (
 	// 			uri, 'GET',
 	// 			{}, {}, {},
