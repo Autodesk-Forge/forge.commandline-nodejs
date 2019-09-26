@@ -29,6 +29,8 @@ const moment =require ('moment') ;
 const opn =require ('opn') ;
 const http =require ('http') ;
 const url =require ('url') ;
+const path =require ('path') ;
+const ejs =require ('ejs') ;
 const utils =require ('./utils') ;
 
 class Forge_oauth {
@@ -80,6 +82,20 @@ class Forge_oauth {
 	}
 
 	// oauth 3 legged
+	static render (data, res) {
+		return (new Promise ((fulfill, reject) => {
+			ejs.renderFile (path.normalize (path.join (__dirname, '/../views/signed-in.ejs')), data, {}, (err, str) => {
+				res.writeHeader (200, { 'Content-Type': 'text/html' }) ;
+				if ( err )
+					res.write (`${data.result}. ${data.message}`) ;
+				else
+					res.write (str) ;
+				res.end () ;
+				fulfill () ;
+			});
+		})) ;
+	}
+
 	static _3legged_authorize (auto) {
 		let oa3Legged =new ForgeAPI.AuthClientThreeLegged (Forge_oauth.settings.clientId, Forge_oauth.settings.clientSecret, Forge_oauth.settings.callback, Forge_oauth.settings.opts.scope.split (' '), true) ;
 		// Generate a URL page that asks for permissions for the specified scopes.
@@ -99,16 +115,24 @@ class Forge_oauth {
 					let query =url.parse (req.url, true) ;
 					Forge_oauth._3legged_code (query.query.code)
 						.then ((client) => {
-							res.writeHeader (200, { 'Content-Type': 'text/html' }) ;
-							res.write ('You are logged in! You can now close this window/tab!') ;
-							res.end () ;
+							let data ={
+								result: 'You are Signed in',
+								message: 'You can now close this window'
+							} ;
+							return (Forge_oauth.render (data, res)) ;
+						})
+						.then (() => {
 							setTimeout (() => { process.exit () ; }, 1000) ;
 						})
 						.catch ((error) => {
-							res.writeHeader (500, { 'Content-Type': 'text/html' }) ;
-							res.write ('An error occured, sorry!') ;
-							res.end () ;
-							setTimeout (() => { process.exit () ; }, 1000) ;
+							let data ={
+								result: 'An error occured, sorry!',
+								message: 'You can now close this window'
+							} ;
+							Forge_oauth.render (data, res)
+								.finally (() => {
+									setTimeout (() => { process.exit () ; }, 1000) ;
+								}) ;
 						}) ;
 					//server.close () ;
 				}
