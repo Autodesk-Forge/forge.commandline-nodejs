@@ -150,6 +150,22 @@ class utils {
 		) ;
 	}
 
+	static gunzip (res) {
+		return (new Promise ((fulfill, reject) => {
+			zlib.gunzip (res, (err, dezipped) => {
+				if ( err ) {
+					console.error (err) ;
+					return (reject (err)) ;
+				}
+				try {
+					fulfill (JSON.parse (dezipped.toString ('utf-8'))) ;
+				} catch ( ex ) {
+					fulfill (dezipped) ;
+				}
+			}) ;
+		})) ;
+	}
+
 	static filesize (filename) {
 		return (new Promise ((fulfill, reject) => {
 			fs.stat (filename, (err, stat) => {

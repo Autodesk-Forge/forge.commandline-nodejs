@@ -22,23 +22,20 @@
 // by Cyrille Fauvel
 // Autodesk Forge Partner Development
 //
-var ForgeAPI =require ('forge-apis') ;
-var zip =require ('node-zip') ;
-var archiver =require ('archiver') ;
-var ejs =require ('ejs') ;
-var mkdirp =require ('mkdirp') ;
+/*jshint esversion: 6 */
+/*jshint -W014 */
 
-var fs =require ('fs') ;
-var zlib =require ('zlib') ;
-var path =require ('path') ;
+const ForgeAPI =require ('forge-apis') ;
+const zip =require ('node-zip') ;
+const archiver =require ('archiver') ;
+const ejs =require ('ejs') ;
+const mkdirp =require ('mkdirp') ;
+const fs =require ('fs') ;
+const zlib =require ('zlib') ;
+const path =require ('path') ;
+const utils =require ('./api/utils') ;
 
-//var config =require ('./config') ;
-//var forgeToken =require ('./forge-token') ;
-//var utils =require ('./utils') ;
-//var sendMail =require ('./sendMail') ;
-//var viewerFileList =require ('./viewer') ;
-
-function bubble (progress) {
+function svfBubble (progress) {
 	this._outPath ='./' ;
 	this._token =null ;
 	this._progress =progress ;
@@ -48,8 +45,8 @@ function bubble (progress) {
 	this._viewables =[] ; // { path: '', name: '' }
 	this._errors =[] ; // ''
 
-	this.downloadBubble =function (urn, outPath, token) {
-		var self =this ;
+	this.downloadBubble =(urn, outPath, token) => {
+		let self =this ;
 		if ( token ) {
 			self._token =new ForgeAPI.AuthClientTwoLegged ('__', '__', [ 'data:read' ]) ;
 			self._token.setCredentials ({
@@ -61,13 +58,13 @@ function bubble (progress) {
 			self._token =forgeToken.RW ;
 		}
 		self._outPath =outPath ;
-		return (new Promise (function (fulfill, reject) {
+		return (new Promise ((fulfill, reject) => {
 			self._progress.msg ='Downloading manifest' ;
 			self.getManifest (urn)
-				.then (function (bubble) {
+				.then ((bubble) => {
 					//utils.writeFile (outPath + 'bubble.json', bubble) ;
 					self._progress.msg ='Listing all derivative files' ;
-					self.listAllDerivativeFiles (bubble.body, function (error, result) {
+					self.listAllDerivativeFiles (bubble.body, (error, result) => {
 						self._progress._filesToFetch =result.list.length ;
 						console.log ('Number of files to fetch:', self._progress._filesToFetch) ;
 						self._progress._estimatedSize =0 | (result.totalSize / (1024 * 1024)) ;
@@ -77,7 +74,7 @@ function bubble (progress) {
 						//self.fixFusionBubbles (result) ;
 
 						self._progress.msg ='Downloading derivative files' ;
-						self.downloadAllDerivativeFiles (result.list, self._outPath, function (failed, succeeded) {
+						self.downloadAllDerivativeFiles (result.list, self._outPath, (failed, succeeded) => {
 							//if ( ++self._done == 1 /*2*/ )
 							//	return ;
 							self.failed =failed ;
@@ -86,7 +83,7 @@ function bubble (progress) {
 						}) ;
 					}) ;
 				})
-				.catch (function (err) {
+				.catch ((err) => {
 					console.error ('Error:', err.message) ;
 					self._errors.push (err.message) ;
 					reject (self) ;
@@ -95,10 +92,10 @@ function bubble (progress) {
 		})) ;
 	} ;
 
-	this.listAllDerivativeFiles =function (bubble, callback) {
-		var self =this ;
+	this.listAllDerivativeFiles =(bubble, callback) => {
+		let self =this ;
 		// First get all the root derivative files from the bubble
-		var res =[] ;
+		let res =[] ;
 		(function traverse (node, parent) {
 			if (   node.role === 'Autodesk.CloudPlatform.PropertyDatabase'
 				|| node.role === 'Autodesk.CloudPlatform.DesignDescription'
@@ -110,7 +107,7 @@ function bubble (progress) {
 				|| node.role === 'preview'
 				|| node.role === 'lod'
 			) {
-				var item ={ mime: node.mime } ;
+				let item ={ mime: node.mime } ;
 				self.extractPathsFromGraphicsUrn (node.urn, item) ;
 			//	if ( item.localPath === '' )
 			//		item.localPath =parent.guid + '/' ;
@@ -123,7 +120,7 @@ function bubble (progress) {
 				) {
 					item.name =node.name =parent.name ;
 					if ( parent.hasThumbnail === 'true' ) {
-						var thumbnailItem ={ mime: 'thumbnail', urn: bubble.urn, guid: parent.guid,
+						let thumbnailItem ={ mime: 'thumbnail', urn: bubble.urn, guid: parent.guid,
 							localPath: item.localPath,
 							thumbnailUrn: '$file$/thumbnails/' + parent.guid + '.png',
 							rootFileName: (item.rootFileName + '.png')
@@ -135,10 +132,10 @@ function bubble (progress) {
 			if ( node.type === 'geometry' ) {
 				// Why would we be sane and use real booleans??
 				//if ( node.hasThumbnail === 'true' ) {
-				//	var item ={ mime: 'thumbnail', urn: bubble.urn, guid: node.guid } ;
+				//	let item ={ mime: 'thumbnail', urn: bubble.urn, guid: node.guid } ;
 				//	if ( node.guid.substring (0, 1) === '{' ) {
 				//		try {
-				//			var guidObject =JSON.parse (node.guid) ;
+				//			let guidObject =JSON.parse (node.guid) ;
 				//			node.assetguid =guidObject.asset ;
 				//			item.assetguid =guidObject.asset ;
 				//		} catch ( ex ) {
@@ -150,30 +147,30 @@ function bubble (progress) {
 				//}
 				if ( node.intermediateFile && node.children ) {
 					// We will derive the full intermediate file path from the child F2D node
-					var f2dNode ;
-					for ( var i =0 ; i<node.children.length ; i++) {
+					let f2dNode ;
+					for ( let i =0 ; i<node.children.length ; i++) {
 						if ( node.children [i].mime === 'application/autodesk-f2d' ) {
 							f2dNode =node.children [i] ;
 							break ;
 						}
 					}
 					if ( f2dNode ) {
-						var f2dUrl =f2dNode.urn ;
-						var idx =f2dUrl.indexOf (bubble.urn) ;
-						var baseUrl =f2dUrl.substr (0, idx + bubble.urn.length) ;
-						var item ={ mime: 'application/octet-stream', urn: bubble.urn, guid: node.guid } ;
+						let f2dUrl =f2dNode.urn ;
+						let idx =f2dUrl.indexOf (bubble.urn) ;
+						let baseUrl =f2dUrl.substr (0, idx + bubble.urn.length) ;
+						let item ={ mime: 'application/octet-stream', urn: bubble.urn, guid: node.guid } ;
 						// Construct the full urn path, similar to how it's stored for the SVF geometry items
-						var intPath ='/' + node.intermediateFile ;
+						let intPath ='/' + node.intermediateFile ;
 						if ( baseUrl.indexOf ('urn:adsk.objects') === 0 )
 							intPath =encodeURIComponent (intPath) ;
-						var fullPath =baseUrl + intPath ;
+						let fullPath =baseUrl + intPath ;
 						self.extractPathsFromGraphicsUrn (fullPath, item) ;
 						res.push (item) ;
 					}
 				}
 			}
 			if ( node.children ) {
-				node.children.forEach (function (child) {
+				node.children.forEach ((child) => {
 					traverse (child, node) ;
 				}) ;
 			}
@@ -183,17 +180,17 @@ function bubble (progress) {
 		if ( res.length === 0 )
 			return (callback (null, { list: [], totalSize: 0 })) ;
 
-		var current =0 ;
-		var done =0 ;
-		var estSize =0 ;
-		var countedPropDb ={} ;
+		let current =0 ;
+		let done =0 ;
+		let estSize =0 ;
+		let countedPropDb ={} ;
 
-		var processOne =function () {
+		let processOne =() => {
 			function onProgress () {
 				done++ ;
 				console.log ('Manifests done ', done) ;
 				if ( done === res.length ) {
-					var result ={
+					let result ={
 						list: res,
 						totalSize: estSize
 					} ;
@@ -205,9 +202,9 @@ function bubble (progress) {
 
 			if ( current >= res.length )
 				return ;
-			var rootItem =res [current++] ;
-			var basePath ;
-			var files =rootItem.files =[] ;
+			let rootItem =res [current++] ;
+			let basePath ;
+			let files =rootItem.files =[] ;
 			if ( rootItem.mime !== 'thumbnail' )
 				basePath =rootItem.basePath ;
 			if ( rootItem.mime === 'application/autodesk-db' ) {
@@ -226,18 +223,18 @@ function bubble (progress) {
 				rootItem.files.push (rootItem.rootFileName) ;
 				onProgress () ;
 			} else if ( rootItem.mime === 'application/autodesk-svf' ) {
-				var svfPath =rootItem.urn.slice (basePath.length) ;
+				let svfPath =rootItem.urn.slice (basePath.length) ;
 				files.push (svfPath) ;
 				// Closure to capture loop-variant variable for the getItem callback
-				(function () {
-					var myItem =rootItem ;
-					self.getItem (rootItem.urn, null, function (error, success) {
+				(() => {
+					let myItem =rootItem ;
+					self.getItem (rootItem.urn, null, (error, success) => {
 						if ( error )
 							self._errors.push ('Failed to download ' + myItem.urn) ;
 						if ( success ) {
-							var manifest ;
+							let manifest ;
 							try {
-								var pack =new zip (success, { base64: false, checkCRC32: true }) ;
+								let pack =new zip (success, { base64: false, checkCRC32: true }) ;
 								success =pack.files ['manifest.json'].asNodeBuffer () ;
 								manifest =JSON.parse (success.toString ('utf8')) ;
 							} catch ( e ) {
@@ -245,8 +242,8 @@ function bubble (progress) {
 								self._errors.push (e.message) ;
 							}
 							if ( manifest && manifest.assets ) {
-								for ( var j =0 ; j < manifest.assets.length ; j++ ) {
-									var asset =manifest.assets [j] ;
+								for ( let j =0 ; j < manifest.assets.length ; j++ ) {
+									let asset =manifest.assets [j] ;
 									// Skip SVF embedded resources
 									if ( asset.URI.indexOf ('embed:/') === 0 )
 										continue ;
@@ -275,16 +272,16 @@ function bubble (progress) {
 				}) () ;
 			} else if ( rootItem.mime === 'application/autodesk-f2d' ) {
 				files.push ('manifest.json.gz') ;
-				var manifestPath =basePath + 'manifest.json.gz' ;
+				let manifestPath =basePath + 'manifest.json.gz' ;
 				// Closure to capture loop-variant variable for the getItem callback
-				(function () {
-					var myItem =rootItem ;
-					self.getItem (manifestPath, null, function (error, success) {
+				(() => {
+					let myItem =rootItem ;
+					self.getItem (manifestPath, null, (error, success) => {
 						if ( error )
 							self._errors.push ('Failed to download ' + myItem.urn) ;
 						if ( success ) {
 							estSize +=success.length ;
-							var manifest ;
+							let manifest ;
 							try {
 								if (success [0] === 0x1f && success [1] === 0x8b )
 									success =zlib.gunzipSync (success) ;
@@ -294,8 +291,8 @@ function bubble (progress) {
 								self._errors.push (e.message) ;
 							}
 							if ( manifest && manifest.assets ) {
-								for ( var j =0 ; j < manifest.assets.length ; j++ ) {
-									var asset =manifest.assets [j] ;
+								for ( let j =0 ; j < manifest.assets.length ; j++ ) {
+									let asset =manifest.assets [j] ;
 									// Skip non-local property db files
 									// Those are listed explicitly in the bubble as property database role
 									// so we will get them anyway
@@ -316,19 +313,19 @@ function bubble (progress) {
 			}
 		} ;
 		// Kick off 6 parallel jobs
-		for ( var k =0 ; k < 6 ; k++ )
+		for ( let k =0 ; k < 6 ; k++ )
 			processOne () ;
 	} ;
 
-	this.downloadAllDerivativeFiles =function (fileList, destDir, callback) {
-		var self =this ;
-		var succeeded =0 ;
-		var failed =0 ;
-		var flatList =[] ;
-		for ( var i =0 ; i < fileList.length ; i++ ) {
-			var item =fileList [i] ;
-			for (var j =0 ; j < item.files.length ; j++ ) {
-				var flatItem ={
+	this.downloadAllDerivativeFiles =(fileList, destDir, callback) => {
+		let self =this ;
+		let succeeded =0 ;
+		let failed =0 ;
+		let flatList =[] ;
+		for ( let i =0 ; i < fileList.length ; i++ ) {
+			let item =fileList [i] ;
+			for (let j =0 ; j < item.files.length ; j++ ) {
+				let flatItem ={
 					basePath: item.basePath,
 					localPath: destDir + item.localPath,
 					fileName: item.files [j]
@@ -345,13 +342,13 @@ function bubble (progress) {
 		}
 		if ( flatList.length === 0 )
 			return (callback (failed, succeeded)) ;
-		var current =0 ;
-		var done =0 ;
-		var downloadOneItem =function () {
+		let current =0 ;
+		let done =0 ;
+		let downloadOneItem =() => {
 			if ( current >= flatList.length )
 				return ;
-			var fi =flatList [current++] ;
-			var downloadComplete =function (error, success) {
+			let fi =flatList [current++] ;
+			let downloadComplete =(error, success) => {
 				done++ ;
 				if ( error ) {
 					failed++ ;
@@ -380,33 +377,33 @@ function bubble (progress) {
 				self._viewables.push ({ path: ('./' + fi.localPath.substring (self._outPath.length) + fi.fileName), name: fi.name }) ;
 		} ;
 		// Kick off 10 parallel jobs
-		for ( var k =0 ; k < 10 ; k++ )
+		for ( let k =0 ; k < 10 ; k++ )
 			downloadOneItem () ;
 	} ;
 
-	this.extractPathsFromGraphicsUrn =function (urn, result) {
+	this.extractPathsFromGraphicsUrn =(urn, result) => {
 		// This needs to be done for encoded OSS URNs, because the paths
 		// in there are url encoded and lose the / character.
 		urn =decodeURIComponent (urn) ;
-		var basePath =urn.slice (0, urn.lastIndexOf ('/') + 1) ;
-		var localPath =basePath.slice (basePath.indexOf ('/') + 1) ;
-		var urnBase =basePath.slice (0, basePath.indexOf ('/')) ;
+		let basePath =urn.slice (0, urn.lastIndexOf ('/') + 1) ;
+		let localPath =basePath.slice (basePath.indexOf ('/') + 1) ;
+		let urnBase =basePath.slice (0, basePath.indexOf ('/')) ;
 		localPath =localPath.replace (/^output\//, '') ;
 		// For supporting compound bubbles, we need to prefix
 		// by sub-urn as well, otherwise files might clash.
-		// var localPrefix = urnBase ? crypto.createHash('md5').update(urnBase).digest("hex") + "/" : "";
-		var localPrefix ='' ;
+		// let localPrefix = urnBase ? crypto.createHash('md5').update(urnBase).digest("hex") + "/" : "";
+		let localPrefix ='' ;
 		result.urn =urn ;
 		result.basePath =basePath ;
 		result.localPath =localPrefix + localPath ;
 		result.rootFileName =urn.slice (urn.lastIndexOf ('/') + 1) ;
 	} ;
 
-	this.getManifest =function (urn) {
+	this.getManifest =(urn) => {
 		// Verify the required parameter 'urn' is set
 		if ( urn === undefined || urn === null )
 			return (Promise.reject ("Missing the required parameter 'urn' when calling getManifest")) ;
-		var ModelDerivative =new ForgeAPI.DerivativesApi () ;
+		let ModelDerivative =new ForgeAPI.DerivativesApi () ;
 		return (ModelDerivative.apiClient.callApi (
 			'/derivativeservice/v2/manifest/{urn}', 'GET',
 			{ 'urn': urn }, {}, { /*'Accept-Encoding': 'gzip, deflate'*/ },
@@ -416,11 +413,11 @@ function bubble (progress) {
 		)) ;
 	} ;
 
-	this.downloadItem =function (urn) {
+	this.downloadItem =(urn) => {
 		// Verify the required parameter 'urn' is set
 		if ( urn === undefined || urn === null )
 			return (Promise.reject ("Missing the required parameter 'urn' when calling downloadItem")) ;
-		var ModelDerivative =new ForgeAPI.DerivativesApi () ;
+		let ModelDerivative =new ForgeAPI.DerivativesApi () ;
 		return (ModelDerivative.apiClient.callApi (
 			'/derivativeservice/v2/derivatives/{urn}', 'GET',
 			{ 'urn': urn }, {}, { 'Accept-Encoding': 'gzip, deflate' },
@@ -430,8 +427,8 @@ function bubble (progress) {
 		)) ;
 	} ;
 
-	this.openWriteStream =function (outFile) {
-		var wstream ;
+	this.openWriteStream =(outFile) => {
+		let wstream ;
 		if ( outFile ) {
 			try {
 				mkdirp.sync (path.dirname (outFile)) ;
@@ -443,15 +440,15 @@ function bubble (progress) {
 		return (wstream) ;
 	} ;
 
-	this.getItem =function (itemUrn, outFile, callback) {
-		var self =this ;
+	this.getItem =(itemUrn, outFile, callback) => {
+		let self =this ;
 		//console.log ('-> ' + itemUrn) ;
 		this.downloadItem (itemUrn)
-			.then (function (response) {
+			.then ((response) => {
 				if ( response.statusCode !== 200 )
 					return (callback (response.statusCode)) ;
 				// Skip unzipping of items to make the downloaded content compatible with viewer debugging
-				var wstream =self.openWriteStream (outFile) ;
+				let wstream =self.openWriteStream (outFile) ;
 				if ( wstream ) {
 					wstream.write (typeof response.body == 'object' && path.extname (outFile) === '.json' ? JSON.stringify (response.body) : response.body) ;
 					wstream.end () ;
@@ -460,7 +457,7 @@ function bubble (progress) {
 					callback (null, response.body) ;
 				}
 			})
-			.catch (function (error) {
+			.catch ((error) => {
 				console.error ('Error:', error.message) ;
 				self._errors.push ('Error: ' + error.message) ;
 				callback (error, null) ;
@@ -469,14 +466,14 @@ function bubble (progress) {
 		;
 	} ;
 
-	this.getThumbnail =function (urn, guid, sz, outFile, callback) {
-		var self =this ;
-		var ModelDerivative =new ForgeAPI.DerivativesApi () ;
+	this.getThumbnail =(urn, guid, sz, outFile, callback) => {
+		let self =this ;
+		let ModelDerivative =new ForgeAPI.DerivativesApi () ;
 		//console.log ('Thumbnail URN: ', urn, 'GUID: ', guid) ;
 		//ModelDerivative.getThumbnail (urn, { width: sz, height: sz }, this._token, this._token.getCredentials ())
-		//	.then (function (thumbnail) {
+		//	.then ((thumbnail) => {
 		//		//fs.writeFile (outFile, thumbnail.body) ;
-		//		var wstream =self.openWriteStream (outFile) ;
+		//		let wstream =self.openWriteStream (outFile) ;
 		//		if ( wstream ) {
 		//			wstream.write (thumbnail.body) ;
 		//			wstream.end () ;
@@ -485,7 +482,7 @@ function bubble (progress) {
 		//			callback (null, thumbnail.body) ;
 		//		}
 		//	})
-		//	.catch (function (error) {
+		//	.catch ((error) => {
 		//		console.error ('Error:', error.message) ;
 		//		self._errors.push ('Error: ' + error.message) ;
 		//		callback (error, null) ;
@@ -493,7 +490,7 @@ function bubble (progress) {
 		//;
 		if ( urn === undefined || urn === null )
 			return (Promise.reject ("Missing the required parameter 'urn' when calling getThumbnail")) ;
-		var queryParams ={ width: sz, height: sz, role: 'rendered' } ;
+		let queryParams ={ width: sz, height: sz, role: 'rendered' } ;
 		if ( guid )
 			queryParams.guid =guid ;
 		ModelDerivative.apiClient.callApi (
@@ -503,9 +500,9 @@ function bubble (progress) {
 			[], [ 'application/octet-stream' ], null,
 			this._token, this._token.getCredentials ()
 		)
-			.then (function (thumbnail) {
+			.then ((thumbnail) => {
 				//fs.writeFile (outFile, thumbnail.body) ;
-				var wstream =self.openWriteStream (outFile) ;
+				let wstream =self.openWriteStream (outFile) ;
 				if ( wstream ) {
 					wstream.write (thumbnail.body) ;
 					wstream.end () ;
@@ -514,7 +511,7 @@ function bubble (progress) {
 					callback (null, thumbnail.body) ;
 				}
 			})
-			.catch (function (error) {
+			.catch ((error) => {
 				console.error ('Error:', error.message) ;
 				self._errors.push ('Error: ' + error.message) ;
 				callback (error, null) ;
@@ -522,18 +519,18 @@ function bubble (progress) {
 		;
 	} ;
 
-	//this.fixFlatBubbles =function (result) {
+	//this.fixFlatBubbles =(result) => {
 	//	// Trying to fix paths without breaking ones which are already good
 	//	// We're lucky that our array is sorted by viewables
-	//	var guid ='f0224dd3-8767-45c1-ff99-5c9c881b9fee' ;
-	//	for ( var i =0 ; i < result.list.length ; i++ ) { // Find the first thumbnail guid to start with
+	//	let guid ='f0224dd3-8767-45c1-ff99-5c9c881b9fee' ;
+	//	for ( let i =0 ; i < result.list.length ; i++ ) { // Find the first thumbnail guid to start with
 	//		if ( result.list [i].mime === 'thumbnail' ) {
 	//			guid =result.list [i].guid ;
 	//			break ;
 	//		}
 	//	}
-	//	for ( var i =0 ; i < result.list.length ; i++ ) {
-	//		var obj =result.list [i] ;
+	//	for ( let i =0 ; i < result.list.length ; i++ ) {
+	//		let obj =result.list [i] ;
 	//		if ( obj.rootFileName === 'designDescription.json' ) {
 	//			// Do nothing
 	//		} else if ( obj.mime !== 'thumbnail' ) {
@@ -545,12 +542,12 @@ function bubble (progress) {
 	//	}
 	//} ;
 	//
-	//this.fixFusionBubbles =function (result) {
+	//this.fixFusionBubbles =(result) => {
 	//	// We're lucky that our array is sorted by viewables
-	//	var bFusionFixRequired =false
-	//	var guid ='f0224dd3-8767-45c1-ff99-5c9c881b9fee' ;
-	//	for ( var i =0 ; i < result.list.length ; i++ ) { // Find the first thumbnail guid to start with
-	//		var obj =result.list [i] ;
+	//	let bFusionFixRequired =false
+	//	let guid ='f0224dd3-8767-45c1-ff99-5c9c881b9fee' ;
+	//	for ( let i =0 ; i < result.list.length ; i++ ) { // Find the first thumbnail guid to start with
+	//		let obj =result.list [i] ;
 	//		if ( result.list [i].rootFileName === 'designDescription.json' ) {
 	//			// Do nothing
 	//		} else if ( obj.mime === 'thumbnail' ) {
@@ -561,19 +558,19 @@ function bubble (progress) {
 	//	}
 	//	//if ( !bFusionFixRequired )
 	//	//	return ;
-	//	for ( var i =0 ; i < result.list.length ; i++ ) {
-	//		var obj =result.list [i] ;
+	//	for ( let i =0 ; i < result.list.length ; i++ ) {
+	//		let obj =result.list [i] ;
 	//		if ( obj.mime !== 'thumbnail' ) {
 	//			if (    bFusionFixRequired
 	//				|| /^[0-9]+\/.*$/.test (obj.localPath)
 	//				|| /^(Resource)\/.*$/.test (obj.localPath)
 	//			) {
-	//				var paths =obj.localPath.split ('/') ;
+	//				let paths =obj.localPath.split ('/') ;
 	//				paths [0] =guid ;
 	//				obj.localPath =paths.join ('/') ;
 	//			}
 	//			//else if ( /^(Resource)\/.*$/.test (obj.localPath) ) {
-	//			//	var paths =obj.localPath.split ('/') ;
+	//			//	let paths =obj.localPath.split ('/') ;
 	//			//	paths.unshift (guid) ;
 	//			//	obj.localPath =paths.join ('/') ;
 	//			//}
@@ -585,52 +582,206 @@ function bubble (progress) {
 
 }
 
-var bubbleUtils ={
-	// GenerateStartupFiles: function (bubble, identifier) {
-	// 	return (new Promise (function (fulfill, reject) {
+function otgBubble (progress) {
+	this._outPath ='./' ;
+	this._token =null ;
+	this._progress =progress ;
+	//this._filesToFetch =0 ;
+	//this._estimatedSize =0 ;
+	//this._progress =0 ;
+	this._viewables =[] ; // { path: '', name: '' }
+	this._errors =[] ; // ''
+
+	this.downloadBubble =(urn, outPath, token) => {
+		let self =this ;
+		if ( token ) {
+			self._token =new ForgeAPI.AuthClientTwoLegged ('__', '__', [ 'data:read' ]) ;
+			self._token.setCredentials ({
+				'token_type': 'Bearer',
+				'expires_in': 1799,
+				'access_token': token
+			}) ;
+		} else {
+			self._token =forgeToken.RW ;
+		}
+		self._outPath =outPath ;
+		return (new Promise ((fulfill, reject) => {
+			self._progress.msg ='Downloading manifest' ;
+			self.data ={} ;
+			self.getManifest (urn)
+				.then ((bubble) => {
+					let outFile =path.resolve (path.join (outPath, 'bubble.json')) ;
+					console.log (outFile) ;
+					utils.writeFile (outFile, bubble.body)
+						.catch ((err) => {
+							console.error ('Error:', err.message) ;
+						}) ;
+
+					// Code for GET /modeldata/manifest/{urn}
+
+					// let otg_manifest =bubble.body.children.filter((elt) => { return (elt.role === 'viewable' && elt.otg_manifest) ; }) ;
+					// if ( otg_manifest.length !== 1 )
+					// 	throw new Error ('Unexpected OTG manifest format.') ;
+					// otg_manifest =otg_manifest [0].otg_manifest ;
+
+					// Code for GET /modeldata/otgmanifest/{urn}
+
+					let otg_manifest =bubble.body ;
+
+					//let views =Object.values (otg_manifest.views).filter ((elt) => { return (elt.role === 'graphics' && elt.urn.endsWith ('/otg_model.json') ) ; }) ;
+					let views =Object.values (otg_manifest.views).filter ((elt) => { return (elt.role && elt.urn) ; }) ;
+					if ( views.length === 0 )
+						throw new Error ('Unexpected OTG manifest format.') ;
+
+					self.data ={
+						urn: urn,
+						OTG_manifest: otg_manifest,
+						
+						global_root: otg_manifest.paths.global_root,
+						global_sharding: otg_manifest.paths.global_sharding,
+						version_root: otg_manifest.paths.version_root,
+						shared_root: otg_manifest.paths.shared_root,
+						region: otg_manifest.paths.region,
+
+						local_version_root: path.join (outPath, otg_manifest.paths.version_root.substring (otg_manifest.paths.shared_root.length)),
+						local_shared_root: path.join (outPath, otg_manifest.paths.shared_root),
+
+						OTG_models: views.map ((elt) => { return (elt.urn) ; }),
+						OTG_models_keys: Object.keys (otg_manifest.views)
+					} ;
+					console.log (JSON.stringify (self.data, null, 4)) ;
+
+					//let l1 =['otg_model.json', 'fragments.fl', 'fragments_extra.fl', 'materials_ptrs.hl geometry_ptrs.hl texture_manifest.json]
+					//download "modeldata/file/$OG_VERSION_ROOT$ENCODED_RELATIVE_ROOT/$asset" "$VERSION_ROOT/$asset"
+					//let jobs =self.data.OTG_URN.map ((elt) => { return (self.downloadItem (self.data.OG_VERSION_ROOT + elt)) ; }) ;
+
+					let jobs =self.data.OTG_models.map ((elt) => {
+						return (self.getModel (self.data.version_root + encodeURI(elt), self.data.urn)) ;
+					}) ;
+
+					//return self.getModel (self.data.version_root + encodeURI(self.data.OTG_models[0]), self.data.urn) ;
+					return (Promise.all (jobs.map (p => p.catch (() => undefined)))) ;
+				})
+				.then ((manifests) => {
+					let jobs =manifests.map ((elt) => {
+						return (utils.gunzip (elt.body)) ;
+					}) ;
+					return (Promise.all (jobs.map (p => p.catch (() => undefined)))) ;
+				})
+				.then ((manifestsjson) => {
+					self.data.OTG_models_manifests =manifestsjson ;
+					let jobs =manifestsjson.map ((elt, index) => {
+						let outFile =path.resolve (path.join (self.data.local_version_root, 'otg_model.json')) ;
+						console.log (' > ', outFile) ;
+						return (utils.writeFile (outFile, elt));
+					}) ;
+					return (Promise.all (jobs)) ;
+					//return (Promise.all (jobs.map (p => p.catch (() => undefined)))) ;
+				})
+				.then ((na) => {
+					// let jobs =self.data.OTG_models_manifests.map ((elt, index) => {
+					// 	let manifestJobs =elt.manifest.assets.map ((asset) => {
+					// 		return (self.getModel (self.data.version_root + encodeURI(elt), self.data.urn)) ;
+					// 	}) ;	
+					// }) ;
+					let jobs =self.data.OTG_models_manifests.map ((elt, index) => {
+						let manifestJobs =elt.manifest.assets.map ((asset) => {
+							return (self.getModel (self.data.version_root + encodeURI(elt), self.data.urn)) ;
+						}) ;
+						return (manifestJobs) ;
+					}) ;
+				})
+				.catch ((err) => {
+					console.error ('Error:', err.message || err.statusMessage) ;
+					self._errors.push (err.message || err.statusMessage) ;
+					reject (self) ;
+				})
+				// .finally ((p) => {
+				// 	console.error (p) ;
+				// });
+			;
+		})) ;
+	} ;
+
+	this.getManifest =(urn) => {
+		// Verify the required parameter 'urn' is set
+		if ( urn === undefined || urn === null )
+			return (Promise.reject ("Missing the required parameter 'urn' when calling getManifest")) ;
+		let ModelDerivative =new ForgeAPI.DerivativesApi () ;
+		ModelDerivative.apiClient.basePath ='https://otg.autodesk.com' ;
+		return (ModelDerivative.apiClient.callApi (
+			//'/modeldata/manifest/{urn}', 'GET', // full manifest
+			'/modeldata/otgmanifest/{urn}', 'GET', // only OTG manifest
+			{ urn: urn }, {}, { /*'Accept-Encoding': 'gzip, deflate'*/ pragma: 'no-cache' },
+			{}, null,
+			[], [ 'application/vnd.api+json', 'application/json' ], null,
+			this._token, this._token.getCredentials ()
+		)) ;
+	} ;
+
+	this.getModel =(fileurn, modelurn) => {
+		// Verify the required parameter 'urn' is set
+		if ( !fileurn || !modelurn )
+			return (Promise.reject ("Missing the required parameter 'urn' when calling downloadItem")) ;
+		let ModelDerivative =new ForgeAPI.DerivativesApi () ;
+		ModelDerivative.apiClient.basePath ='https://otg.autodesk.com' ;
+		return (ModelDerivative.apiClient.callApi (
+			'/modeldata/file/' + fileurn, 'GET',
+			{}, { acmsession: modelurn }, { 'Accept-Encoding': 'gzip, deflate', pragma: 'no-cache' },
+			{}, null,
+			[], [ /*'application/vnd.api+json', 'application/json'*/ ], null,
+			this._token, this._token.getCredentials ()
+		)) ;
+	} ;
+
+}
+
+let bubbleUtils ={
+	// GenerateStartupFiles: (bubble, identifier) => {
+	// 	return (new Promise ((fulfill, reject) => {
 	// 		fs.createReadStream (utils.path ('views/readme.txt'))
 	// 			.pipe (fs.createWriteStream (utils.path ('data/' + identifier + '/readme.txt'))) ;
 	// 		fs.createReadStream (utils.path ('views/bat.ejs'))
 	// 			.pipe (fs.createWriteStream (utils.path ('data/' + identifier + '/index.bat'))) ;
-	// 		var ws =fs.createWriteStream (utils.path ('data/' + identifier + '/index')) ;
+	// 		let ws =fs.createWriteStream (utils.path ('data/' + identifier + '/index')) ;
 	// 		fs.createReadStream (utils.path ('views/bash.ejs'))
 	// 			.pipe (ws) ;
-	// 		ws.on ('finish', function () {
+	// 		ws.on ('finish', () => {
 	// 			if ( /^win/.test (process.platform) === false )
 	// 				fs.chmodSync (utils.path ('data/' + identifier + '/index'), 0777) ;
 	// 		}) ;
 	// 		utils.readFile (utils.path ('views/view.ejs'), 'utf-8')
-	// 			.then (function (st) {
-	// 				var data =ejs.render (st, { docs: bubble._viewables }) ;
-	// 				var fullnameHtml =utils.path ('data/' + identifier + '/index.html') ;
+	// 			.then ((st) => {
+	// 				let data =ejs.render (st, { docs: bubble._viewables }) ;
+	// 				let fullnameHtml =utils.path ('data/' + identifier + '/index.html') ;
 	// 				return (utils.writeFile (fullnameHtml, data, 'utf-8')) ;
 	// 			})
-	// 			.then (function (st) {
+	// 			.then ((st) => {
 	// 				fulfill (bubble) ;
 	// 			})
-	// 			.catch (function (error) {
+	// 			.catch ((error) => {
 	// 				reject (error) ;
 	// 			})
 	// 		;
 	// 	})) ;
 	// },
 	//
-	// AddViewerFiles: function (bubble, identifier) {
-	// 	return (new Promise (function (fulfill, reject) {
-	// 		var urns =viewerFileList.map (function (item) {
+	// AddViewerFiles: (bubble, identifier) => {
+	// 	return (new Promise ((fulfill, reject) => {
+	// 		let urns =viewerFileList.map ((item) => {
 	// 			return (bubbleUtils.DownloadViewerItem ('/derivativeservice/v2/viewers/' + item, bubble._outPath, item)) ;
 	// 		}) ;
 	// 		Promise.all (urns)
-	// 			.then (function (urns) {
-	// 				var bower =utils.path ('www/bower_components') ;
-	// 				var data =utils.path ('data/' + identifier) ;
+	// 			.then ((urns) => {
+	// 				let bower =utils.path ('www/bower_components') ;
+	// 				let data =utils.path ('data/' + identifier) ;
 	// 				fs.createReadStream (bower + '/jquery/dist/jquery.min.js')
 	// 					.pipe (fs.createWriteStream (data + '/jquery.min.js')) ;
 	// 				fs.createReadStream (bower + '/jquery-ui/jquery-ui.min.js')
 	// 					.pipe (fs.createWriteStream (data + '/jquery-ui.min.js')) ;
 	// 				fulfill (bubble) ;
 	// 			})
-	// 			.catch (function (error) {
+	// 			.catch ((error) => {
 	// 				console.error ('Something wrong happened during viewer files download') ;
 	// 				reject (error) ;
 	// 			})
@@ -638,10 +789,10 @@ var bubbleUtils ={
 	// 	})) ;
 	// },
 	//
-	// DownloadViewerItem: function (uri, outPath, item) {
+	// DownloadViewerItem: (uri, outPath, item) => {
 	// 	uri +='?v=v' + (config ? config.viewerVersion : '2.17') ;
-	// 	return (new Promise (function (fulfill, reject) {
-	// 		var ModelDerivative =new ForgeAPI.DerivativesApi () ;
+	// 	return (new Promise ((fulfill, reject) => {
+	// 		let ModelDerivative =new ForgeAPI.DerivativesApi () ;
 	// 		ModelDerivative.apiClient.callApi (
 	// 			uri, 'GET',
 	// 			{}, {}, {},
@@ -649,9 +800,9 @@ var bubbleUtils ={
 	// 			[], [ 'application/octet-stream', 'image/png', 'text/html', 'text/css', 'text/javascript', 'application/json' ], null,
 	// 			forgeToken.RW, forgeToken.RW.getCredentials ()
 	// 		)
-	// 			.then (function (response) {
+	// 			.then ((response) => {
 	// 				//console.log (response.headers ['content-type'], item) ;
-	// 				var body =response.body ;
+	// 				let body =response.body ;
 	// 				if (   response.headers ['content-type'] == 'text/javascript'
 	// 					|| response.headers ['content-type'] == 'text/css'
 	// 				)
@@ -663,10 +814,10 @@ var bubbleUtils ={
 	// 				console.log ('Downloaded:', outPath + item) ;
 	// 				return (utils.writeFile (outPath + item, body, null, true)) ;
 	// 			})
-	// 			.then (function (response) {
+	// 			.then ((response) => {
 	// 				fulfill (item) ;
 	// 			})
-	// 			.catch (function (error) {
+	// 			.catch ((error) => {
 	// 				console.error (error) ;
 	// 				reject (error) ;
 	// 			})
@@ -674,24 +825,24 @@ var bubbleUtils ={
 	// 	})) ;
 	// },
 	//
-	// PackBubble: function (inDir, outZip) {
-	// 	return (new Promise (function (fulfill, reject) {
+	// PackBubble: (inDir, outZip) => {
+	// 	return (new Promise ((fulfill, reject) => {
 	// 		try {
-	// 			//var zip =new AdmZip () ;
+	// 			//let zip =new AdmZip () ;
 	// 			//zip.addLocalFolder (inDir) ;
-	// 			//zip.writeZip (outZip, function (error, result) {
+	// 			//zip.writeZip (outZip, (error, result) => {
 	// 			//	if ( error )
 	// 			//		reject (error) ;
 	// 			//	else
 	// 			//		fulfill (outZip) ;
 	// 			//}) ;
 	//
-	// 			var archive =archiver ('zip') ;
-	// 			archive.on ('error', function (err) {
+	// 			let archive =archiver ('zip') ;
+	// 			archive.on ('error', (err) => {
 	// 				console.error ('PackBubble: ' + err) ;
 	// 				//reject (err) ;
 	// 			}) ;
-	// 			archive.on ('finish', function (err) {
+	// 			archive.on ('finish', (err) => {
 	// 				if ( err ) {
 	// 					console.error ('PackBubble: ' + err) ;
 	// 					reject (err) ;
@@ -701,7 +852,7 @@ var bubbleUtils ={
 	// 				}
 	// 			}) ;
 	//
-	// 			var output =fs.createWriteStream (outZip) ;
+	// 			let output =fs.createWriteStream (outZip) ;
 	// 			archive.pipe (output) ;
 	// 			archive.directory (inDir, '') ;
 	// 			archive.finalize () ;
@@ -711,19 +862,19 @@ var bubbleUtils ={
 	// 	})) ;
 	// },
 	//
-	// NotifyPeopleOfSuccess: function (identifier, locks) {
+	// NotifyPeopleOfSuccess: (identifier, locks) => {
 	// 	return (bubbleUtils.NotifyPeople (identifier, locks, utils.path ('views/email-extract-succeeded.ejs'), 'Autodesk Forge Viewer Extractor notification')) ;
 	// },
 	//
-	// NotifyPeopleOfFailure: function (identifier, locks, error) {
+	// NotifyPeopleOfFailure: (identifier, locks, error) => {
 	// 	return (bubbleUtils.NotifyPeople (identifier, locks, utils.path ('views/email-extract-failed.ejs'), 'Autodesk Forge Viewer Extractor failure')) ;
 	// },
 	//
-	// NotifyPeople: function (identifier, locks, template, subject) {
-	// 	return (new Promise (function (fulfill, reject) {
+	// NotifyPeople: (identifier, locks, template, subject) => {
+	// 	return (new Promise ((fulfill, reject) => {
 	// 		utils.readFile (template, 'utf-8')
-	// 			.then (function (st) {
-	// 				var data =ejs.render (st, { ID: identifier }) ;
+	// 			.then ((st) => {
+	// 				let data =ejs.render (st, { ID: identifier }) ;
 	// 				sendMail ({
 	// 					'from': 'ADN Sparks <adn.sparks@autodesk.com>',
 	// 					'replyTo': 'adn.sparks@autodesk.com',
@@ -734,7 +885,7 @@ var bubbleUtils ={
 	// 				}) ;
 	// 				fulfill () ;
 	// 			})
-	// 			.catch (function (error) {
+	// 			.catch ((error) => {
 	// 				console.error (error) ;
 	// 				reject (error) ;
 	// 			})
@@ -745,8 +896,9 @@ var bubbleUtils ={
 } ;
 
 module.exports ={
-	bubble: bubble,
+	svf: svfBubble,
+	otg: otgBubble,
 	utils: bubbleUtils
 } ;
-// function Ds(endpoint, auth, oss) {
+// Ds(endpoint, auth, oss) => {
 // bubble-leech / index
