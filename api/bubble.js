@@ -33,7 +33,7 @@ const mkdirp =require ('mkdirp') ;
 const fs =require ('fs') ;
 const zlib =require ('zlib') ;
 const path =require ('path') ;
-const utils =require ('./api/utils') ;
+const utils =require ('./utils') ;
 
 function svfBubble (progress) {
 	this._outPath ='./' ;
@@ -610,23 +610,14 @@ function otgBubble (progress) {
 			self.data ={} ;
 			self.getManifest (urn)
 				.then ((bubble) => {
-					let outFile =path.resolve (path.join (outPath, 'bubble.json')) ;
-					console.log (outFile) ;
-					utils.writeFile (outFile, bubble.body)
-						.catch ((err) => {
-							console.error ('Error:', err.message) ;
-						}) ;
-
 					// Code for GET /modeldata/manifest/{urn}
-
-					// let otg_manifest =bubble.body.children.filter((elt) => { return (elt.role === 'viewable' && elt.otg_manifest) ; }) ;
-					// if ( otg_manifest.length !== 1 )
-					// 	throw new Error ('Unexpected OTG manifest format.') ;
-					// otg_manifest =otg_manifest [0].otg_manifest ;
+					let otg_manifest =bubble.body.children.filter((elt) => { return (elt.role === 'viewable' && elt.otg_manifest) ; }) ;
+					if ( otg_manifest.length !== 1 )
+						throw new Error ('Unexpected OTG manifest format.') ;
+					otg_manifest =otg_manifest [0].otg_manifest ;
 
 					// Code for GET /modeldata/otgmanifest/{urn}
-
-					let otg_manifest =bubble.body ;
+					// let otg_manifest =bubble.body ;
 
 					//let views =Object.values (otg_manifest.views).filter ((elt) => { return (elt.role === 'graphics' && elt.urn.endsWith ('/otg_model.json') ) ; }) ;
 					let views =Object.values (otg_manifest.views).filter ((elt) => { return (elt.role && elt.urn) ; }) ;
@@ -644,52 +635,86 @@ function otgBubble (progress) {
 						region: otg_manifest.paths.region,
 
 						local_version_root: path.join (outPath, otg_manifest.paths.version_root.substring (otg_manifest.paths.shared_root.length)),
-						local_shared_root: path.join (outPath, otg_manifest.paths.shared_root),
+						local_shared_root: outPath,
+						remote_root_path: otg_manifest.paths.version_root.substring (otg_manifest.paths.shared_root.length),
 
 						OTG_models: views.map ((elt) => { return (elt.urn) ; }),
 						OTG_models_keys: Object.keys (otg_manifest.views)
 					} ;
-					console.log (JSON.stringify (self.data, null, 4)) ;
-
-					//let l1 =['otg_model.json', 'fragments.fl', 'fragments_extra.fl', 'materials_ptrs.hl geometry_ptrs.hl texture_manifest.json]
-					//download "modeldata/file/$OG_VERSION_ROOT$ENCODED_RELATIVE_ROOT/$asset" "$VERSION_ROOT/$asset"
-					//let jobs =self.data.OTG_URN.map ((elt) => { return (self.downloadItem (self.data.OG_VERSION_ROOT + elt)) ; }) ;
+					
+					// Save manifests
+					let outFile =path.resolve (path.join (outPath, self.data.remote_root_path, 'bubble.json')) ;
+					console.log (outFile) ;
+					utils.writeFile (outFile, bubble.body)
+						.catch ((err) => {
+							console.error ('Error:', err.message) ;
+						}) ;
+					outFile =path.resolve (path.join (outPath, self.data.remote_root_path, 'otg_manifest.json')) ;
+					console.log (outFile) ;
+					utils.writeFile (outFile, bubble.body.children [0].otg_manifest)
+						.catch ((err) => {
+							console.error ('Error:', err.message) ;
+						}) ;
 
 					let jobs =self.data.OTG_models.map ((elt) => {
-						return (self.getModel (self.data.version_root + encodeURI(elt), self.data.urn)) ;
+						return (self.getViewModelManifest (self.data.version_root, elt, self.data.urn, self.data.local_version_root)) ;
 					}) ;
 
-					//return self.getModel (self.data.version_root + encodeURI(self.data.OTG_models[0]), self.data.urn) ;
-					return (Promise.all (jobs.map (p => p.catch (() => undefined)))) ;
-				})
-				.then ((manifests) => {
-					let jobs =manifests.map ((elt) => {
-						return (utils.gunzip (elt.body)) ;
-					}) ;
+					// Get placement.json file
+					outFile =path.resolve (path.join (outPath, self.data.remote_root_path)) ;
+					jobs.push (
+						self.getViewModelManifest (self.data.version_root, 'placement.json', urn, outFile)
+					) ;
 					return (Promise.all (jobs.map (p => p.catch (() => undefined)))) ;
 				})
 				.then ((manifestsjson) => {
+					let dlOnlyOnce =[] ;
 					self.data.OTG_models_manifests =manifestsjson ;
-					let jobs =manifestsjson.map ((elt, index) => {
-						let outFile =path.resolve (path.join (self.data.local_version_root, 'otg_model.json')) ;
-						console.log (' > ', outFile) ;
-						return (utils.writeFile (outFile, elt));
-					}) ;
-					return (Promise.all (jobs)) ;
-					//return (Promise.all (jobs.map (p => p.catch (() => undefined)))) ;
-				})
-				.then ((na) => {
-					// let jobs =self.data.OTG_models_manifests.map ((elt, index) => {
-					// 	let manifestJobs =elt.manifest.assets.map ((asset) => {
-					// 		return (self.getModel (self.data.version_root + encodeURI(elt), self.data.urn)) ;
-					// 	}) ;	
-					// }) ;
 					let jobs =self.data.OTG_models_manifests.map ((elt, index) => {
-						let manifestJobs =elt.manifest.assets.map ((asset) => {
-							return (self.getModel (self.data.version_root + encodeURI(elt), self.data.urn)) ;
+						if ( !elt.manifest || !elt.manifest.assets )
+							return (null) ;
+						let keys =Object.keys (elt.manifest.assets) ;
+					 	let manifestJobs =Object.values (elt.manifest.assets).map ((asset, ikey) => {
+							if ( typeof asset === 'string' ) {
+								//return (path.join (self.data.local_version_root, elt.__dirname__, asset)) ;
+								let outFile =path.join (self.data.local_version_root, elt.__dirname__, asset) ;	
+								return (self.getViewModelFile (self.data.version_root, path.join (elt.__dirname__, asset), self.data.urn, outFile)) ;
+							}
+							return (
+								Object.values (asset).map ((pdb) => {
+									// let st =path.join (self.data.local_version_root, elt.__dirname__, pdb) ;
+									// return (path.join (path.dirname (st), keys [ikey], path.basename (st))) ;
+									let st =path.join (self.data.local_version_root, elt.__dirname__, pdb) ;
+									let outFile =path.join (path.dirname (st), /*keys [ikey],*/ path.basename (st)) ;
+									st =path.join (elt.__dirname__, pdb) ;
+									if ( dlOnlyOnce.indexOf (self.data.version_root + st) !== -1 )
+										return (null) ;
+									dlOnlyOnce.push (self.data.version_root + st) ;
+									return (self.getViewModelFile (self.data.version_root, st, self.data.urn, outFile)) ;
+								})
+							) ;
 						}) ;
-						return (manifestJobs) ;
+						manifestJobs =[].concat(...manifestJobs) ;
+
+						self.data.geometry =elt.manifest.shared_assets.geometry ;
+						self.data.materials =elt.manifest.shared_assets.materials ;
+						self.data.textures =elt.manifest.shared_assets.textures ;
+
+						let sharedJobs =Object.values (elt.manifest.shared_assets.pdb).map ((pdb) => {
+							let outFile =path.join (self.data.local_version_root, elt.__dirname__, pdb) ;
+							let st =path.join (self.data.remote_root_path, elt.__dirname__, pdb) ;
+							if ( dlOnlyOnce.indexOf (self.data.shared_root + st) !== -1 )
+								return (null) ;
+							dlOnlyOnce.push (self.data.shared_root + st) ;
+							return (self.getViewModelFile (self.data.shared_root, st, self.data.urn, outFile)) ;
+						}) ;
+						manifestJobs =manifestJobs.concat(...sharedJobs) ;
+					 	return (manifestJobs) ;
 					}) ;
+					//jobs =[].concat(...jobs).filter ((elt) => { return (typeof elt === 'string' && elt !== '') ; }) ;
+					jobs =[].concat(...jobs).filter ((elt) => { return (elt !== null) ; }) ;
+
+					return (Promise.all (jobs)) ;
 				})
 				.catch ((err) => {
 					console.error ('Error:', err.message || err.statusMessage) ;
@@ -710,8 +735,8 @@ function otgBubble (progress) {
 		let ModelDerivative =new ForgeAPI.DerivativesApi () ;
 		ModelDerivative.apiClient.basePath ='https://otg.autodesk.com' ;
 		return (ModelDerivative.apiClient.callApi (
-			//'/modeldata/manifest/{urn}', 'GET', // full manifest
-			'/modeldata/otgmanifest/{urn}', 'GET', // only OTG manifest
+			'/modeldata/manifest/{urn}', 'GET', // full manifest
+			//'/modeldata/otgmanifest/{urn}', 'GET', // only OTG manifest
 			{ urn: urn }, {}, { /*'Accept-Encoding': 'gzip, deflate'*/ pragma: 'no-cache' },
 			{}, null,
 			[], [ 'application/vnd.api+json', 'application/json' ], null,
@@ -719,19 +744,188 @@ function otgBubble (progress) {
 		)) ;
 	} ;
 
-	this.getModel =(fileurn, modelurn) => {
-		// Verify the required parameter 'urn' is set
-		if ( !fileurn || !modelurn )
-			return (Promise.reject ("Missing the required parameter 'urn' when calling downloadItem")) ;
-		let ModelDerivative =new ForgeAPI.DerivativesApi () ;
-		ModelDerivative.apiClient.basePath ='https://otg.autodesk.com' ;
-		return (ModelDerivative.apiClient.callApi (
-			'/modeldata/file/' + fileurn, 'GET',
-			{}, { acmsession: modelurn }, { 'Accept-Encoding': 'gzip, deflate', pragma: 'no-cache' },
-			{}, null,
-			[], [ /*'application/vnd.api+json', 'application/json'*/ ], null,
-			this._token, this._token.getCredentials ()
-		)) ;
+	this.getViewModelManifest =(fileurn, elt, modelurn, outPath) => {
+		return (new Promise ((fulfill, reject) => {
+			// Verify the required parameter 'urn' is set
+			if ( !fileurn || !modelurn )
+				return (reject ("Missing the required parameter 'urn' when calling getViewModelManifest")) ;
+			let ModelDerivative =new ForgeAPI.DerivativesApi () ;
+			ModelDerivative.apiClient.basePath ='https://otg.autodesk.com' ;
+			ModelDerivative.apiClient.callApi (
+				'/modeldata/file/' + fileurn + encodeURI (elt), 'GET',
+				{}, { acmsession: modelurn }, { 'Accept-Encoding': 'gzip, deflate', pragma: 'no-cache' },
+				{}, null,
+				[], [ /*'application/vnd.api+json', 'application/json'*/ ], null,
+				this._token, this._token.getCredentials ()
+			)
+				.then ((res) => {
+					return (utils.gunzip (res.body)) ;
+				})
+				.then ((json) => {
+					json.__dirname__ =path.dirname (elt) ;
+					fulfill (json) ;
+
+					let outFile =path.resolve (path.join (outPath, elt)) ;
+					console.log (' > ', outFile) ;
+					return (utils.writeFile (outFile, json));
+				})
+				.catch ((error) => {
+					reject (error) ;
+				}) ;
+		})) ;
+	} ;
+
+	this.getViewModelBinary =(fileurn, elt, modelurn, outFile) => {
+		return (new Promise ((fulfill, reject) => {
+			// Verify the required parameter 'urn' is set
+			if ( !fileurn || !modelurn )
+				return (reject ("Missing the required parameter 'urn' when calling getViewModelBinary")) ;
+			let ModelDerivative =new ForgeAPI.DerivativesApi () ;
+			ModelDerivative.apiClient.basePath ='https://otg.autodesk.com' ;
+			ModelDerivative.apiClient.callApi (
+				'/modeldata/file/' + fileurn + encodeURI (elt), 'GET',
+				{}, { acmsession: modelurn }, { 'Accept-Encoding': 'gzip, deflate', pragma: 'no-cache' },
+				{}, null,
+				[], [ /*'application/vnd.api+json', 'application/json'*/ ], null,
+				this._token, this._token.getCredentials ()
+			)
+				.then ((res) => {
+					fulfill (res) ;
+					console.log (' >> ', outFile) ;
+					return (utils.writeFile (outFile, res.body, null, true));
+				})
+				.catch ((error) => {
+					reject (error) ;
+				}) ;
+		})) ;
+	} ;
+
+	this.getViewModelJson =(fileurn, elt, modelurn, outFile) => {
+		return (new Promise ((fulfill, reject) => {
+			// Verify the required parameter 'urn' is set
+			if ( !fileurn || !modelurn )
+				return (reject ("Missing the required parameter 'urn' when calling getViewModelJson")) ;
+			let ModelDerivative =new ForgeAPI.DerivativesApi () ;
+			ModelDerivative.apiClient.basePath ='https://otg.autodesk.com' ;
+			ModelDerivative.apiClient.callApi (
+				'/modeldata/file/' + fileurn + encodeURI (elt), 'GET',
+				{}, { acmsession: modelurn }, { 'Accept-Encoding': 'gzip, deflate', pragma: 'no-cache' },
+				{}, null,
+				[], [ /*'application/vnd.api+json',*/ 'application/json' ], null,
+				this._token, this._token.getCredentials ()
+			)
+				.then ((res) => {
+					return (utils.gunzip (res.body)) ;
+				})
+				.then ((json) => {
+					fulfill (json) ;
+					console.log (' >> ', outFile) ;
+					return (utils.writeFile (outFile, json));
+				})
+				.catch ((error) => {
+					reject (error) ;
+				}) ;
+		})) ;
+	} ;
+
+	this.getViewModelFile =(fileurn, elt, modelurn, outFile) => {
+		if ( path.extname (outFile) === '.json' )
+			return (this.getViewModelJson (fileurn, elt, modelurn, outFile))
+		else
+			return (this.getViewModelBinary (fileurn, elt, modelurn, outFile)) ;
+	} ;
+
+	this.getMaterialHash =(materialIndex) => {
+		let cached =this.materialIdToHash [materialIndex] ;
+		if ( cached )
+			return (cached) ;
+		// bytes per SHA1 hash
+		let stride =this.materialHashes.byteStride ;
+		// get the hash string that points to the material
+		let matHash =this.getHexStringPacked (this.materialHashes.hashes, materialIndex * stride, stride) ;
+		this.materialIdToHash [materialIndex] =matHash ;
+		return (matHash) ;
+	} ;
+	  
+	this.getGeometryHash =(geomIndex) => {
+		// bytes per SHA1 hash
+		let stride = this.geomMetadata.byteStride;
+		// get the hash string that points to the geometry
+		let gHash =this.getHexStringPacked (this.geomMetadata.hashes, geomIndex * stride, stride) ;
+		return (gHash) ;
+	} ;
+
+	this.TO_HEX =new Array (256) ;
+	for ( let i =0; i < 256 ; i++ ) {
+		let s =i.toString (16) ;
+		if ( s.length === 1 )
+			s = '0' + s ;
+		this.TO_HEX [i] =s ;
+	}
+
+	// Most common case is for SHA1 hashes, which are 20 bytes
+	this.tmpArr20 =new Array(20) ;
+
+	this.getHexString =(buffer, offset, length) => {
+		let res =length === 20 ? tmpArr20 : [] ;
+		for ( let i =0; i < length ; i++ ) {
+			let b =buffer[offset + i] ;
+			let s =this.TO_HEX [b] ;
+			res [i] =s ;
+		}
+		return (res.join('')) ;
+	} ;
+
+	this.tmpArr10 =new Array (10) ;
+
+	// Converts the input byte array into a string of half the length
+	// by packing two bytes into each string character (JS strings are two bytes per char)
+	this.getHexStringPacked =(buffer, offset, length) => {
+		let res =length === 20 ? tmpArr10 : [] ;
+		for ( let i =0 ; i < length ; i +=2 ) {
+			let b0 =buffer [offset + i] ;
+			let b1 =buffer [offset + i + 1] ;
+			res [i / 2] =b1 << 8 | b0 ;
+		}
+		return (String.fromCharCode.apply (null, res)) ;
+	} ;
+
+	// Converts from UCS16 packed string (two bytes per character) to
+	// regular ASCII string of 4x the length
+	this.unpackHexString =(s) => {
+		let res =s.length === 10 ? tmpArr20 : [] ;
+		for ( let i =0 ; i < s.length ; i++ ) {
+			let bytes =s.charCodeAt (i) ;
+			res [2 * i] =TO_HEX [bytes & 0xff] ;
+			res [2 * i + 1] =TO_HEX [bytes >> 8 & 0xff] ;
+		}
+		return (res.join('')) ;
+	} ;
+
+	this.hexToDec =(code) => {
+		//0-9
+		if ( code >= 48 && code <= 57 )
+			return (code - 48) ;
+		//A-F
+		if ( code >= 65 && code <= 70 )
+			return (code - 55) ;
+		//a-f
+		if ( code >= 97 && code <= 102 )
+			return (code - 87) ;
+		return (0) ;
+	} ;
+
+	// Convert string in hex format, e.g. "3498572abc" to binary
+	this.hexToBin =(str, buf, offset) => {
+		// TODO: Add utility function that goes directly from packed to bin,
+		// instead of unopack, then convert to bin
+		let s =str.length === 10 ? this.unpackHexString (str) : str ;
+		let j =offset ;
+		for ( let _i =0; _i < s.length ; _i +=2 ) {
+			let d1 =this.hexToDec (s.charCodeAt (_i)) ;
+			let d2 =this.hexToDec (s.charCodeAt (_i + 1)) ;
+			buf [j++] = d1 << 4 | d2 ;
+		}
 	} ;
 
 }

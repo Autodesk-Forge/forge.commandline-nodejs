@@ -30,14 +30,14 @@ const program =require ('commander') ;
 const ejs =require ('ejs') ;
 const fs =require ('fs') ;
 
-const Bubble =require ('./bubble') ;
+const Bubble =require ('./api/bubble') ;
 const utils =require ('./api/utils') ;
 
 const ForgeSettings ={
 	clientId: process.env.FORGE_CLIENT_ID || 'your_client_id',
 	clientSecret: process.env.FORGE_CLIENT_SECRET || 'your_client_secret',
 	PORT: process.env.PORT || '3006',
-	callback: process.env.FORGE_CALLBACK || ('http://localhost:' + PORT + '/oauth'),
+	callback: process.env.FORGE_CALLBACK || ('http://localhost:' + (process.env.PORT || '3006') + '/oauth'),
 
 	grantType: 'client_credentials',
 	opts: { 'scope': 'data:read data:write data:create data:search bucket:create bucket:read bucket:update bucket:delete viewables:read' },
@@ -281,10 +281,13 @@ let commands =[
 		]
 	},
 
-	{ name: 'bubble', description: 'download the bubble  (2legged/3legged)',
+	{ name: 'bubble', description: 'download the bubble (2legged/3legged)',
 		subcommands: [
 			{ name: 'get', isDefault: true, description: 'download the bubble (2legged/3legged)',
-				arguments: '<urn> <outputFolder>', action: bubbleGet
+				arguments: '<urn> <outputFolder>', action: bubble,
+				options: [
+					{ option: '-o, --otg', description: 'Download OTG bubble vs SVF Bubble' },
+				]
 			},
 		]
 	},
@@ -324,9 +327,9 @@ function userAboutMe (options) {
 		}) ;
 }
 
-// bubble
-function bubbleGet (urn, outputFolder, options) {
-	console.log ('Downloading urn: ' + urn) ;
+// svf/otg bubble
+function bubble (urn, outputFolder, options) {
+	console.log ('Downloading Bubble for urn: ' + urn) ;
 	if ( urn.substring (0, 4) === 'urn:' )
 		urn =utils.safeBase64encode (urn) ;
 	let _progress ={} ;
@@ -340,7 +343,12 @@ function bubbleGet (urn, outputFolder, options) {
 		})
 		.then ((_oauthClient) => {
 			oauthClient =_oauthClient ;
-			let obj =new Bubble.bubble (_progress) ;
+			let obj =null ;
+			let otg =options.otg || options.parent.otg || false ;
+			if ( otg )
+				obj =new Bubble.otg (_progress) ;
+			else
+				obj =new Bubble.svf (_progress) ;
 			obj.downloadBubble (urn, outputFolder + '/', oauthClient.credentials.access_token)
 				.then ((bubble) => {
 					console.log ('Your bubble is ready at: ' + outputFolder) ;
