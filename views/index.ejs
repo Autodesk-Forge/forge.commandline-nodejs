@@ -15,7 +15,6 @@
 	<script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
 	
 	<!-- Autodesk Forge Viewer -->
-<<<<<<< HEAD
 	<link href="https://developer.api.autodesk.com/modelderivative/v2/viewers/style.min.css?v=<%= version %>" rel="stylesheet" />
 	<!-- script src="https://developer.api.autodesk.com/modelderivative/v2/viewers/three.min.js?v=<%= version %>"></script -->
 	<script src="https://developer.api.autodesk.com/modelderivative/v2/viewers/viewer3D.js?v=<%= version %>"></script>
@@ -70,18 +69,12 @@
 	}
 	div#list div button:active { position:relative; top:1px; }
 	</style>
-=======
-	<link href="https://developer.api.autodesk.com/modelderivative/v2/viewers/style.min.css?v=v6.2" rel="stylesheet" />
-	<script src="https://developer.api.autodesk.com/modelderivative/v2/viewers/viewer3D.js?v=v6.2"></script>
->>>>>>> 067d97f279b4bdc1e8db588458c7065ea5243aee
 </head>
 <body onload="initialize()">
 
 	<div id="project">
-		
 			<div id="viewer" class="left"></div>
 			<div id="list" class="right"></div>
-		
 		<br>
 	</div>
 
@@ -104,9 +97,9 @@
     			env: 'FluentProduction',
     			api: 'fluent',
     			useCookie: false,  //optional for Chrome browser
-    			useCredentials: true,
-    			//getAccessToken: getAccessToken,
-				accessToken: '<%= access_token %>'
+				useCredentials: true,
+				acmSessionId: urn,
+    			getAccessToken: getAccessToken
 			} ;
 			let options =otg_options ;
 			Autodesk.Viewing.Initializer (options, loadModel) ;
@@ -114,13 +107,14 @@
 
 		function loadModel () {
 			let pattern =/^(urn|https?):.*$/g ;
-			if ( !pattern.test (urn) )
-				urn ='urn:' + urn ;
+			let thisURN =urn ;
+			if ( !pattern.test (thisURN) )
+				thisURN ='urn:' + thisURN ;
 			pattern =/^(urn):.*$/g ;
-			if ( pattern.test (urn) )
-				Autodesk.Viewing.Document.load (urn, onDocumentLoaded, onError) ;
+			if ( pattern.test (thisURN) )
+				Autodesk.Viewing.Document.load (thisURN, onDocumentLoaded, onError, { acmSessionId: urn /*'x-ads-acm-scopes': urn0*/ }) ;
 			else
-				startViewer (urn, urn.replace (/[^\/]*$/, '')) ;
+				startViewer (thisURN, thisURN.replace (/[^\/]*$/, '')) ;
 		}
 
 		function onDocumentLoaded (doc) {
@@ -167,7 +161,7 @@
 			if ( oViewer )
 				return (loadModelInViewer (svfUrl, sharedPropertyDbPath)) ;
 
-			let modelOptions ={ sharedPropertyDbPath: sharedPropertyDbPath } ;
+			let modelOptions ={ sharedPropertyDbPath: sharedPropertyDbPath, acmSessionId: urn } ;
 			let viewerElement =document.getElementById ('viewer') ;
 			oViewer =new Autodesk.Viewing.Private.GuiViewer3D (viewerElement) ;
 			//let pattern =/^(urn):.*$/g ;
@@ -184,7 +178,7 @@
 		function loadModelInViewer (svfUrl, sharedPropertyDbPath) {
 			oViewer.tearDown () ;
 			oViewer.setUp (oViewer.config) ;
-			let modelOptions ={ sharedPropertyDbPath: sharedPropertyDbPath } ;
+			let modelOptions ={ sharedPropertyDbPath: sharedPropertyDbPath, acmSessionId: urn } ;
 			oViewer.loadModel (svfUrl, modelOptions, onModelLoaded, onError) ;
 		}
 
@@ -206,7 +200,7 @@
 				'role': role,
 				'guid': guid
 			}, true);
-			if (viewObj.length == 0)
+			if (viewObj.length === 0)
 				return;
 			let svfUrl = oDocument.getViewablePath(viewObj[0]);
 			loadModelInViewer(svfUrl, viewObj[0].findPropertyDbPath());

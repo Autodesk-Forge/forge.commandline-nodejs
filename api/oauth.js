@@ -144,7 +144,7 @@ class Forge_oauth {
 	}
 
 	static _3legged_refresh () {
-		let oa3Legged =new ForgeAPI.AuthClientThreeLegged (Forge_oauth.settings.clientId, clientSecret, Forge_oauth.settings.callback, Forge_oauth.settings.opts.scope.split (' '), true) ;
+		let oa3Legged =new ForgeAPI.AuthClientThreeLegged (Forge_oauth.settings.clientId, Forge_oauth.settings.clientSecret, Forge_oauth.settings.callback, Forge_oauth.settings.opts.scope.split (' '), true) ;
 		Forge_oauth.getCredentials ()
 			.then ((credentials) => {
 				return (oa3Legged.refreshToken (credentials)) ;

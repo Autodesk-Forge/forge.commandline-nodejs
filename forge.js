@@ -352,6 +352,9 @@ function bubble (urn, outputFolder, options) {
 			obj.downloadBubble (urn, outputFolder + '/', oauthClient.credentials.access_token)
 				.then ((bubble) => {
 					console.log ('Your bubble is ready at: ' + outputFolder) ;
+				})
+				.catch ((error) => {
+					throw error ;
 				}) ;
 		})
 		.catch ((error) => {

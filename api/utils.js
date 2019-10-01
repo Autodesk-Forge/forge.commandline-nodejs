@@ -439,6 +439,122 @@ class utils {
 		return (Promise.all (results)) ;
 	}
 
+	// This function allow you to modify a JS Promise by adding some status properties.
+	// Based on: http://stackoverflow.com/questions/21485545/is-there-a-way-to-tell-if-an-es6-promise-is-fulfilled-rejected-resolved
+	// But modified according to the specs of promises : https://promisesaplus.com/
+	static PromiseStatus (promise) {
+		// Don't modify any promise that has been already modified.
+		if ( promise.isResolved )
+			return (promise) ;
+
+		// Set initial state
+		let isPending =true ;
+		let isRejected =false ;
+		let isFulfilled =false ;
+
+		// Observe the promise, saving the fulfillment in a closure scope.
+		let result =promise.then (
+			function (v) {
+				isFulfilled =true ;
+				isPending =false ;
+				return (v) ;
+			}, 
+			function (e) {
+				isRejected =true ;
+				isPending =false ;
+				throw e ;
+			}
+		) ;
+
+		result.isFulfilled =() => { return (isFulfilled) ; } ;
+		result.isPending =() => { return (isPending) ; } ;
+		result.isRejected =() => { return (isRejected) ; } ;
+		return (result) ;
+	}
+
+	static promiseAllLimit (array, limit, iterator, thisArg) {
+		// let length =array.length ;
+		// let results =new Array (length) ;
+		// for ( let i =0 ; i < length ; i++ )
+		// 	results [i] =undefined ;
+		// let tmp =new Array (limit) ;
+		// let itmp =new Array (limit) ;
+		// let cb =arguments.length > 2 ? iterator.bind (thisArg) : iterator ;
+		let data ={
+			limit: limit,
+			length: array.length,
+			results: new Array (array.length).fill (undefined),
+			tmp: new Array (Math.min (limit, array.length)).fill (undefined),
+			itmp: new Array (Math.min (limit, array.length)).fill (-1),
+			cb: arguments.length > 2 ? iterator.bind (thisArg) : iterator,
+			index: Math.min (limit, array.length)
+		} ;
+
+		return (new Promise (function (fulfill, reject) {
+			for ( let i =0 ; i < this.limit && i < this.length ; i++ ) {
+				this.tmp [i] =this.cb (array [i], i, array) ;
+				this.itmp [i] =i ;
+			}
+
+			function waitOneMore (data) {
+				Promise.race (data.tmp)
+					.then (function (res) { // jshint ignore:line
+						let nb =[] ;
+						for ( let k =0 ; k < this.tmp.length ; k++ ) {
+							if ( !this.tmp [k].isPending () ) {
+								this.results [this.itmp [k]] =this.tmp [k] ;
+								this.itmp [k] =-1 ;
+								this.tmp [k] =undefined ;
+								nb.push (k) ;
+							}
+						}
+						let loop =false ;
+						for ( let n =0 ; n < nb.length && this.index < this.length ; n++, this.index++ ) {
+							this.tmp [nb [n]] =this.cb (array [this.index], this.index, array) ;
+							this.itmp [nb [n]] =this.index ;
+							loop =this.index ;
+						}
+						if ( loop !== false ) {
+							waitOneMore (this) ;
+						} else {
+							this.tmp =this.tmp.filter ((elt) => { return (elt !== undefined) ; }) ;
+							this.itmp =this.itmp.filter ((elt) => { return (elt !== -1) ; }) ;
+							Promise.all (this.tmp)
+								.then ((res) => {
+									for ( let k =0 ; k < this.tmp.length ; k++ )
+										this.results [this.itmp [k]] =this.tmp [k] ;
+									Promise.all (this.results)
+										.then ((res2) => { fulfill (res2) ; }) ;
+								}) ;
+						}
+					
+					}.bind (data)/*.bind (undefined, { i: i, tmp: tmp, itmp: itmp })*/)
+					.catch ((err) => {
+						reject (err) ;
+					}) ;
+			}
+
+			waitOneMore (this) ;
+		}.bind (data))) ;
+	}
+
+	/* promiseAllLimit example:
+	
+	function test (x) {
+		return (utils.PromiseStatus (new Promise ((fulfill, reject) => {
+			console.log (`calling test (${x})`) ;
+			setTimeout (() => { fulfill (x * x) ; console.log (`resolving test (${x})`) ; }, x * 100) ;
+		}))) ;
+	}
+	
+	let jobs = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+		.map ((elt) => function () { return ([test, arguments]) ; } (elt)) ;
+	
+	utils.promiseAllLimit (jobs, 3, (elt, index, arr) => elt [0].apply (null, elt [1]))
+		.then ((prs) => console.log (prs))
+		.catch ((err) => console.log (err)) ;
+	*/
+
 }
 
 // Array.prototype.flatMap =(lambda) => {
