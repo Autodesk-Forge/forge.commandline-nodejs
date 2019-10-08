@@ -35,6 +35,9 @@ const fs =require ('fs') ;
 const zlib =require ('zlib') ;
 const path =require ('path') ;
 const utils =require ('./utils') ;
+const unirest =require ('unirest') ;
+const https = require('https');
+const _url = require('url');
 
 class svfBubble {
 	
@@ -788,7 +791,7 @@ class otgBubble {
 					return (utils.promiseAllLimit (jobs, 10, (elt, index, arr) => utils.PromiseStatus (elt [0].apply (self, elt [1])))) ;
 				})
 				.then ((files) => {
-					console.log ('Download complete.')
+					console.log ('Download complete.');
 				})
 				.catch ((err) => {
 					console.error ('Error:', err.message || err.statusMessage) ;
@@ -849,28 +852,91 @@ class otgBubble {
 		})) ;
 	}
 
+	// https://zenhax.com/viewtopic.php?t=27
+	static isGzip (buf) {
+		//return (buf [0] === 0x1f && buf [1] === 0x8b && buf [2] === 0x08 && buf [3] === 0x00) ;
+		//return (buf [0] === 0x1f && (buf [1] === 0x8b || buf [1] === 0xef)) ;
+		return (buf [0] === 0x1f /*31*/ && buf [1] === 0x8b /*139*/) ;
+	}
+
 	getViewModelBinary (fileurn, elt, modelurn, outFile) {
 		return (new Promise ((fulfill, reject) => {
 			// Verify the required parameter 'urn' is set
 			if ( !fileurn || !modelurn )
-				return (reject ("Missing the required parameter 'urn' when calling getViewModelBinary")) ;
-			let ModelDerivative =new ForgeAPI.DerivativesApi () ;
-			ModelDerivative.apiClient.basePath ='https://otg.autodesk.com' ;
-			ModelDerivative.apiClient.callApi (
-				'/modeldata/file/' + fileurn + encodeURI (elt), 'GET',
-				{}, { acmsession: modelurn }, { 'Accept-Encoding': 'gzip, deflate', pragma: 'no-cache' },
-				{}, null,
-				[], [ /*'application/vnd.api+json', 'application/json'*/ ], null,
-				this._token, this._token.getCredentials ()
-			)
-				.then ((res) => {
-					fulfill (res.body) ;
-					console.log (' >> ', outFile) ;
-					return (utils.writeFile (outFile, res.body, null, true));
-				})
-				.catch ((error) => {
-					reject (error) ;
-				}) ;
+				return (reject ('Missing the required parameter {urn} when calling getViewModelBinary')) ;
+			// let ModelDerivative =new ForgeAPI.DerivativesApi () ;
+			// ModelDerivative.apiClient.basePath ='https://otg.autodesk.com' ;
+			// ModelDerivative.apiClient.callApi (
+			// 	'/modeldata/file/' + fileurn + encodeURI (elt), 'GET',
+			// 	{}, { acmsession: modelurn }, { 'Accept-Encoding': 'gzip, deflate', pragma: 'no-cache' },
+			// 	{}, null,
+			// 	[], [ /*'application/vnd.api+json', 'application/json'*/ ], null,
+			// 	this._token, this._token.getCredentials ()
+			// )
+
+			// let req =unirest.get ('https://otg.autodesk.com' + path.join ('/modeldata/file/', fileurn, encodeURI (elt)) + '?acmsession=' + modelurn)
+			// 	.headers ({
+			// 		pragma: 'no-cache',
+			// 		'Accept-Encoding': 'gzip, deflate',
+			// 		// Accept: 'application/octet-stream',
+			// 		Authorization: ('Bearer ' + this._token.getCredentials ().access_token)
+			// 	});
+			// if ( !outFile.endsWith ('.fl') && !outFile.endsWith ('.idx') && !outFile.endsWith ('.pack') )
+			// 	req.encoding ('binary');
+			// req.send ()
+				// .then ((res) => {
+				// 	console.log (' >> ', outFile) ;
+				// 	if ( otgBubble.isGzip (res.body) )
+				// 		return (utils.gunzip (res.body)) ;
+				// 	return (Buffer.from (res.body)) ;
+				// })
+				// .then ((res) => {
+				// 	fulfill (res) ;
+				// 	console.log (' >> ', outFile) ;
+				// 	return (utils.writeFile (outFile, res, 'binary', true));
+				// })
+				// .catch ((error) => {
+				// 	console.error (' !! ', outFile) ;
+				// 	reject (error) ;
+				// }) ;
+
+				const options = {
+					method: 'GET',
+					hostname: 'otg.autodesk.com',
+					port: 443,
+					path: ('/modeldata/file/' + fileurn + encodeURI (elt) + '?acmsession=' + modelurn),
+					headers: {
+						'Authorization': ('Bearer ' + this._token.getCredentials ().access_token),
+						'cache-control': 'no-cache',
+						pragma: 'no-cache',
+					}
+				} ;
+				let req =https.get (options, (res) => {
+					//res.setEncoding('binary');
+					let data =[] ;
+				
+					res.on ('data', (chunk) => {
+						data.push (chunk) ;
+					}).on ('end', () => {
+						let buffer = Buffer.concat (data) ;
+						// if ( otgBubble.isGzip (buffer) ) {
+						// 	utils.gunzip (buffer)
+						// 		.then ((data) => {
+						// 			fulfill (data) ;
+						// 			console.log (' >> ', outFile) ;
+						// 			return (utils.writeFile (outFile, data, 'binary', true));
+						// 		})
+						// 		.catch ((error) => {
+						// 			console.log (' !! ', outFile) ;
+						// 			reject (error) ;
+						// 		}) ;
+						// } else {
+							fulfill (buffer) ;
+							console.log (' >> ', outFile) ;
+							utils.writeFile (outFile, buffer, 'binary', true);
+						//}
+					});
+				});
 		})) ;
 	}
 
@@ -889,16 +955,66 @@ class otgBubble {
 				this._token, this._token.getCredentials ()
 			)
 				.then ((res) => {
-					return (utils.gunzip (res.body)) ;
+					return (utils.gunzip (res.body, true)) ;
 				})
-				.then ((json) => {
-					fulfill (json) ;
+				.then ((data) => {
 					console.log (' >> ', outFile) ;
-					return (utils.writeFile (outFile, json));
+					return (utils.writeFile (outFile, data, 'binary', true));
+				})
+				.then ((data) => {
+					fulfill (JSON.parse (data.toString ('utf-8'))) ;
 				})
 				.catch ((error) => {
 					reject (error) ;
 				}) ;
+		})) ;
+	}
+
+	getViewModelJson3 (fileurn, elt, modelurn, outFile) {
+		return (new Promise ((fulfill, reject) => {
+			// Verify the required parameter 'urn' is set
+			if ( !fileurn || !modelurn )
+				return (reject ('Missing the required parameter {urn} when calling getViewModelBinary')) ;
+			const options = {
+				method: 'GET',
+				hostname: 'otg.autodesk.com',
+				port: 443,
+				path: ('/modeldata/file/' + fileurn + encodeURI (elt) + '?acmsession=' + modelurn),
+				headers: {
+					'Authorization': ('Bearer ' + this._token.getCredentials ().access_token),
+					'cache-control': 'no-cache',
+					pragma: 'no-cache',
+					'Accept-Encoding': 'gzip, deflate'
+				}
+			} ;
+			let req =https.get (options, (res) => {
+				//res.setEncoding('binary');
+				let data =[] ;
+			
+				res.on ('data', (chunk) => {
+					data.push (chunk) ;
+				}).on ('end', () => {
+					let buffer = Buffer.concat (data) ;
+					if ( otgBubble.isGzip (buffer) ) {
+						utils.gunzip (buffer, true)
+							.then ((data) => {
+								console.log (' >> ', outFile) ;
+								return (utils.writeFile (outFile, data, 'binary', true));
+							})
+							.then ((data) => {
+								fulfill (JSON.parse (data.toString ('utf-8'))) ;
+							})
+							.catch ((error) => {
+								console.log (' !! ', outFile) ;
+								reject (error) ;
+							}) ;
+					} else {
+						fulfill (buffer) ;
+						console.log (' >> ', outFile) ;
+						utils.writeFile (outFile, buffer, 'binary', true);
+					}
+				});
+			});
 		})) ;
 	}
 
@@ -946,25 +1062,94 @@ class otgBubble {
 		return (new Promise ((fulfill, reject) => {
 			// Verify the required parameter 'urn' is set
 			if ( !fileurn )
-				return (reject ("Missing the required parameter 'urn' when calling getViewModelBinary")) ;
-			let ModelDerivative =new ForgeAPI.DerivativesApi () ;
-			ModelDerivative.apiClient.basePath ='https://otg.autodesk.com' ;
-			ModelDerivative.apiClient.callApi (
-				path.join ('/cdn/', elt [0], account_id, type, elt [1]), 'GET',
-				{}, { acmsession: modelurn }, { /*'Accept-Encoding': 'gzip, deflate',*/ pragma: 'no-cache' },
-				{}, null,
-				[], [], null,
-				this._token, this._token.getCredentials ()
-			)
-				.then ((res) => {
-					fulfill (res.body) ;
-					console.log (' >> ', outFile) ;
-					return (utils.writeFile (outFile, res.body, null, true));
-				})
-				.catch ((error) => {
-					console.log (' !! ', outFile) ;
-					reject (error) ;
-				}) ;
+				return (reject ('Missing the required parameter {urn} when calling getViewModelBinary')) ;
+			// let ModelDerivative =new ForgeAPI.DerivativesApi () ;
+			// ModelDerivative.apiClient.basePath ='https://otg.autodesk.com' ;
+			// ModelDerivative.apiClient.callApi (
+			// 	path.join ('/cdn/', elt [0], account_id, type, elt [1]), 'GET',
+			// 	{}, { acmsession: modelurn }, { /*'Accept-Encoding': 'gzip, deflate',*/ 
+			// 	Accept: 'image/png',
+			// 		pragma: 'no-cache' },
+			// 	{}, null,
+			// 	[], [], null,
+			// 	this._token, this._token.getCredentials ()
+			// )
+			console.log (' >> ', outFile) ;
+			if ( outFile.endsWith ('.png') ) {
+				let req =unirest.get ('https://otg.autodesk.com' + path.join ('/cdn/', elt [0], account_id, type, elt [1]) + '?acmsession=' + modelurn)
+					.headers ({
+						pragma: 'no-cache',
+						Authorization: ('Bearer ' + this._token.getCredentials ().access_token)
+					});
+				if ( outFile.endsWith ('.png') )
+					req.encoding ('binary');
+				req.send ()
+					.then ((res) => {
+						fulfill (res.body) ;
+						//console.log (' >> ', outFile) ;
+						return (utils.writeFile (outFile, res.body, 'binary', true));
+					})
+					.catch ((error) => {
+						console.log (' !! ', outFile) ;
+						reject (error) ;
+					}) ;
+			} else {
+				const options = {
+					method: 'GET',
+					hostname: 'otg.autodesk.com',
+					port: 443,
+					path: (path.join ('/cdn/', elt [0], account_id, type, elt [1]) + '?acmsession=' + modelurn),
+					headers: {
+						'Authorization': ('Bearer ' + this._token.getCredentials ().access_token),
+						'cache-control': 'no-cache',
+						pragma: 'no-cache',
+					}
+				} ;
+				let req =https.get (options, (res) => {
+					//res.setEncoding('binary');
+					let data =[] ;
+				
+					res.on ('data', (chunk) => {
+						data.push (chunk) ;
+					}).on ('end', () => {
+						let buffer = Buffer.concat (data) ;
+						utils.gunzip (buffer)
+							.then ((data) => {
+								fulfill (data) ;
+								console.log (' >> ', outFile) ;
+								return (utils.writeFile (outFile, data, 'binary', true));
+							})
+							.catch ((error) => {
+								console.log (' !! ', outFile) ;
+								reject (error) ;
+							}) ;
+					});
+				});
+			}
+
+
+
+			// var req = unirest.get("https://otg.autodesk.com/cdn/c326/-fs0QRsyTbfb0fXSqBhg35VOvKc/g/4e152833b4fd8fb8665afd4b6b740e97984e");
+
+			// req.query({
+			//   "acmsession": "dXJuOmFkc2sud2lwcHJvZDpmcy5maWxlOnZmLk5xSUVvUEVSVGNDZUtKMmFWRkFRSHc_dmVyc2lvbj0y"
+			// });
+			
+			// req.headers({
+			//   "Postman-Token": "0ea64675-727e-4968-bd02-a045f4e8da6c",
+			//   "cache-control": "no-cache",
+			//   "Pragma": "no-cache",
+			//   "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsImtpZCI6Imp3dF9zeW1tZXRyaWNfa2V5In0.eyJ1c2VyaWQiOiIxMTU5MjUxNTQwNDg3NTMiLCJleHAiOjE1NzA0NjQ2NjYsInNjb3BlIjpbImRhdGE6cmVhZCIsImRhdGE6d3JpdGUiLCJkYXRhOmNyZWF0ZSIsImRhdGE6c2VhcmNoIiwiYnVja2V0OmNyZWF0ZSIsImJ1Y2tldDpyZWFkIiwiYnVja2V0OnVwZGF0ZSIsImJ1Y2tldDpkZWxldGUiLCJ2aWV3YWJsZXM6cmVhZCJdLCJjbGllbnRfaWQiOiJvWlowQ043cVhUR0FpcVNibUVoTGxtWWNLWHQwWVZvVSIsImdyYW50X2lkIjoiTE5OQlQwRXZLTmhZNXN0dUJTQUNMdkpEZXk4d210VGQiLCJhdWQiOiJodHRwczovL2F1dG9kZXNrLmNvbS9hdWQvand0ZXhwNjAiLCJqdGkiOiIzV1pRb3NXT2dtaXFFWksxNkNLbXAyRTdqb0N5REhNdmVZejNoUGdvckZTdk05QURtWnhib3VEN3hNcUJkWmpRIn0.QeGuQ0Thn0mju2BLf9W929lt4Pm7YSOr5EhcYsh8CSM"
+			// });
+			
+			
+			// req.end(function (res) {
+			//   if (res.error) throw new Error(res.error);
+			
+			//   console.log(res.body);
+			// });
+
+
 		})) ;
 	}
 
@@ -976,7 +1161,7 @@ class otgBubble {
 		return (new Promise ((fulfill, reject) => {
 			// Verify the required parameter 'urn' is set
 			if ( !fileurn )
-				return (reject ("Missing the required parameter 'urn' when calling getViewModelBinary")) ;
+				return (reject ('Missing the required parameter {urn} when calling getViewModelBinary')) ;
 			let ModelDerivative =new ForgeAPI.DerivativesApi () ;
 			ModelDerivative.apiClient.basePath ='https://otg.autodesk.com' ;
 			ModelDerivative.apiClient.callApi (
