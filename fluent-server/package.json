@@ -1,0 +1,28 @@
+{
+  "name": "fluent-server",
+  "version": "1.0.0",
+  "description": "Local Fluent server",
+  "main": "start.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "otg",
+    "fluent",
+    "forge",
+    "autodesk",
+    "nodejs"
+  ],
+  "author": "Cyrille Fauvel",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.17.1",
+    "ws": "^7.1.2"
+  },
+  "devDependencies": {
+    "eslint": "^6.5.1"
+  },
+  "prettier": {
+    "singleQuote": true
+  }
+}
