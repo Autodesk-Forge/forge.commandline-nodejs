@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 	<meta charset="UTF-8">
 	<meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible" />
@@ -12,200 +13,308 @@
 	<meta http-equiv="pragma" content="no-cache" />
 
 	<!-- script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha256-pasqAKBDmFT4eHoN2ndd6lN370kFiGUFyTiUHWhU7k8=" crossorigin="anonymous"></script -->
-	<script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
-	
+	<script src="https://code.jquery.com/jquery-2.2.4.min.js"
+		integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
+
 	<!-- Autodesk Forge Viewer -->
-	<link href="https://developer.api.autodesk.com/modelderivative/v2/viewers/style.min.css?v=<%= version %>" rel="stylesheet" />
-	<!-- script src="https://developer.api.autodesk.com/modelderivative/v2/viewers/three.min.js?v=<%= version %>"></script -->
-	<script src="https://developer.api.autodesk.com/modelderivative/v2/viewers/viewer3D.js?v=<%= version %>"></script>
-
-	<style>
-	.left { float: left; }
-	.right { float: right; }
-	.clear { clear: both; }
-
-	body { margin: 0 auto; padding: 0px; }
-
-	div#project { margin: 0 auto; text-align: left; position:absolute; width:100%; height:99%; }
-	div#viewer { width: 75%; height: 100%; cursor: pointer; padding: 0px; position: relative; overflow: hidden;
-		background-color: #eee; border: 2px dashed #aaa; border-radius: 10px; }
-	div#list { width: calc(24% - 8px); height: 100%; padding: 0px; position:relative;
-		background-color: #eee; border: 2px dashed #aaa; border-radius: 10px; }
-
-	div#list div button {
-		background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #44c767), color-stop(1, #5cbf2a));
-		background:-moz-linear-gradient(top, #44c767 5%, #5cbf2a 100%);
-		background:-webkit-linear-gradient(top, #44c767 5%, #5cbf2a 100%);
-		background:-o-linear-gradient(top, #44c767 5%, #5cbf2a 100%);
-		background:-ms-linear-gradient(top, #44c767 5%, #5cbf2a 100%);
-		background:linear-gradient(to bottom, #44c767 5%, #5cbf2a 100%);
-		filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#44c767', endColorstr='#5cbf2a',GradientType=0);
-		background-color:#44c767;
-		-moz-border-radius:12px;
-		-webkit-border-radius:12px;
-		border-radius:12px;
-		border:1px solid #18ab29;
-		display:inline-block;
-		cursor:pointer;
-		color:#ffffff;
-		font-family:Verdana;
-		font-size:12px;
-
-		text-decoration:none;
-		text-shadow:0px 1px 0px #2f6627;
-		margin: 2px;
-		height: 42px;
-		width: 170px;
-	}
-	div#list div button:hover {
-		background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #5cbf2a), color-stop(1, #44c767));
-		background:-moz-linear-gradient(top, #5cbf2a 5%, #44c767 100%);
-		background:-webkit-linear-gradient(top, #5cbf2a 5%, #44c767 100%);
-		background:-o-linear-gradient(top, #5cbf2a 5%, #44c767 100%);
-		background:-ms-linear-gradient(top, #5cbf2a 5%, #44c767 100%);
-		background:linear-gradient(to bottom, #5cbf2a 5%, #44c767 100%);
-		filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#5cbf2a', endColorstr='#44c767',GradientType=0);
-		background-color:#5cbf2a;
-	}
-	div#list div button:active { position:relative; top:1px; }
-	</style>
+	<link href="<%= viewer_path %>/style.min.css?v=<%= version %>"
+		rel="stylesheet" />
+	<script src="<%= viewer_path %>/viewer3D.js?v=<%= version %>"></script>
 </head>
+
 <body onload="initialize()">
 
 	<div id="project">
-			<div id="viewer" class="left"></div>
-			<div id="list" class="right"></div>
+		<div id="viewer" class="left"></div>
+		<div id="list" class="right">
+				<details id="3d" open>
+					<summary>3D Views</summary>
+				</details>
+				<details id="2d" open>
+					<summary>2D Sheets</summary>
+				</details>
+				<details id="options" open>
+					<summary>Options</summary>
+					<div><input type="checkbox" onclick="setOptions(this)" value="disableHighlight" name="disableHighlight" checked> Disable Highlight </div>
+					<div><input type="checkbox" onclick="setOptions(this)" value="setGroundShadow" name="setGroundShadow"> Ground Shadow </div>
+					<div><input type="checkbox" onclick="setOptions(this)" value="setGroundReflection" name="setGroundReflection"> Ground Reflection </div>
+					<div><input type="checkbox" onclick="setOptions(this)" value="setGhosting" name="setGhosting" checked> Ghosting </div>
+					<div><input type="checkbox" onclick="setOptions(this)" value="setEnvMapBackground" name="setEnvMapBackground"> Env Map Background </div>
+				</details>
+			</div>
 		<br>
 	</div>
 
 	<script>
-		let urn ='<%= urn %>' ;
-		function getAccessToken (onGetAccessToken) {
-			onGetAccessToken ('<%= access_token %>', 82000) ;
+		let urn = '<%= urn %>';
+		let oViewer = null;
+
+		function getAccessToken(onGetAccessToken) {
+			onGetAccessToken('<%= access_token %>', 82000);
 		}
 
-		let oDocument =null, oViewer =null ;
-		let oViews3D =null, oViews2D =null ;
-
-		function initialize () {
-			let svf_options ={
+		function initialize() {
+			let svf_options = {
 				env: 'AutodeskProduction',
 				getAccessToken: getAccessToken,
-				//accessToken: ''
-			} ;
-			let otg_options ={
-    			env: 'FluentProduction',
-    			api: 'fluent',
-    			useCookie: false,  //optional for Chrome browser
+				//accessToken: '',
+			};
+			let otg_options = {
+				env: 'FluentProduction',
+				api: 'fluent',
+				useCookie: false, //optional for Chrome browser
 				useCredentials: true,
-				acmSessionId: urn,
-    			getAccessToken: getAccessToken
-			} ;
-			let options =otg_options ;
-			Autodesk.Viewing.Initializer (options, loadModel) ;
+				//acmSessionId: urn,
+				getAccessToken: getAccessToken,
+				//disableWebSocket: true, // on url param
+				//disableIndexedDb: true, // on url param
+			};
+			let svf_options_local = {
+				env: 'Local',
+				getAccessToken: getAccessToken,
+			};
+			let otg_options_local = {
+				env: 'Local',
+				api: 'fluent',
+				//useCookie: false,  //optional for Chrome browser
+				//useCredentials: false
+				//disableWebSocket: true, // on url param
+				//disableIndexedDb: true, // on url param
+				endpoint: '<%= endpoint %>',
+			};
+			let options = <%= viewer_options %>;
+			Autodesk.Viewing.Initializer(options, loadModel);
 		}
 
-		function loadModel () {
-			let pattern =/^(urn|https?):.*$/g ;
-			let thisURN =urn ;
-			if ( !pattern.test (thisURN) )
-				thisURN ='urn:' + thisURN ;
-			pattern =/^(urn):.*$/g ;
-			if ( pattern.test (thisURN) )
-				Autodesk.Viewing.Document.load (thisURN, onDocumentLoaded, onError, { acmSessionId: urn /*'x-ads-acm-scopes': urn0*/ }) ;
-			else
-				startViewer (thisURN, thisURN.replace (/[^\/]*$/, '')) ;
+		function loadModel() {
+			// Autodesk.Viewing.Private.ENABLE_DEBUG =true;
+			// Autodesk.Viewing.Private.ENABLE_INLINE_WORKER =false;
+
+			oViewer = new Autodesk.Viewing.Private.GuiViewer3D(document.getElementById('viewer'));
+			oViewer.start();
+
+			oViewer.addEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, (event) => {
+				//oViewer.removeEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, arguments.callee);
+				oViewer.fitToView(true);
+				setTimeout(function () {
+					oViewer.autocam.setHomeViewFrom(oViewer.navigation.getCamera());
+				}, 1000);
+			});
+			oViewer.addEventListener(Autodesk.Viewing.TOOLBAR_CREATED_EVENT, (event) => {
+				//oViewer.removeEventListener(Autodesk.Viewing.TOOLBAR_CREATED_EVENT, arguments.callee);
+			});
+
+			// oViewer.addEventListener(Autodesk.Viewing.PREF_CHANGED_EVENT, (event) => {
+			// 	//oViewer.removeEventListener(Autodesk.Viewing.TOOLBAR_CREATED_EVENT, arguments.callee);
+			// 	console.log (`${event.type} ${event.name} ${event.value}`) ;
+			// });
+
+			oViewer.disableHighlight(true);
+			oViewer.autocam.shotParams.destinationPercent = 1;
+			oViewer.autocam.shotParams.duration = 3;
+			oViewer.prefs.tag('ignore-producer'); // Ignore the model default environment
+			oViewer.prefs.tag('envMapBackground'); // Ignore the model background image
+
+			if (!/^(urn|https?):.*$/g.test(urn) && urn[0] !== '/')
+				urn = 'urn:' + urn;
+			Autodesk.Viewing.Document.load(urn, onDocumentLoaded, onError);
 		}
 
-		function onDocumentLoaded (doc) {
-			oDocument =doc ;
-			// Get all the 3D and 2D views (but keep in separate arrays so we can differentiate in the UI)
-			oViews3D = doc.getRoot().search({
-				'type': 'geometry',
-				'role': '3d'
+		function onDocumentLoaded(doc) {
+			let views = doc.getRoot().search({
+				type: 'geometry'
 			});
-			oViews2D = doc.getRoot().search({
-				'type': 'geometry',
-				'role': '2d'
-			});
-			// Load up first a 3D view by default
-			let viewable =null ;
-			if ( oViews3D && oViews3D.length > 0 )
-				viewable =oViews3D [0] ;
-			else if ( oViews2D && oViews2D.length > 0 )
-				viewable =oViews2D [0] ;
-			else
-				return (alert ('ERROR: No 3D or 2D views found in this document!')) ;
-
-			for (let i = 0; oViews3D && i < oViews3D.length; i++) {
-				let r = $('<div><button id="view_' + i + '" data="' + oViews3D[i].data.guid + '">' + oViews3D[i].data.name +
-					'</button></div>');
-				$('#list').append(r);
-				$('#view_' + i).click(function (e) {
-					switchView(e, '3d');
+			for (let i = 0; views && i < views.length; i++) {
+				let r = $('<div><button id="' + views[i].data.guid + '" title="' 
+					+ htmlEntities(views[i].data.name) + '">' 
+					+ htmlEntities(views[i].data.name) + '</button></div>');
+				//$('#list').append(r);
+				$('#' + views[i].data.role).append(r);
+				$('#' + views[i].data.guid).click((e) => {
+					switchView(e);
 				});
 			}
-			for (let i = 0, j = 1000; oViews2D && i < oViews2D.length; j++, i++) {
-				let r = $('<div><button id="view_' + j + '" data="' + oViews2D[i].data.guid + '">' + oViews2D[i].data.name +
-					'</button></div>');
-				$('#list').append(r);
-				$('#view_' + j).click(function (e) {
-					switchView(e, '2d');
-				});
-			}
 
-			startViewer (doc.getViewablePath (viewable), viewable.findPropertyDbPath ()) ;
+			// Load up the main view
+			oViewer.MyDocument = doc;
+			doc.CurrentViewable = doc.getRoot().getDefaultGeometry();
+			oViewer.loadDocumentNode(doc, doc.CurrentViewable).then((model) => onModelLoaded(model));
 		}
-
-		function startViewer (svfUrl, sharedPropertyDbPath) {
-			if ( oViewer )
-				return (loadModelInViewer (svfUrl, sharedPropertyDbPath)) ;
-
-			let modelOptions ={ sharedPropertyDbPath: sharedPropertyDbPath, acmSessionId: urn } ;
-			let viewerElement =document.getElementById ('viewer') ;
-			oViewer =new Autodesk.Viewing.Private.GuiViewer3D (viewerElement) ;
-			//let pattern =/^(urn):.*$/g ;
-			//if ( pattern.test (urn) ) {
-			oViewer.start (svfUrl, modelOptions, onModelLoaded, onError) ;
-			//} else {
-			//    oViewer.initialize () ;
-			//    oViewer.loadModel (svfUrl, modelOptions, onModelLoaded, onError) ;
-			//}
-			//oViewer.addEventListener (Autodesk.Viewing.TOOLBAR_CREATED_EVENT, onViewerToolbarCreated) ;
-			//oViewer.addEventListener (Autodesk.Viewing.GEOMETRY_LOADED_EVENT, onViewerGeometryLoaded) ;
-		}
-
-		function loadModelInViewer (svfUrl, sharedPropertyDbPath) {
-			oViewer.tearDown () ;
-			oViewer.setUp (oViewer.config) ;
-			let modelOptions ={ sharedPropertyDbPath: sharedPropertyDbPath, acmSessionId: urn } ;
-			oViewer.loadModel (svfUrl, modelOptions, onModelLoaded, onError) ;
-		}
-
-		function onModelLoaded (model) {
-		}
-
-		function onError (viewerErrorCode) {
-			alert ('Loading Error #' + viewerErrorCode) ;
-		}
-
+	
 		function switchView(evt, role) {
 			evt.stopPropagation();
-			let index = role === '3d' ? 0 : 1000;
-			let views = role === '3d' ? oViews3D : oViews2D;
-			let i = parseInt(evt.target.id.substring(5)) - index;
-			let guid = views[i].data.guid;
-			let viewObj = oDocument.getRoot().search({
-				'type': 'geometry',
-				'role': role,
-				'guid': guid
+			let view = oViewer.MyDocument.getRoot().search({
+				type: 'geometry',
+				guid: evt.target.id
 			}, true);
-			if (viewObj.length === 0)
-				return;
-			let svfUrl = oDocument.getViewablePath(viewObj[0]);
-			loadModelInViewer(svfUrl, viewObj[0].findPropertyDbPath());
+			let doc =oViewer.MyDocument
+			oViewer.unloadDocumentNode(doc.CurrentViewable);
+			doc.CurrentViewable = view[0];
+			oViewer.loadDocumentNode(doc, doc.CurrentViewable).then((model) => onModelLoaded(model));
 		}
 
+		function onModelLoaded(model) {
+			oViewer.setLightPreset(0);
+			oViewer.setLightPreset(2);
+			oViewer.setQualityLevel(/* ambient shadows */ false, /* antialiasing */ true);
+			oViewer.setGroundShadow(false);
+			oViewer.setGroundReflection(false);
+			oViewer.setGhosting(true);
+			oViewer.setEnvMapBackground(false);
+			oViewer.setSelectionColor(new THREE.Color(0xEBB30B));
+		}
+
+		function onError(errorCode) {
+			console.error(`Loading Error #${errorCode}`);
+		}
+
+		function htmlEntities(str) {
+			return (String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'));
+		}
+
+		function setOptions (evt) {
+			oViewer[evt.name](evt.checked);
+		}
+		
 	</script>
+
+	<style>
+	.left {
+		float: left;
+	}
+
+	.right {
+		float: right;
+	}
+
+	.clear {
+		clear: both;
+	}
+
+	body {
+		margin: 0 auto;
+		padding: 0px;
+		background-color: #555555;
+	}
+
+	div#project {
+		margin: 0 auto;
+		text-align: left;
+		position: absolute;
+		width: 100%;
+		height: 99%;
+	}
+
+	div#viewer {
+		width: 75%;
+		height: 100%;
+		cursor: pointer;
+		padding: 0px;
+		position: relative;
+		overflow: hidden;
+		background-color: #2f2f2f;
+		border: 2px dashed #000000;
+		border-radius: 10px;
+	}
+
+	div#list {
+		width: calc(24% - 8px);
+		height: 100%;
+		padding: 0px;
+		position: relative;
+		background-color: #2f2f2f;
+		border: 2px dashed #000000;
+		border-radius: 10px;
+		overflow: hidden;
+		overflow-y: scroll;
+	}
+
+	div#list div button {
+		background: -webkit-gradient(linear, left top, left bottom, color-stop(0.05, rgb(230, 189, 67) 5%), color-stop(1, rgb(236, 180, 10)));
+		background: -moz-linear-gradient(top, rgb(230, 189, 67) 5%, rgb(236, 180, 10) 100%);
+		background: -webkit-linear-gradient(top, rgb(230, 189, 67) 5% 5%, rgb(236, 180, 10) 100%);
+		background: -o-linear-gradient(top, rgb(230, 189, 67) 5% 5%, rgb(236, 180, 10) 100%);
+		background: -ms-linear-gradient(top, rgb(230, 189, 67) 5% 5%, rgb(236, 180, 10) 100%);
+		background: linear-gradient(to bottom, rgb(230, 189, 67) 5% 5%, rgb(236, 180, 10) 100%);
+		filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='rgb(230, 189, 67) 5%', endColorstr='rgb(236, 180, 10)', GradientType=0);
+		background-color: rgb(230, 189, 67) 5%;
+		-moz-border-radius: 12px;
+		-webkit-border-radius: 12px;
+		border-radius: 12px;
+		border: 1px solid rgb(230, 189, 67);
+		display: inline-block;
+		cursor: pointer;
+		color: #ffffff;
+		font-family: Verdana;
+		font-size: 12px;
+		text-decoration: none;
+		text-shadow: 0px 1px 0px rgb(230, 189, 67);
+		margin: 2px;
+		height: 42px;
+		width: calc(100% - 4px);
+		/*padding-top: 100%;*/ /* 1:1 Aspect Ratio */
+		/*position: relative;*/ /* If you want text inside of it */
+	}
+
+	div#list div button:hover {
+		background: -webkit-gradient(linear, left top, left bottom, color-stop(0.05, rgb(236, 180, 10)), color-stop(1, rgb(230, 189, 67) 5%));
+		background: -moz-linear-gradient(top, rgb(236, 180, 10) 5%, rgb(230, 189, 67) 100%);
+		background: -webkit-linear-gradient(top, rgb(236, 180, 10) 5%, rgb(230, 189, 67) 100%);
+		background: -o-linear-gradient(top, rgb(236, 180, 10) 5%, rgb(230, 189, 67) 100%);
+		background: -ms-linear-gradient(top, rgb(236, 180, 10) 5%, rgb(230, 189, 67) 100%);
+		background: linear-gradient(to bottom, rgb(236, 180, 10) 5%, rgb(230, 189, 67) 100%);
+		filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='rgb(236, 180, 10)', endColorstr='rgb(230, 189, 67)', GradientType=0);
+		background-color: rgb(236, 180, 10);
+	}
+
+	div#list div button:active {
+		position: relative;
+		top: 1px;
+	}
+
+	div#list div button img {
+		width: calc(100% - 8px);
+	}
+
+	div#list details {
+		margin-bottom: 4px;
+	}
+
+	div#list summary {
+		display: block;
+		font-weight: bold;
+		box-shadow: inset 0px 0px 14px -3px #f2fadc;
+		background-color: #dbe6c4;
+		border-radius: 6px;
+		border: 1px solid #b2b8ad;
+		cursor: pointer;
+		color: #757d6f;
+		padding: 6px 24px;
+		text-decoration: none;
+		text-shadow: 0px 1px 0px #ced9bf;
+	}
+
+	details#options div {
+		color: white;
+		margin-bottom: 4px;
+	}
+
+	::-webkit-scrollbar {
+		height: 12px;
+		width: 12px;
+		background: #000;
+	}
+
+	::-webkit-scrollbar-thumb {
+		background: #EBB30B;
+		-webkit-border-radius: 1ex;
+		-webkit-box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.75);
+	}
+
+	::-webkit-scrollbar-corner {
+		background: #000;
+	}
+	</style>
 </body>
+
 </html>

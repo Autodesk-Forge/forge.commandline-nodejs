@@ -1,0 +1,55 @@
+{
+	"env": {
+		"es6": true,
+		"node": true
+	},
+	"extends": "eslint:recommended",
+	"parserOptions": {
+		"ecmaFeatures": {
+			"jsx": true
+		},
+		"ecmaVersion": 2018,
+		"sourceType": "module"
+	},
+	"globals": {
+		"describe": false,
+		"afterEach": false,
+		"test": false,
+		"expect": false,
+		"it": false
+	},
+	"rules": {
+		"no-mixed-spaces-and-tabs": "warn",
+		"no-multi-spaces": "error",
+		"indent": ["error", "tab", { "SwitchCase": 1 }],
+		"linebreak-style": ["error", "unix"],
+		"quotes": ["error", "single"],
+		"no-template-curly-in-string": "warn",
+		"curly": "off",
+		"semi": ["error", "always"],
+		"no-extra-semi": "warn",
+		"no-undef": ["error", { "typeof": true }],
+		"no-unused-vars": "error",
+		"no-redeclare": "error",
+		"no-shadow": "error",
+		"no-shadow-restricted-names": "error",
+		"init-declarations": ["error", "always"],
+		"eqeqeq": ["error", "always"],
+		"no-empty": ["warn", { "allowEmptyCatch": true }],
+		"getter-return": ["error", { "allowImplicit": true }],
+		"no-fallthrough": ["error", { "commentPattern": "fallthrough" }],
+		"no-unreachable": "error",
+		"no-use-before-define": "warn",
+		"no-this-before-super": "error",
+		"constructor-super": "warn",
+		"no-const-assign": "error",
+		"valid-typeof": "warn",
+		"no-path-concat": "error",
+		"no-cond-assign": ["error", "always"],
+		"no-constant-condition": ["error", { "checkLoops": false }],
+		"no-unsafe-finally": "error",
+
+		"valid-jsdoc": "error"
+	}
+
+}
