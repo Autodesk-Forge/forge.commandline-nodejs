@@ -24,6 +24,7 @@
 //
 /*jshint esversion: 6 */
 /* eslint-disable no-multi-spaces */
+/*jshint -W014 */
 
 const ForgeAPI = require('forge-apis');
 

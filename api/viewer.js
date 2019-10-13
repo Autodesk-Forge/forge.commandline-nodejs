@@ -222,10 +222,8 @@ locales =locales.reduce (
 ) ;
 
 //-
-// module.exports =viewer
-// 	.concat (extensions)
-// 	.concat (environments)
-// 	.concat (textures)
-// 	.concat (locales) ;
-
-module.exports =extensions;
+module.exports =viewer
+	.concat (extensions)
+	.concat (environments)
+	.concat (textures)
+	.concat (locales) ;
