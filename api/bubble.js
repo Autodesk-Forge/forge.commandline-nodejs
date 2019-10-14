@@ -753,6 +753,7 @@ class otgBubble {
 
 						if (value.stats.num_materials) {
 							let materialHashes = self.decomposeHashFile(value.__dependencies__.materials_ptrs, self.global_sharding);
+							materialHashes = materialHashes.filter (elt => elt[0] !== '' && elt[1] !== '');
 							materialHashes.map((elt) => {
 								//self.getSharedAssetFile (self.materials_urn (key), elt, self.urn, self.local_materials_root (key)) ;
 								jobs.push(function () { return ([self.getSharedAssetJson, arguments]); }(self.materials_urn(key), elt, self.urn, self.local_materials_root(key)));
@@ -761,6 +762,7 @@ class otgBubble {
 						}
 						if (value.stats.num_geoms) {
 							let geometryHashes = self.decomposeHashFile(value.__dependencies__.geometry_ptrs, self.global_sharding);
+							geometryHashes = geometryHashes.filter (elt => elt[0] !== '' && elt[1] !== '');
 							geometryHashes.map((elt) => {
 								//self.getSharedAssetFile (self.geometry_urn (key), elt, self.urn, self.local_geometry_root (key)) ;
 								jobs.push(function () { return ([self.getSharedAssetFile, arguments]); }(self.geometry_urn(key), elt, self.urn, self.local_geometry_root(key)));
@@ -776,7 +778,7 @@ class otgBubble {
 								jobs.push(function () { return ([self.getSharedAssetFile, arguments]); }(self.textures_urn(key), elt, self.urn, self.local_textures_root(key)));
 							}
 						}
-						break;
+						//break;
 					}
 
 					return (utils.promiseAllLimit(jobs, 10, (elt, index, arr) => utils.PromiseStatus(elt[0].apply(self, elt[1])))); // eslint-disable-line no-unused-vars
@@ -1003,7 +1005,7 @@ class otgBubble {
 						data.push(chunk);
 					}).on('end', () => {
 						let buffer = Buffer.concat(data);
-						utils.gunzip(buffer, true)
+						otgBubble.gunzip(buffer, true)
 							.then((result) => {
 								fulfill(result);
 								console.log(' >> ', outFile);
@@ -1048,6 +1050,23 @@ class otgBubble {
 					console.error(' !! ', outFile);
 					reject(error);
 				});
+		}));
+	}
+
+	static gunzip (res, bRaw = false) {
+		return (new Promise((fulfill, reject) => { // eslint-disable-line no-unused-vars
+			zlib.gunzip(res, (err, dezipped) => {
+				if (err)
+					return(fulfill(res));
+				try {
+					if (bRaw)
+						fulfill(dezipped);
+					else
+						fulfill(JSON.parse(dezipped.toString('utf-8')));
+				} catch (ex) {
+					fulfill(dezipped);
+				}
+			});
 		}));
 	}
 
