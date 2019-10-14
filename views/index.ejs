@@ -84,6 +84,9 @@
 			};
 			let options = <%= viewer_options %>;
 			Autodesk.Viewing.Initializer(options, loadModel);
+			// No 2d views in OTG
+			if (options === otg_options || options === otg_options_local)
+				$('details#2d').hide();
 		}
 
 		function loadModel() {

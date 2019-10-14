@@ -710,8 +710,8 @@ class otgBubble {
 							if (typeof asset === 'string') {
 								let outFile = path.join(self.local_version_root, elt.__dirname__, asset);
 								//elt.jobs.push (self.getViewModelFile (self.version_root, path.join (elt.__dirname__, asset), self.urn, outFile)) ;
-								elt.jobs.push(function () { return ([self.getViewModelFile, arguments]); }(self.version_root, path.join(elt.__dirname__, asset), self.urn, outFile));
-								elt.__dependencies__[assetkey] = elt.jobs.length - 1;
+								elt.jobs.push(function () { return ([self.getViewModelFile, arguments]); }(self.version_root, key, path.join(elt.__dirname__, asset), self.urn, outFile));
+								elt.__dependencies__[assetkey] = key + '%' + path.join(elt.__dirname__, asset);
 								continue;
 							}
 							// pdb/avs.pack pdb/avs.idx pdb/dbid.idx
@@ -723,8 +723,8 @@ class otgBubble {
 									continue;
 								self._urns.push(self.version_root + st);
 								//elt.jobs.push (self.getViewModelFile (self.version_root, st, self.urn, outFile)) ;
-								elt.jobs.push(function () { return ([self.getViewModelFile, arguments]); }(self.version_root, st, self.urn, outFile));
-								elt.__dependencies__[pdbkey] = elt.jobs.length - 1;
+								elt.jobs.push(function () { return ([self.getViewModelFile, arguments]); }(self.version_root, key, st, self.urn, outFile));
+								elt.__dependencies__[pdbkey] = `${key}%${st}`;
 							}
 						}
 
@@ -736,8 +736,8 @@ class otgBubble {
 								continue;
 							self._urns.push(self.shared_root + st);
 							//elt.jobs.push (self.getViewModelFile (self.shared_root, st, self.urn, outFile)) ;
-							elt.jobs.push(function () { return ([self.getViewModelFile, arguments]); }(self.shared_root, st, self.urn, outFile));
-							elt.__dependencies__[pdbkey] = elt.jobs.length - 1;
+							elt.jobs.push(function () { return ([self.getViewModelFile, arguments]); }(self.shared_root, key, st, self.urn, outFile));
+							elt.__dependencies__[pdbkey] = `${key}%${st }`;
 						}
 
 						jobs = [...jobs, ...elt.jobs];
@@ -748,8 +748,10 @@ class otgBubble {
 				.then((results) => {
 					let jobs = [];
 					for (let [key, value] of Object.entries(self.OTG_models)) {
-						for (let [asset, ijob] of Object.entries(value.__dependencies__))
-							value.__dependencies__[asset] = results[ijob];
+						for (let [asset, ijob] of Object.entries(value.__dependencies__)) {
+							let result = results.filter(elt => elt[0] === value.__dependencies__[asset]);
+							value.__dependencies__[asset] =result [0] [1];
+						}
 
 						if (value.stats.num_materials) {
 							let materialHashes = self.decomposeHashFile(value.__dependencies__.materials_ptrs, self.global_sharding);
@@ -845,7 +847,7 @@ class otgBubble {
 		return (buf[0] === 0x1f /*31*/ && buf[1] === 0x8b /*139*/);
 	}
 
-	getViewModelBinary (fileurn, elt, modelurn, outFile) {
+	getViewModelBinary (fileurn, key, elt, modelurn, outFile) {
 		return (new Promise((fulfill, reject) => {
 			if (!fileurn || !modelurn)
 				return (reject('Missing the required parameter {urn} when calling getViewModelBinary'));
@@ -875,13 +877,18 @@ class otgBubble {
 					.on('data', (chunk) => {
 						data.push(chunk);
 					})
-					.on('end', (pp) => { // eslint-disable-line no-unused-vars
+					.on('end', () => { // eslint-disable-line no-unused-vars
 						let buffer = Buffer.concat(data);
+						if (buffer.slice(0, 5).toString() === '<?xml') {
+							console.error(' !! ', outFile);
+							reject(buffer.toString());
+							return;
+						}
 						if (otgBubble.isGzip(buffer)) {
 							utils.gunzip(buffer, true)
 								.then((result) => {
-									fulfill(result);
-									console.log(' >> ', outFile);
+									fulfill([ `${key}%${elt}`, result ]);
+									console.log(' >> ', outFile, elt);
 									utils.writeFile(outFile, result, 'binary', true);
 								})
 								.catch((err) => {
@@ -889,7 +896,7 @@ class otgBubble {
 									reject(err);
 								});
 						} else {
-							fulfill(buffer);
+							fulfill([ `${key}%${elt}`, buffer ]);
 							console.log(' >> ', outFile);
 							utils.writeFile(outFile, buffer, 'binary', true);
 						}
@@ -899,7 +906,7 @@ class otgBubble {
 		}));
 	}
 
-	getViewModelJson (fileurn, elt, modelurn, outFile) {
+	getViewModelJson (fileurn, key, elt, modelurn, outFile) {
 		return (new Promise((fulfill, reject) => {
 			if (!fileurn || !modelurn)
 				return (reject('Missing the required parameter {urn} when calling getManifest'));
@@ -920,7 +927,7 @@ class otgBubble {
 				})
 				.then((data) => {
 					console.log(' >> ', outFile);
-					fulfill(JSON.parse(data.toString('utf-8')));
+					fulfill([ `${key}%${elt}`, JSON.parse(data.toString('utf-8')) ]);
 				})
 				.catch((error) => {
 					console.error(' !! ', outFile);
@@ -929,11 +936,11 @@ class otgBubble {
 		}));
 	}
 
-	getViewModelFile (fileurn, elt, modelurn, outFile) {
+	getViewModelFile (fileurn, key, elt, modelurn, outFile) {
 		if (path.extname(outFile) === '.json')
-			return (this.getViewModelJson(fileurn, elt, modelurn, path.resolve(outFile)));
+			return (this.getViewModelJson(fileurn, key, elt, modelurn, path.resolve(outFile)));
 		else
-			return (this.getViewModelBinary(fileurn, elt, modelurn, path.resolve(outFile)));
+			return (this.getViewModelBinary(fileurn, key, elt, modelurn, path.resolve(outFile)));
 	}
 
 	decomposeHashFile (content, sharding) {
@@ -986,37 +993,47 @@ class otgBubble {
 						reject(error);
 					});
 			} else {
-				const options = {
-					method: 'GET',
-					hostname: 'otg.autodesk.com',
-					port: 443,
-					path: (path.join('/cdn/', elt[0], account_id, type, elt[1]) + '?acmsession=' + modelurn),
-					headers: {
-						'Authorization': ('Bearer ' + this._token.getCredentials().access_token),
-						'cache-control': 'no-cache',
-						pragma: 'no-cache',
-					}
-				};
-				https.get(options, (res) => {
-					//res.setEncoding('binary');
-					let data = [];
+				utils.fileexists (outFile)
+					.then ((bExists) => {
+						if (bExists && elt[0] != 5000)
+							return (fulfill(outFile));
+						const options = {
+							method: 'GET',
+							hostname: 'otg.autodesk.com',
+							port: 443,
+							path: (path.join('/cdn/', elt[0], account_id, type, elt[1]) + '?acmsession=' + modelurn),
+							headers: {
+								'Authorization': ('Bearer ' + this._token.getCredentials().access_token),
+								'cache-control': 'no-cache',
+								pragma: 'no-cache',
+							}
+						};
+						https.get(options, (res) => {
+							//res.setEncoding('binary');
+							let data = [];
 
-					res.on('data', (chunk) => {
-						data.push(chunk);
-					}).on('end', () => {
-						let buffer = Buffer.concat(data);
-						otgBubble.gunzip(buffer, true)
-							.then((result) => {
-								fulfill(result);
-								console.log(' >> ', outFile);
-								return (utils.writeFile(outFile, result, 'binary', true));
-							})
-							.catch((error) => {
-								console.error(' !! ', outFile);
-								reject(error);
+							res.on('data', (chunk) => {
+								data.push(chunk);
+							}).on('end', () => {
+								let buffer = Buffer.concat(data);
+								if (buffer.slice(0, 5).toString() === '<?xml') {
+									console.error(' !! ', outFile);
+									reject(buffer.toString());
+									return;
+								}
+								otgBubble.gunzip(buffer, true)
+									.then((result) => {
+										fulfill(result);
+										console.log(' >> ', outFile);
+										return (utils.writeFile(outFile, result, 'binary', true));
+									})
+									.catch((error) => {
+										console.error(' !! ', outFile);
+										reject(error);
+									});
 							});
+						});
 					});
-				});
 			}
 		}));
 	}
@@ -1029,26 +1046,31 @@ class otgBubble {
 		return (new Promise((fulfill, reject) => {
 			if (!fileurn)
 				return (reject('Missing the required parameter {urn} when calling getViewModelBinary'));
-			let ModelDerivative = new ForgeAPI.DerivativesApi();
-			ModelDerivative.apiClient.basePath = 'https://otg.autodesk.com';
-			ModelDerivative.apiClient.callApi(
-				path.join('/cdn/', elt[0], account_id, type, elt[1]), 'GET',
-				{}, { acmsession: modelurn }, { 'Accept-Encoding': 'gzip, deflate', pragma: 'no-cache' },
-				{}, null,
-				[], ['application/json'], null,
-				this._token, this._token.getCredentials()
-			)
-				.then((res) => {
-					return (utils.gunzip(res.body));
-				})
-				.then((json) => {
-					fulfill(json);
-					console.log(' >> ', outFile);
-					return (utils.writeFile(outFile, json));
-				})
-				.catch((error) => {
-					console.error(' !! ', outFile);
-					reject(error);
+			utils.fileexists (outFile)
+				.then ((bExists) => {
+					if (bExists)
+						return (fulfill(outFile));
+					let ModelDerivative = new ForgeAPI.DerivativesApi();
+					ModelDerivative.apiClient.basePath = 'https://otg.autodesk.com';
+					ModelDerivative.apiClient.callApi(
+						path.join('/cdn/', elt[0], account_id, type, elt[1]), 'GET',
+						{}, { acmsession: modelurn }, { 'Accept-Encoding': 'gzip, deflate', pragma: 'no-cache' },
+						{}, null,
+						[], ['application/json'], null,
+						this._token, this._token.getCredentials()
+					)
+						.then((res) => {
+							return (utils.gunzip(res.body));
+						})
+						.then((json) => {
+							fulfill(json);
+							console.log(' >> ', outFile);
+							return (utils.writeFile(outFile, json));
+						})
+						.catch((error) => {
+							console.error(' !! ', outFile);
+							reject(error);
+						});
 				});
 		}));
 	}
