@@ -133,7 +133,7 @@ class Forge_Other {
 				//oauthClient = _oauthClient;
 				let SvfOrOtg = (options.otg || options.parent.otg) ? 'otg' : 'svf';
 				let localOptions = (/^(https?):.*$/g.test(urn) || urn[0] === '/') ? '_local' : '';
-				let localServer = (options.local || options.parent.local) ? '' : Forge_Other.viewerServerPath;
+				let localServer = (options.local || options.parent.local) ? '/' + Forge_Other.viewerVersion : Forge_Other.viewerServerPath;
 				let data = {
 					urn: urn,
 					access_token: _oauthClient.credentials.access_token,
@@ -155,7 +155,7 @@ class Forge_Other {
 	// viewer
 	static viewerGet (outputFolder, options) { // eslint-disable-line no-unused-vars
 		console.log('Downloading Viewer');
-		outputFolder = _path.resolve (outputFolder);
+		outputFolder = _path.resolve (_path.join(outputFolder, Forge_Other.viewerVersion));
 
 		let urns =viewerFileList.map ((item) => {
 			return (Forge_Other.DownloadViewerItem (`/derivativeservice/v2/viewers/${item}?v=${Forge_Other.viewerVersion}`, outputFolder, item)) ;
