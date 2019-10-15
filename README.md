@@ -126,19 +126,19 @@ Here are few examples (click &#9658; to expand):
    node forge.js hubs ls
 
    # Get the list of projects.
-   node forge.js projects ls $MyHubID
+   node forge.js projects ls $hubid
 
    # Get the entire project data tree.
-   node forge.js projects tree $MyHubID $MyProjectID -f
+   node forge.js projects tree $hubid $projectid -f
 
    # Refresh the access token
    node forge.js 3legged refresh
 
    # Create an HTML page with your URN and a read-only access token to view the SVF.
-   node forge.js html get $MyVersionId ./bubbles/output.html
+   node forge.js html get $versionid ./bubbles/output.html
 
    # Create an HTML page with your URN and a read-only access token to view the OTG version.
-   node forge.js html get $MyVersionId ./bubbles/output.html --otg
+   node forge.js html get $versionid ./bubbles/output.html --otg
 
    # Start local server and load the HTML page.
    open http://localhost:$PORT/Au.obj.html & http-server ./bubbles/
@@ -156,13 +156,13 @@ Forge provides a service to extract CAD design file information into what Autode
 
 Recently, the Autodesk engineers refined the process to make a lightweight Bubble for AEC/BIM outputs, called OTG. While it was designed for AEC/BIM, OTG would still work for our scenarios but not guarantee on the reduction ratio compared to SVF. The Viewer also supports OTG natively, and would nicely switch to OTG with no code change other than the initializer configuration.
 
-### OTG de-duplication
+## OTG de-duplication
 
 OTG uses a de-duplication process of meshes. So think of a wall as a cube. And many walls are just a cube that is squished and rotated into place. So imagine all walls of a building represented by a single cube with many transforms. This saves storage space (data transfer). BUT.... It also significantly improves render performance, with GPU instancing. You send a single cube mesh to the GPU and thousands of tiny transforms as a single draw-call, thus drawing signicantly more triangles per frame.
 
 Similar to the cube primative for walls, the same thing happens for Re-Bar and hand-rails, it's mostly de-duplication of a 'cylindrical primitive'.
 
-### OTG precision
+## OTG precision
 
 OTG (centered at the origin) can theoretically measure a 20km stretch at 4.6 micron precision, which is just equivalent to the limit of 32 bit float precision. Currently, OTG uses a single double precision offset for each model.
 

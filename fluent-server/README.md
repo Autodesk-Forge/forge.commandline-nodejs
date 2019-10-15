@@ -98,16 +98,16 @@ This utility does provide a way to download the SVF and OTG Bubbles on your loca
    node forge.js hubs ls
 
    # Get the list of projects.
-   node forge.js projects ls $MyHubID
+   node forge.js projects ls $hubid
 
    # Get the Project tree information.
-   node forge.js projects tree $MyHubID $MyProjectID
+   node forge.js projects tree $hubid $projectid
 
    # Download the SVF Bubble
-   node forge.js bubble get $MyVersionID ./bubbles/MyPath --otg
+   node forge.js bubble get $versionid ./bubbles/MyPath --otg
 
    # Create an HTML page with your local URN
-   node forge.js html get /MyPath/VERSION_NUMBER/bubble.json ./bubbles/output.html
+   node forge.js html get /MyPath/$VERSION_NUMBER/bubble.json ./bubbles/output.html
 
    # Start local server and load the HTML page.
    open http://localhost:7124/output.html & PORT=7124 & node fluent-server/start.js ./bubbles/
@@ -131,7 +131,7 @@ The Viewer can take to query parameter options which will change the way the Vie
 
   ex: http://localhost:7124/output.html?disableWebSockets=true
 
-ex: Both together
+Both together
 
 ex: http://localhost:7124/output.html?disableIndexedDb=true&disableWebSockets=true
 
