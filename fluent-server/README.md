@@ -55,6 +55,66 @@ We do recommend you to read the Viewer copyright and understands limitations in 
      set PORT=7124
      ```
 
+## Getting the OTG bubble
+
+This utility does provide a way to download the SVF and OTG Bubbles on your local machine for debugging propose. (click &#9658; to expand)
+
+<details>
+   <summary>Download and run the SVF bubble</summary>
+
+   ```bash
+   # Do authorization/authentication.
+   node forge.js 3legged auto
+
+   # Get the list of Hubs.
+   node forge.js hubs ls
+
+   # Get the list of projects.
+   node forge.js projects ls $MyHubID
+
+   # Get the Project tree information.
+   node forge.js projects tree $MyHubID $MyProjectID
+
+   # Download the SVF Bubble
+   node forge.js bubble get $MyVersionID ./bubbles/MyPath
+
+   # Create an HTML page with your local URN
+   node forge.js html get /MyPath/bubble.json ./bubbles/output.html
+
+   # Start local server and load the HTML page.
+   open http://localhost:$PORT/output.html & http-server ./bubbles/
+   ```
+
+</details>
+
+<details>
+   <summary>Download and run the OTG bubble</summary>
+
+   ``` bash
+   # Do authorization/authentication.
+   node forge.js 3legged auto
+
+   # Get the list of Hubs.
+   node forge.js hubs ls
+
+   # Get the list of projects.
+   node forge.js projects ls $MyHubID
+
+   # Get the Project tree information.
+   node forge.js projects tree $MyHubID $MyProjectID
+
+   # Download the SVF Bubble
+   node forge.js bubble get $MyVersionID ./bubbles/MyPath --otg
+
+   # Create an HTML page with your local URN
+   node forge.js html get /MyPath/VERSION_NUMBER/bubble.json ./bubbles/output.html
+
+   # Start local server and load the HTML page.
+   open http://localhost:7124/output.html & PORT=7124 & node fluent-server/start.js ./bubbles/
+   ```
+
+</details>
+
 ### OTG Viewer options
 
 The Viewer can take to query parameter options which will change the way the Viewer is working and loading OTG.
@@ -74,6 +134,12 @@ The Viewer can take to query parameter options which will change the way the Vie
 ex: Both together
 
 ex: http://localhost:7124/output.html?disableIndexedDb=true&disableWebSockets=true
+
+## Tips & tricks
+
+When running the OTG Bubble locally, you may get CORS issues. You can solce this problem by installing a Firefox or Chrome extension which will turn off CORS.
+
+ex: https://chrome.google.com/webstore/detail/moesif-orign-cors-changer/digfbfaphojjndkpccljibejjbppifbc
 
 ## License
 
