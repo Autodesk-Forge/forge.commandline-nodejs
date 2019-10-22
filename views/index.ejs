@@ -56,13 +56,17 @@
 		function initialize() {
 			let svf_options = {
 				env: 'AutodeskProduction',
+				api: 'derivativeV2' + (atob(urn.replace('_', '/')).indexOf('emea') > -1 ? '_EU' : ''), // 'derivativeV2', 'derivativeV2_EU'
+				useCookie: false, // optional for Chrome browser
+				useCredentials: true,
+				//acmSessionId: urn,
 				getAccessToken: getAccessToken,
 				//accessToken: '',
 			};
 			let otg_options = {
 				env: 'FluentProduction',
 				api: 'fluent',
-				useCookie: false, //optional for Chrome browser
+				useCookie: false, // optional for Chrome browser
 				useCredentials: true,
 				//acmSessionId: urn,
 				getAccessToken: getAccessToken,
