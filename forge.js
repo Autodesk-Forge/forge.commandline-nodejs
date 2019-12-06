@@ -206,6 +206,8 @@ let commands = [
 					{ option: '-m, --master <master>', description: 'define the master file when using a compressed seed file' },
 					{ option: '-f, --force', description: 'force translation' },
 					{ option: '-r, --region <region>', description: 'region: US or EMEA [string, default: US]' },
+					{ option: '--switchLoader', description: 'switches the IFC loader from Navisworks to Revit' },
+					{ option: '--generateMasterViews', description: 'generates master views when translating from the Revit' },
 					{ option: '--svf', description: 'translate to the Forge bubble format' },
 					{ option: '--step', description: 'translate to the STEP format' },
 					{ option: '--protocol <protocol>', description: '203 for configuration controlled design, 214 for core data for automotive mechanical design processes, 242 for managed model based 3D engineering. Default to 214.' },

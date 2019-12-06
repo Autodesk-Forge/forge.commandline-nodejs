@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+
+<html
+    style="background: url(https://cdn.accounts.autodesk.com/consumerimages/bd7f11e5e2ee2d78589c564dbcdb7d69/bg/2/bg.jpg)no-repeat center center fixed"
+    class=" normal_mode">
+
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Signed in</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="msapplication-tap-highlight" content="no" />
+    <meta name="referrer" content="no-referrer">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <link rel="shortcut icon"
+        href="https://cdn.accounts.autodesk.com/content/identity/28.0.77.6fd4fac/z/Content/images/favicon.ico" />
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <link rel="stylesheet"
+        href="https://cdn.accounts.autodesk.com/content/identity/28.0.77.6fd4fac/z/Content/css/identity-base-compact-light.min.css" />
+    <script type="text/javascript"
+        src="https://cdn.accounts.autodesk.com/content/identity/28.0.77.6fd4fac/z/Content/js/identity-base-compact.min.js">
+    </script>
+    <script async="true" src="https://tags.tiqcdn.com/utag/autodesk/oxygen/prod/utag.js"></script>
+    <script type="text/javascript"
+        src="https://cdn.accounts.autodesk.com/content/identity/28.0.77.6fd4fac/z/Content/js/client-resources.js">
+    </script>
+</head>
+
+<body class=" oxygen-body compact  normal_mode  mac en">
+    <div id="wrapper" class="wrapper">
+        <div class="environmentDivPosition">
+
+        </div>
+        <div>
+            <div class="adsk-alert-container" id="alert_container"></div>
+        </div>
+        <!--[if lte IE 9]>
+             <![if IE 8]>
+                <div class="ie8">
+             <![endif]>
+            <![if gt IE 8]>
+                <div class="ie8 ie9">
+             <![endif]>
+        <![endif]-->
+        <!--[if (gt IE 9)|!(IE)]><!-->
+        <div>
+            <!--<![endif]-->
+            <div id="content_div" class="container">
+
+                <div class="signinWrapper">
+                    <div class="usernameInputCont">
+                        <div class="row">
+                            <div class="col-xs-12">
+                                <div id="signin_header" class="row">
+                                    <div class="col-xs-8 col-sm-10">
+                                        <h2 class="adsk-header"><%= result %></h2>
+                                    </div>
+
+                                    <div class="cardFlip col-xs-4 col-sm-2">
+                                        <div class="frontFlip">
+                                            <img class="adsk-small-img"
+                                                src="https://cdn.accounts.autodesk.com/consumerimages/bd7f11e5e2ee2d78589c564dbcdb7d69/sl/2/sl.png" />
+                                        </div>
+                                        <div class="backFlip">
+                                            <div class="adsk-small-img logo"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="social_header" class="hide text-center ">
+                                    <div class="pull-left passwordBack pointer show-signin">
+                                        <object class="adsk-back"
+                                            data="https://cdn.accounts.autodesk.com/content/identity/28.0.77.6fd4fac/z/Content/images/svg/back.svg"></object>
+                                    </div>
+                                    <h2 class="adsk-social-header">Sign in with</h2>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row signinEmailInput halfSecTrans adsk-row-margin-top-sm-md"
+                            style="opacity: 1; display: block;">
+                            <div class="col-xs-12">
+                                <div>
+                                    <div class="custom-form">
+                                        <label for="userName" style="position:static;"><%= message %></label>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <!--/usernameInputCont-->
+                </div>
+
+                <div class="footerNote halfSecTrans">
+                    <span>Your account for everything Autodesk</span>
+                    <br />
+                    <a href="#">LEARN MORE</a>
+                </div>
+
+                <script type="text/javascript"
+                    src="https://cdn.accounts.autodesk.com/content/identity/28.0.77.6fd4fac/z/Content/js/identity-compact-signin.min.js">
+                </script>
+
+            </div>
+            <!--[if IE 9]>
+                    <div class="ie9 footerNote halfSecTrans" id="footerNote_div">
+                <![endif]-->
+            <!--[if (gt IE 9)|(IE 8)]><!-->
+            <div class="footerNote halfSecTrans" id="footerNote_div">
+                <!--<![endif]-->
+                <span>Your account for everything Autodesk</span>
+                <br />
+                <a style="cursor: pointer;">LEARN MORE</a>
+            </div>
+            <div class="hide" id="learn_more_div">
+                <div class="learnMoreWrapper">
+                    <div class="learnMore halfSecTrans">
+
+                        <div class="row text-center copy">
+                            <div class="col-xs-12 text">
+                                <div class="col-xs-12 adsk-social-header">
+                                    Why ?
+                                </div>
+
+                            </div>
+                            <div class="col-xs-12 margin-top-33">
+                                Gain access to Autodesk products and services with a single set of credentials.
+                            </div>
+
+                            <div class="col-xs-12 text-center margin-top-50">
+                                <div id="thumb" class="learn-icon inline-element"></div>
+                                <div id="gear" class="learn-icon inline-element"></div>
+                                <div id="lock" class="learn-icon inline-element"></div>
+                            </div>
+
+                            <div class="col-xs-12 margin-top-50 font-size-12 panel-content">
+                                <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+
+                                    <div class="panel panel-default first">
+                                        <div class="panel-heading" role="tab" id="learn-more-2">
+                                            <h4 class="panel-title">
+                                                <a class="block collapsed" role="button" data-toggle="collapse"
+                                                    data-parent="#accordion" href="#collapse-learn-more-2"
+                                                    aria-expanded="false" aria-controls="collapse-learn-more-2">
+                                                    Access all your applications <i class="pull-right chevron-down"></i>
+                                                </a>
+                                            </h4>
+                                        </div>
+                                        <div id="collapse-learn-more-2" class="panel-collapse collapse" role="tabpanel"
+                                            aria-labelledby="learn-more-2" aria-expanded="false" style="height: 0px;">
+                                            <div class="panel-body">
+                                                Your account is what you use for everything you do with Autodesk
+                                                products and services, such as Fusion, A360, Sketchbook, 123d App, Store
+                                                and much more.&#13;&#10;With just one account, you can sign into all
+                                                your Autodesk entitlements and get access to new ones.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="panel panel-default">
+                                        <div class="border100p"></div>
+                                        <div class="panel-heading" role="tab" id="learn-more-3">
+                                            <h4 class="panel-title">
+                                                <a class="block collapsed" role="button" data-toggle="collapse"
+                                                    data-parent="#accordion" href="#collapse-learn-more-3"
+                                                    aria-expanded="false" aria-controls="collapse-learn-more-3">
+                                                    Manage your preferences <i class="pull-right chevron-down"></i>
+                                                </a>
+                                            </h4>
+                                        </div>
+                                        <div id="collapse-learn-more-3" class="panel-collapse collapse" role="tabpanel"
+                                            aria-labelledby="learn-more-3" aria-expanded="false" style="height: 0px;">
+                                            <div class="panel-body">
+                                                Access and update your marketing subscriptions, and language preferences
+                                                for Autodesk products and services.
+                                                <br> Need to update your contact email? Just head into your account and
+                                                make the necessary updates to your profile.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="panel panel-default">
+                                        <div class="border100p"></div>
+                                        <div class="panel-heading" role="tab" id="learn-more-5">
+                                            <h4 class="panel-title">
+                                                <a class="collapsed block" role="button" data-toggle="collapse"
+                                                    data-parent="#accordion" href="#collapse-learn-more-5"
+                                                    aria-expanded="false" aria-controls="collapse-learn-more-5">
+                                                    Privacy and security <i class="chevron-down pull-right"></i>
+                                                </a>
+                                            </h4>
+                                        </div>
+                                        <div id="collapse-learn-more-5" class="panel-collapse collapse" role="tabpanel"
+                                            aria-labelledby="learn-more-5" aria-expanded="false">
+                                            <div class="panel-body">
+                                                Because your security is our utmost priority here at
+                                                Autodesk,&#13;&#10;we allow updating any of your access credentials at
+                                                any point of time should you feel that your account has been
+                                                compromised.&#13;&#10;In addition, we offer enhanced security features
+                                                to help you feel secure with your account.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="border100p"></div>
+                                </div>
+
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                    <a class="strong back" id="close_learn_more">
+                        <div class="halfSecTrans text-uppercase">
+                            Back
+                        </div>
+                    </a>
+
+                </div>
+            </div>
+        </div>
+
+        <script type="text/javascript"
+            src="https://cdn.accounts.autodesk.com/content/identity/28.0.77.6fd4fac/z/Content/js/identity-ensighten.min.js">
+        </script>
+
+    </div>
+</body>
+
+</html>

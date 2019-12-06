@@ -48,6 +48,8 @@ class Forge_MD {
 			filename = Forge_MD.key2filename(filename);
 		let master = options.master || options.parent.master || null;
 		let force = options.force || options.parent.force || false;
+		let switchLoader = options.switchLoader || options.parent.switchLoader || false;
+		let generateMasterViews = options.generateMasterViews || options.parent.generateMasterViews || false;
 		let region = options.region || options.parent.region || 'US';
 		let compressed = (path.extname(filename).toLowerCase() === '.zip' || path.extname(filename).toLowerCase() === '.rar');
 		if (compressed && master === null)
@@ -81,7 +83,7 @@ class Forge_MD {
 				}
 
 				let svf = options.svf || options.parent.svf || false;
-				if (svf)
+				if (svf) {
 					jobs.output.formats.push({
 						type: 'svf',
 						views: [
@@ -89,6 +91,11 @@ class Forge_MD {
 							'3d'
 						]
 					});
+					jobs.output.advanced = {
+						switchLoader: switchLoader,
+						generateMasterViews: generateMasterViews
+					};
+				}
 
 				let stl = options.stl || options.parent.stl || false;
 				let ascii = options.ascii || options.parent.ascii || false;
