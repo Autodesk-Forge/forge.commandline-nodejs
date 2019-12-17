@@ -45,7 +45,7 @@ class Forge_DM {
 				return (hubs.getHubs({}, oa3Legged, oa3Legged.credentials));
 			})
 			.then((hubs) => {
-				if (hubs.body.meta.warnings) {
+				if (hubs.body.meta && hubs.body.meta.warnings) {
 					for (let key in hubs.body.meta.warnings) {
 						let warning = hubs.body.meta.warnings[key];
 						console.warn(warning.HttpStatusCode + '/' + warning.ErrorCode + ': ' + warning.Detail + ' > ' + warning.Title);
