@@ -41,7 +41,7 @@
     "archiver": "^2.1.1",
     "commander": "^2.20.3",
     "ejs": "^2.7.4",
-    "forge-apis": "^0.7.0",
+    "forge-apis": "^0.7.2",
     "mkdirp": "^0.5.1",
     "moment": "^2.24.0",
     "node-zip": "^1.1.1",
