@@ -105,7 +105,10 @@ let commands = [
 
 	{
 		name: '3legged', description: '3 legged operations (3legged) [code] could be empty / auto / refresh / or the autorization code',
-		arguments: '[code]', action: ForgeOauth._3legged
+		arguments: '[code]', action: ForgeOauth._3legged,
+		options: [
+			{ option: '-i, --implicit', description: 'run an implicit grant vs code grant' }
+		]
 	},
 
 	{

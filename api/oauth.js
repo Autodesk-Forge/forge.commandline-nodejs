@@ -82,9 +82,10 @@ class Forge_oauth {
 	}
 
 	// oauth 3 legged
-	static render (data, res) {
+	static render (template, data, res) {
+		template = template || 'signed-in.ejs';
 		return (new Promise((fulfill, reject) => { // eslint-disable-line no-unused-vars
-			ejs.renderFile(path.normalize(path.join(__dirname, '/../views/signed-in.ejs')), data, {}, (err, str) => {
+			ejs.renderFile(path.normalize(path.join(__dirname, '/../views/', template)), data, {}, (err, str) => {
 				res.writeHeader(200, { 'Content-Type': 'text/html' });
 				if (err)
 					res.write(`${data.result}. ${data.message}`);
@@ -96,10 +97,13 @@ class Forge_oauth {
 		}));
 	}
 
-	static _3legged_authorize (auto) {
+	static _3legged_authorize (auto, implicit) {
 		let oa3Legged = new ForgeAPI.AuthClientThreeLegged(Forge_oauth.settings.clientId, Forge_oauth.settings.clientSecret, Forge_oauth.settings.callback, Forge_oauth.settings.opts.scope.split(' '), true);
 		// Generate a URL page that asks for permissions for the specified scopes.
 		let uri = oa3Legged.generateAuthUrl();
+		if ( implicit ) {
+			uri = uri.replace('response_type=code', 'response_type=token');
+		}
 		opn(
 			uri
 			/*, { app: [
@@ -113,13 +117,27 @@ class Forge_oauth {
 			/*let server =*/http.createServer((req, res) => {
 				if (req.method === 'GET' && req.url.indexOf(q.path) !== -1) {
 					let query = url.parse(req.url, true);
+					if ( implicit && Object.keys(query.query).length === 0 ) {
+						return (Forge_oauth.render('implicit.ejs', {}, res));
+					} else if ( implicit && Object.keys(query.query).length !== 0 ) {
+						Forge_oauth.setCredentials(query.query, '3 legged');
+						let data = {
+							result: 'You are Signed in',
+							message: 'You can now close this window'
+						};
+						Forge_oauth.render('signed-in.ejs', data, res)
+							.finally(() => {
+								setTimeout(() => { process.exit(); }, 1000);
+							});
+						return;
+					}
 					Forge_oauth._3legged_code(query.query.code)
 						.then((client) => { // eslint-disable-line no-unused-vars
 							let data = {
 								result: 'You are Signed in',
 								message: 'You can now close this window'
 							};
-							return (Forge_oauth.render(data, res));
+							return (Forge_oauth.render('signed-in.ejs', data, res));
 						})
 						.then(() => {
 							setTimeout(() => { process.exit(); }, 1000);
@@ -129,7 +147,7 @@ class Forge_oauth {
 								result: 'An error occured, sorry!',
 								message: 'You can now close this window'
 							};
-							Forge_oauth.render(data, res)
+							Forge_oauth.render('signed-in.ejs', data, res)
 								.finally(() => {
 									setTimeout(() => { process.exit(); }, 1000);
 								});
@@ -182,13 +200,14 @@ class Forge_oauth {
 		console.error('Your 3 legged token has been released!');
 	}
 
-	static _3legged (code, options) { // eslint-disable-line no-unused-vars
+	static _3legged (code, options) {
+		let implicit = options.implicit || options.parent.implicit || false;
 		switch (code) {
 			case undefined:
 			case null:
 			case '':
 			case 'auto':
-				Forge_oauth._3legged_authorize(code === 'auto');
+				Forge_oauth._3legged_authorize(code === 'auto', implicit);
 				break;
 			case 'refresh':
 				Forge_oauth._3legged_refresh();

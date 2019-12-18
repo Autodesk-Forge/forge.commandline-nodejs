@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="//code.jquery.com/jquery-3.4.1.slim.min.js"
+        integrity="sha256-pasqAKBDmFT4eHoN2ndd6lN370kFiGUFyTiUHWhU7k8=" crossorigin="anonymous"></script>
+    <script>
+        $(document).ready(function () {
+            var credentials = {};
+            var queryString = location.hash.substring(1);
+            var regex = /([^&=]+)=([^&]*)/g;
+            var m = null;
+            while ( m = regex.exec(queryString) )
+                credentials[m[1]] = m[2];
+            console.log(credentials);
+
+            window.location = window.location.href.replace('#', '?');
+        });
+    </script>
+</head>
+
+<body></body>
+
+</html>
