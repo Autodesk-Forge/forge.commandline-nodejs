@@ -3,7 +3,6 @@
 ![Platforms](https://img.shields.io/badge/platform-windows%20%7C%20osx%20%7C%20linux-lightgray.svg)
 [![License](http://img.shields.io/:license-mit-blue.svg)](http://opensource.org/licenses/MIT)
 
-*Forge API*:
 [![oAuth2](https://img.shields.io/badge/oAuth2-v1-green.svg)](http://developer-autodesk.github.io/)
 [![Data-Management](https://img.shields.io/badge/Data%20Management-v1-green.svg)](http://developer-autodesk.github.io/)
 [![OSS](https://img.shields.io/badge/OSS-v2-green.svg)](http://developer-autodesk.github.io/)
@@ -205,3 +204,7 @@ Cyrille Fauvel <br />
 Forge Partner Development <br />
 http://developer.autodesk.com/ <br />
 http://around-the-corner.typepad.com <br />
+
+
+### Thumbnail
+![thumbnail](img/thumbnail_default.png)
