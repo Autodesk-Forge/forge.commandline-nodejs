@@ -26,7 +26,7 @@
 
 const ForgeAPI = require('forge-apis');
 const moment = require('moment');
-const opn = require('opn');
+const opn = require('open');
 const http = require('http');
 const url = require('url');
 const path = require('path');

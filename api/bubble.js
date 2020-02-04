@@ -710,15 +710,15 @@ class otgBubble {
 							if (typeof asset === 'string') {
 								let outFile = path.join(self.local_version_root, elt.__dirname__, asset);
 								//elt.jobs.push (self.getViewModelFile (self.version_root, path.join (elt.__dirname__, asset), self.urn, outFile)) ;
-								elt.jobs.push(function () { return ([self.getViewModelFile, arguments]); }(self.version_root, key, path.join(elt.__dirname__, asset), self.urn, outFile));
-								elt.__dependencies__[assetkey] = key + '%' + path.join(elt.__dirname__, asset);
+								elt.jobs.push(function () { return ([self.getViewModelFile, arguments]); }(self.version_root, key, path.posix.join(elt.__dirname__, asset), self.urn, outFile));
+								elt.__dependencies__[assetkey] = key + '%' + path.posix.join(elt.__dirname__, asset);
 								continue;
 							}
 							// pdb/avs.pack pdb/avs.idx pdb/dbid.idx
 							for (let [pdbkey, pdb] of Object.entries(asset)) {
 								let st = path.join(self.local_version_root, elt.__dirname__, pdb);
 								let outFile = path.join(path.dirname(st), /*pdbkey,*/ path.basename(st));
-								st = path.join(elt.__dirname__, pdb);
+								st = path.posix.join(elt.__dirname__, pdb);
 								if (self._urns.indexOf(self.version_root + st) !== -1)
 									continue;
 								self._urns.push(self.version_root + st);
@@ -731,7 +731,7 @@ class otgBubble {
 						// otg_model.json|manifest.shared_assets (pdb/attrs.json pdb/vals.json pdb/ids.json)
 						for (let [pdbkey, pdb] of Object.entries(elt.manifest.shared_assets.pdb)) {
 							let outFile = path.join(self.local_version_root, elt.__dirname__, pdb);
-							let st = path.join(self.remote_root_path, elt.__dirname__, pdb);
+							let st = path.posix.join(self.remote_root_path, elt.__dirname__, pdb);
 							if (self._urns.indexOf(self.shared_root + st) !== -1)
 								continue;
 							self._urns.push(self.shared_root + st);
@@ -748,7 +748,7 @@ class otgBubble {
 				.then((results) => {
 					let jobs = [];
 					for (let [key, value] of Object.entries(self.OTG_models)) {
-						for (let [asset, ijob] of Object.entries(value.__dependencies__)) {
+						for (let [asset, ijob] of Object.entries(value.__dependencies__)) { // eslint-disable-line no-unused-vars
 							let result = results.filter(elt => elt[0] === value.__dependencies__[asset]);
 							value.__dependencies__[asset] =result [0] [1];
 						}
@@ -973,7 +973,7 @@ class otgBubble {
 		let outFile = path.resolve(path.join(outPath, elt[0], elt[1]));
 		return (new Promise((fulfill, reject) => {
 			if (!fileurn)
-				return (reject('Missing the required parameter {urn} when calling getViewModelBinary'));
+				return (reject('Missing the required parameter {urn} when calling getSharedAssetFile'));
 			if (outFile.endsWith('.png')) {
 				let req = unirest.get('https://otg.autodesk.com' + path.join('/cdn/', elt[0], account_id, type, elt[1]) + '?acmsession=' + modelurn)
 					.headers({
@@ -995,7 +995,7 @@ class otgBubble {
 			} else {
 				utils.fileexists (outFile)
 					.then ((bExists) => {
-						if (bExists && elt[0] != 5000)
+						if (bExists && elt[0] !== 5000)
 							return (fulfill(outFile));
 						const options = {
 							method: 'GET',
@@ -1045,7 +1045,7 @@ class otgBubble {
 		let outFile = path.resolve(path.join(outPath, elt[0], elt[1]));
 		return (new Promise((fulfill, reject) => {
 			if (!fileurn)
-				return (reject('Missing the required parameter {urn} when calling getViewModelBinary'));
+				return (reject('Missing the required parameter {urn} when calling getSharedAssetJson'));
 			utils.fileexists (outFile)
 				.then ((bExists) => {
 					if (bExists)
@@ -1053,7 +1053,7 @@ class otgBubble {
 					let ModelDerivative = new ForgeAPI.DerivativesApi();
 					ModelDerivative.apiClient.basePath = 'https://otg.autodesk.com';
 					ModelDerivative.apiClient.callApi(
-						path.join('/cdn/', elt[0], account_id, type, elt[1]), 'GET',
+						path.posix.join('/cdn/', elt[0], account_id, type, elt[1]), 'GET',
 						{}, { acmsession: modelurn }, { 'Accept-Encoding': 'gzip, deflate', pragma: 'no-cache' },
 						{}, null,
 						[], ['application/json'], null,
