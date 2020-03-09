@@ -48,6 +48,7 @@ class Forge_MD {
 			filename = Forge_MD.key2filename(filename);
 		let master = options.master || options.parent.master || null;
 		let force = options.force || options.parent.force || false;
+		let references = options.references || options.parent.references || false;
 		let switchLoader = options.switchLoader || options.parent.switchLoader || false;
 		let generateMasterViews = options.generateMasterViews || options.parent.generateMasterViews || false;
 		let region = options.region || options.parent.region || 'US';
@@ -81,6 +82,8 @@ class Forge_MD {
 					jobs.input.compressedUrn = compressed;
 					jobs.input.rootFilename = master;
 				}
+				if (references)
+					jobs.input.checkReferences = true;
 
 				let svf = options.svf || options.parent.svf || false;
 				if (svf) {
@@ -182,6 +185,77 @@ class Forge_MD {
 			})
 			.catch((error) => {
 				console.error('Something went wrong while requesting translation for your seed file!', error);
+			});
+	}
+
+	static objectsReferences (filename, options) {
+		let bucketKey = options.bucket || options.parent.bucket || null;
+		let key = options.key || options.parent.key || false;
+		if ( key )
+			filename = Forge_MD.key2filename(filename);
+		let args = options.rawArgs || options.parent.rawArgs || null;
+		if ( !args )
+			return (null);	
+		let oa2legged = null;
+		let jobs = null;
+		Forge_MD.readBucketKey(bucketKey)
+			.then((name) => {
+				bucketKey = name;
+				return (Forge_MD.oauth.getOauth2Legged());
+			})
+			.then((_oa2legged) => {
+				oa2legged = _oa2legged;
+				let urn = Forge_MD.createOSSURN(bucketKey, filename, true);
+				//let decoded = utils.safeBase64decode (urn);
+				let baseURN = 'urn:adsk.objects:os.object:' + bucketKey + '/';
+				let references = {
+					urn: baseURN + filename,
+					filename: filename
+				};
+				// Collect Masters/Childs
+				let dict = {};
+				let master = filename;
+				dict [master] = [];
+				for ( let i = 4 ; i < args.length ; i++ ) {
+					if ( args [i] === '--child' ) {
+						let childs = args [++i].split (',');
+						for ( let j = 0 ; j < childs.length ; j++ )
+							dict [master].push (childs [j]);
+					} else if ( args [i] === '--master' ) {
+						master = args [++i];
+						dict [master] = [];
+					}
+				}
+				// Build references payload
+				function buildReferenceTree (refDict, entry) {
+					if ( !refDict.hasOwnProperty (entry) )
+						return (null);
+					let result = [];
+					for ( let i = 0 ; i < refDict [entry].length ; i++ ) {
+						let ref = {
+							urn: baseURN + refDict [entry] [i],
+							relativePath: refDict [entry] [i]
+						};
+						let subref = buildReferenceTree (refDict, refDict [entry] [i]);
+						if ( subref !== null )
+							ref.references = subref;
+						result.push (ref);
+					}
+					return (result);
+				}
+
+				references.references = buildReferenceTree (dict, filename);
+				return ({ urn: urn, references: references });
+			})
+			.then((_result) => {
+				let md = new ForgeAPI.DerivativesApi();
+				return (md.setReferences(_result.urn, _result.references, {}, oa2legged, oa2legged.getCredentials()));
+			})
+			.then((response) => {
+				console.log(JSON.stringify(response.body, null, 4));
+			})
+			.catch((error) => {
+				console.error('Something went wrong while setting translation references for your seed file!', error);
 			});
 	}
 

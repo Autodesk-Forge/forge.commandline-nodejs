@@ -208,6 +208,7 @@ let commands = [
 					{ option: '-k, --key', description: 'filename represents the objectKey on OSS vs the filename' },
 					{ option: '-m, --master <master>', description: 'define the master file when using a compressed seed file' },
 					{ option: '-f, --force', description: 'force translation' },
+					{ option: '-c, --references', description: 'force using references configuration in the translation' },
 					{ option: '-r, --region <region>', description: 'region: US or EMEA [string, default: US]' },
 					{ option: '--switchLoader', description: 'switches the IFC loader from Navisworks to Revit' },
 					{ option: '--generateMasterViews', description: 'generates master views when translating from the Revit' },
@@ -233,6 +234,16 @@ let commands = [
 				]
 			},
 			{
+				name: 'references', description: 'create references for a composite design in Model Derivative (2legged)',
+				arguments: '<filename>', action: ForgeMD.objectsReferences,
+				options: [
+					{ option: '-b, --bucket <bucket>', description: 'override bucket name to be used in this session' },
+					{ option: '-k, --key', description: 'filename represents the objectKey on OSS vs the filename' },
+					{ option: '-m, --master <filename>', description: 'specificy master (can appear multiple times' },
+					{ option: '-c, --child <filename [, filename]>', description: 'specificy child, comma separated (can appear multiple times' },
+				]
+			},
+			{
 				name: 'progress', description: 'translate progress of a seed file (2legged)',
 				arguments: '<filename>', action: ForgeMD.objectsTranslateProgress,
 				options: [
@@ -241,7 +252,7 @@ let commands = [
 				]
 			},
 			{
-				name: 'manifest', description: 'information about derivatives that correspond to a specific seed file, including derviative URNs and statuses (2legged)',
+				name: 'manifest', description: 'information about derivatives that correspond to a specific seed file, including derivative URNs and statuses (2legged)',
 				arguments: '<filename>', action: ForgeMD.objectsManifest,
 				options: [
 					{ option: '-b, --bucket <bucket>', description: 'override bucket name to be used in this session' },

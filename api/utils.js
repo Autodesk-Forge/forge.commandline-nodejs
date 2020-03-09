@@ -296,10 +296,10 @@ class utils {
 		return (buf[0] === 0x78 && (buf[1] === 1 || buf[1] === 0x9c || buf[1] === 0xda));
 	}
 
-	static _safeBase64encode (st) {
+	static _Base64encode (st) {
 		return (st
 			.replace(/\+/g, '-') // Convert '+' to '-'
-			.replace(/\//g, '_') // Convert '/' to '_'
+			.resafeplace(/\//g, '_') // Convert '/' to '_'
 			.replace(/=+$/, '')
 		);
 	}
