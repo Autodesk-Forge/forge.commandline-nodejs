@@ -17,8 +17,7 @@
 		integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
 
 	<!-- Autodesk Forge Viewer -->
-	<link href="<%= viewer_path %>/style.css?v=<%= version %>"
-		rel="stylesheet" />
+	<link href="<%= viewer_path %>/style.css?v=<%= version %>" rel="stylesheet" />
 	<script src="<%= viewer_path %>/viewer3D.js?v=<%= version %>"></script>
 </head>
 
@@ -27,21 +26,26 @@
 	<div id="project">
 		<div id="viewer" class="left"></div>
 		<div id="list" class="right">
-				<details id="3d" open>
-					<summary>3D Views</summary>
-				</details>
-				<details id="2d" open>
-					<summary>2D Sheets</summary>
-				</details>
-				<details id="options" open>
-					<summary>Options</summary>
-					<div><input type="checkbox" onclick="setOptions(this)" value="disableHighlight" name="disableHighlight" checked> Disable Highlight </div>
-					<div><input type="checkbox" onclick="setOptions(this)" value="setGroundShadow" name="setGroundShadow"> Ground Shadow </div>
-					<div><input type="checkbox" onclick="setOptions(this)" value="setGroundReflection" name="setGroundReflection"> Ground Reflection </div>
-					<div><input type="checkbox" onclick="setOptions(this)" value="setGhosting" name="setGhosting" checked> Ghosting </div>
-					<div><input type="checkbox" onclick="setOptions(this)" value="setEnvMapBackground" name="setEnvMapBackground"> Env Map Background </div>
-				</details>
-			</div>
+			<details id="3d" open>
+				<summary>3D Views</summary>
+			</details>
+			<details id="2d" open>
+				<summary>2D Sheets</summary>
+			</details>
+			<details id="options" open>
+				<summary>Options</summary>
+				<div><input type="checkbox" onclick="setOptions(this)" value="disableHighlight" name="disableHighlight"
+						checked> Disable Highlight </div>
+				<div><input type="checkbox" onclick="setOptions(this)" value="setGroundShadow" name="setGroundShadow">
+					Ground Shadow </div>
+				<div><input type="checkbox" onclick="setOptions(this)" value="setGroundReflection"
+						name="setGroundReflection"> Ground Reflection </div>
+				<div><input type="checkbox" onclick="setOptions(this)" value="setGhosting" name="setGhosting" checked>
+					Ghosting </div>
+				<div><input type="checkbox" onclick="setOptions(this)" value="setEnvMapBackground"
+						name="setEnvMapBackground"> Env Map Background </div>
+			</details>
+		</div>
 		<br>
 	</div>
 
@@ -56,7 +60,8 @@
 		function initialize() {
 			let svf_options = {
 				env: 'AutodeskProduction',
-				api: 'derivativeV2' + (atob(urn.replace('_', '/')).indexOf('emea') > -1 ? '_EU' : ''), // 'derivativeV2', 'derivativeV2_EU'
+				api: 'derivativeV2' + (atob(urn.replace('_', '/')).indexOf('emea') > -1 ? '_EU' :
+					''), // 'derivativeV2', 'derivativeV2_EU'
 				useCookie: false, // optional for Chrome browser
 				useCredentials: true,
 				//acmSessionId: urn,
@@ -86,7 +91,7 @@
 				//disableIndexedDb: true, // on url param
 				endpoint: '<%= endpoint %>',
 			};
-			let options = <%= viewer_options %>;
+			let options = <%= viewer_options %> ;
 			Autodesk.Viewing.Initializer(options, loadModel);
 			// No 2d views in OTG
 			if (options === otg_options || options === otg_options_local)
@@ -132,12 +137,15 @@
 				type: 'geometry'
 			});
 			for (let i = 0; views && i < views.length; i++) {
-				let r = $('<div><button id="' + views[i].data.guid + '" title="' 
-					+ htmlEntities(views[i].data.name) + '">' 
-					+ htmlEntities(views[i].data.name) + '</button></div>');
+				let guid = views[i].data.guid;
+				if (guid.contains('asset'))
+					guid = 'asset-' + JSON.parse(guid).asset;
+				let r = $('<div><button id="' + guid + '" title="' +
+					htmlEntities(views[i].data.name) + '">' +
+					htmlEntities(views[i].data.name) + '</button></div>');
 				//$('#list').append(r);
 				$('#' + views[i].data.role).append(r);
-				$('#' + views[i].data.guid).click((e) => {
+				$('#' + guid).click((e) => {
 					switchView(e);
 				});
 			}
@@ -147,14 +155,17 @@
 			doc.CurrentViewable = doc.getRoot().getDefaultGeometry();
 			oViewer.loadDocumentNode(doc, doc.CurrentViewable).then((model) => onModelLoaded(model));
 		}
-	
+
 		function switchView(evt, role) {
 			evt.stopPropagation();
+			let guid = evt.target.id;
+			if (guid.contains('asset'))
+				guid = '{"type":"Design","asset":"' + guid + '"}'
 			let view = oViewer.MyDocument.getRoot().search({
 				type: 'geometry',
-				guid: evt.target.id
+				guid: guid
 			}, true);
-			let doc =oViewer.MyDocument
+			let doc = oViewer.MyDocument
 			oViewer.unloadDocumentNode(doc.CurrentViewable);
 			doc.CurrentViewable = view[0];
 			oViewer.loadDocumentNode(doc, doc.CurrentViewable).then((model) => onModelLoaded(model));
@@ -163,7 +174,7 @@
 		function onModelLoaded(model) {
 			oViewer.setLightPreset(0);
 			oViewer.setLightPreset(2);
-			oViewer.setQualityLevel(/* ambient shadows */ false, /* antialiasing */ true);
+			oViewer.setQualityLevel( /* ambient shadows */ false, /* antialiasing */ true);
 			oViewer.setGroundShadow(false);
 			oViewer.setGroundReflection(false);
 			oViewer.setGhosting(true);
@@ -179,148 +190,149 @@
 			return (String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'));
 		}
 
-		function setOptions (evt) {
+		function setOptions(evt) {
 			oViewer[evt.name](evt.checked);
 		}
-		
 	</script>
 
 	<style>
-	.left {
-		float: left;
-	}
+		.left {
+			float: left;
+		}
 
-	.right {
-		float: right;
-	}
+		.right {
+			float: right;
+		}
 
-	.clear {
-		clear: both;
-	}
+		.clear {
+			clear: both;
+		}
 
-	body {
-		margin: 0 auto;
-		padding: 0px;
-		background-color: #555555;
-	}
+		body {
+			margin: 0 auto;
+			padding: 0px;
+			background-color: #555555;
+		}
 
-	div#project {
-		margin: 0 auto;
-		text-align: left;
-		position: absolute;
-		width: 100%;
-		height: 99%;
-	}
+		div#project {
+			margin: 0 auto;
+			text-align: left;
+			position: absolute;
+			width: 100%;
+			height: 99%;
+		}
 
-	div#viewer {
-		width: 75%;
-		height: 100%;
-		cursor: pointer;
-		padding: 0px;
-		position: relative;
-		overflow: hidden;
-		background-color: #2f2f2f;
-		border: 2px dashed #000000;
-		border-radius: 10px;
-	}
+		div#viewer {
+			width: 75%;
+			height: 100%;
+			cursor: pointer;
+			padding: 0px;
+			position: relative;
+			overflow: hidden;
+			background-color: #2f2f2f;
+			border: 2px dashed #000000;
+			border-radius: 10px;
+		}
 
-	div#list {
-		width: calc(24% - 8px);
-		height: 100%;
-		padding: 0px;
-		position: relative;
-		background-color: #2f2f2f;
-		border: 2px dashed #000000;
-		border-radius: 10px;
-		overflow: hidden;
-		overflow-y: scroll;
-	}
+		div#list {
+			width: calc(24% - 8px);
+			height: 100%;
+			padding: 0px;
+			position: relative;
+			background-color: #2f2f2f;
+			border: 2px dashed #000000;
+			border-radius: 10px;
+			overflow: hidden;
+			overflow-y: scroll;
+		}
 
-	div#list div button {
-		background: -webkit-gradient(linear, left top, left bottom, color-stop(0.05, rgb(230, 189, 67) 5%), color-stop(1, rgb(236, 180, 10)));
-		background: -moz-linear-gradient(top, rgb(230, 189, 67) 5%, rgb(236, 180, 10) 100%);
-		background: -webkit-linear-gradient(top, rgb(230, 189, 67) 5% 5%, rgb(236, 180, 10) 100%);
-		background: -o-linear-gradient(top, rgb(230, 189, 67) 5% 5%, rgb(236, 180, 10) 100%);
-		background: -ms-linear-gradient(top, rgb(230, 189, 67) 5% 5%, rgb(236, 180, 10) 100%);
-		background: linear-gradient(to bottom, rgb(230, 189, 67) 5% 5%, rgb(236, 180, 10) 100%);
-		filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='rgb(230, 189, 67) 5%', endColorstr='rgb(236, 180, 10)', GradientType=0);
-		background-color: rgb(230, 189, 67) 5%;
-		-moz-border-radius: 12px;
-		-webkit-border-radius: 12px;
-		border-radius: 12px;
-		border: 1px solid rgb(230, 189, 67);
-		display: inline-block;
-		cursor: pointer;
-		color: #ffffff;
-		font-family: Verdana;
-		font-size: 12px;
-		text-decoration: none;
-		text-shadow: 0px 1px 0px rgb(230, 189, 67);
-		margin: 2px;
-		height: 42px;
-		width: calc(100% - 4px);
-		/*padding-top: 100%;*/ /* 1:1 Aspect Ratio */
-		/*position: relative;*/ /* If you want text inside of it */
-	}
+		div#list div button {
+			background: -webkit-gradient(linear, left top, left bottom, color-stop(0.05, rgb(230, 189, 67) 5%), color-stop(1, rgb(236, 180, 10)));
+			background: -moz-linear-gradient(top, rgb(230, 189, 67) 5%, rgb(236, 180, 10) 100%);
+			background: -webkit-linear-gradient(top, rgb(230, 189, 67) 5% 5%, rgb(236, 180, 10) 100%);
+			background: -o-linear-gradient(top, rgb(230, 189, 67) 5% 5%, rgb(236, 180, 10) 100%);
+			background: -ms-linear-gradient(top, rgb(230, 189, 67) 5% 5%, rgb(236, 180, 10) 100%);
+			background: linear-gradient(to bottom, rgb(230, 189, 67) 5% 5%, rgb(236, 180, 10) 100%);
+			filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='rgb(230, 189, 67) 5%', endColorstr='rgb(236, 180, 10)', GradientType=0);
+			background-color: rgb(230, 189, 67) 5%;
+			-moz-border-radius: 12px;
+			-webkit-border-radius: 12px;
+			border-radius: 12px;
+			border: 1px solid rgb(230, 189, 67);
+			display: inline-block;
+			cursor: pointer;
+			color: #ffffff;
+			font-family: Verdana;
+			font-size: 12px;
+			text-decoration: none;
+			text-shadow: 0px 1px 0px rgb(230, 189, 67);
+			margin: 2px;
+			height: 42px;
+			width: calc(100% - 4px);
+			/*padding-top: 100%;*/
+			/* 1:1 Aspect Ratio */
+			/*position: relative;*/
+			/* If you want text inside of it */
+		}
 
-	div#list div button:hover {
-		background: -webkit-gradient(linear, left top, left bottom, color-stop(0.05, rgb(236, 180, 10)), color-stop(1, rgb(230, 189, 67) 5%));
-		background: -moz-linear-gradient(top, rgb(236, 180, 10) 5%, rgb(230, 189, 67) 100%);
-		background: -webkit-linear-gradient(top, rgb(236, 180, 10) 5%, rgb(230, 189, 67) 100%);
-		background: -o-linear-gradient(top, rgb(236, 180, 10) 5%, rgb(230, 189, 67) 100%);
-		background: -ms-linear-gradient(top, rgb(236, 180, 10) 5%, rgb(230, 189, 67) 100%);
-		background: linear-gradient(to bottom, rgb(236, 180, 10) 5%, rgb(230, 189, 67) 100%);
-		filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='rgb(236, 180, 10)', endColorstr='rgb(230, 189, 67)', GradientType=0);
-		background-color: rgb(236, 180, 10);
-	}
+		div#list div button:hover {
+			background: -webkit-gradient(linear, left top, left bottom, color-stop(0.05, rgb(236, 180, 10)), color-stop(1, rgb(230, 189, 67) 5%));
+			background: -moz-linear-gradient(top, rgb(236, 180, 10) 5%, rgb(230, 189, 67) 100%);
+			background: -webkit-linear-gradient(top, rgb(236, 180, 10) 5%, rgb(230, 189, 67) 100%);
+			background: -o-linear-gradient(top, rgb(236, 180, 10) 5%, rgb(230, 189, 67) 100%);
+			background: -ms-linear-gradient(top, rgb(236, 180, 10) 5%, rgb(230, 189, 67) 100%);
+			background: linear-gradient(to bottom, rgb(236, 180, 10) 5%, rgb(230, 189, 67) 100%);
+			filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='rgb(236, 180, 10)', endColorstr='rgb(230, 189, 67)', GradientType=0);
+			background-color: rgb(236, 180, 10);
+		}
 
-	div#list div button:active {
-		position: relative;
-		top: 1px;
-	}
+		div#list div button:active {
+			position: relative;
+			top: 1px;
+		}
 
-	div#list div button img {
-		width: calc(100% - 8px);
-	}
+		div#list div button img {
+			width: calc(100% - 8px);
+		}
 
-	div#list details {
-		margin-bottom: 4px;
-	}
+		div#list details {
+			margin-bottom: 4px;
+		}
 
-	div#list summary {
-		display: block;
-		font-weight: bold;
-		box-shadow: inset 0px 0px 14px -3px #f2fadc;
-		background-color: #dbe6c4;
-		border-radius: 6px;
-		border: 1px solid #b2b8ad;
-		cursor: pointer;
-		color: #757d6f;
-		padding: 6px 24px;
-		text-decoration: none;
-		text-shadow: 0px 1px 0px #ced9bf;
-	}
+		div#list summary {
+			display: block;
+			font-weight: bold;
+			box-shadow: inset 0px 0px 14px -3px #f2fadc;
+			background-color: #dbe6c4;
+			border-radius: 6px;
+			border: 1px solid #b2b8ad;
+			cursor: pointer;
+			color: #757d6f;
+			padding: 6px 24px;
+			text-decoration: none;
+			text-shadow: 0px 1px 0px #ced9bf;
+		}
 
-	details#options div {
-		color: white;
-		margin-bottom: 4px;
-	}
+		details#options div {
+			color: white;
+			margin-bottom: 4px;
+		}
 
-	::-webkit-scrollbar {
-		height: 12px;
-		width: 12px;
-		background: #000;
-	}
+		::-webkit-scrollbar {
+			height: 12px;
+			width: 12px;
+			background: #000;
+		}
 
-	::-webkit-scrollbar-thumb {
-		background: #EBB30B;
-		-webkit-border-radius: 1ex;
-		-webkit-box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.75);
-	}
+		::-webkit-scrollbar-thumb {
+			background: #EBB30B;
+			-webkit-border-radius: 1ex;
+			-webkit-box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.75);
+		}
 
-	::-webkit-scrollbar-corner {
-		background: #000;
-	}
+		::-webkit-scrollbar-corner {
+			background: #000;
+		}
 	</style>
 </body>
 
