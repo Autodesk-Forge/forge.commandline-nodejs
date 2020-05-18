@@ -201,6 +201,24 @@ let commands = [
 				]
 			},
 			{
+				name: 'sign', description: 'sign a seed file (2legged)',
+				arguments: '<filename>', action: ForgeOSS.signObject,
+				options: [
+					{ option: '-b, --bucket <bucket>', description: 'override bucket name to be used in this session' },
+					{ option: '-k, --key', description: 'filename represents the objectKey on OSS vs the filename' },
+					{ option: '-a, --access', description: 'access for signed resource Acceptable values: read, write, readwrite Default value: read' },
+					{ option: '-e, --minutesexpiration <minutesexpiration>', description: 'expiration time in minutes; default: 60' },
+					{ option: '-s, --singleuse', description: 'expires after it is used the first time if true. Default value: false' }
+				]
+			},
+			{
+				name: 'unsign', description: 'unsign a seed file (2legged)',
+				arguments: '<id>', action: ForgeOSS.signObject,
+				options: [
+					{ option: '-r, --region <region>', description: 'region: US or EMEA [string, default: US]' },
+				]
+			},
+			{
 				name: 'translate', description: 'translate a seed file (2legged)',
 				arguments: '<filename>', action: ForgeMD.objectsTranslate,
 				options: [
