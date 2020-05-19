@@ -87,7 +87,7 @@ class utils {
 	static writeFile (filename, content, enc, bRaw) {
 		return (new Promise((fulfill, reject) => {
 			let pathname = path.dirname(filename);
-			utils.mkdirp(pathname)
+			mkdirp(pathname)
 				.then((_pathname) => { // eslint-disable-line no-unused-vars
 					fs.writeFile(filename, !bRaw && typeof content !== 'string' ? JSON.stringify(content) : content, enc, (err) => {
 						if (err)
@@ -344,17 +344,6 @@ class utils {
 	static rimraf (pathname) {
 		return (new Promise((fulfill, reject) => {
 			rimraf(pathname, (err) => {
-				if (err)
-					reject(err);
-				else
-					fulfill(pathname);
-			});
-		}));
-	}
-
-	static mkdirp (pathname) {
-		return (new Promise((fulfill, reject) => {
-			mkdirp(pathname, (err) => {
 				if (err)
 					reject(err);
 				else

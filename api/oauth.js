@@ -78,7 +78,7 @@ class Forge_oauth {
 
 	static _2leggedRelease (options) { // eslint-disable-line no-unused-vars
 		utils.unlink(utils.data('credentials'));
-		console.error('Your 2 legged token has been released!');
+		console.log('Your 2 legged token has been released!');
 	}
 
 	// oauth 3 legged

@@ -25,10 +25,7 @@
 /*jshint esversion: 6 */
 
 const ForgeAPI = require('forge-apis');
-//const fs =require ('fs') ;
-//const url =require ('url') ;
 const path = require('path');
-//const uuidv4 =require ('uuid/v4') ;
 const utils = require('./utils');
 
 class Forge_MD {

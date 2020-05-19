@@ -28,7 +28,7 @@ const ForgeAPI = require('forge-apis');
 const fs = require('fs');
 const url = require('url');
 const path = require('path');
-const uuidv4 = require('uuid/v4');
+const { v4: uuidv4 } = require('uuid');
 const utils = require('./utils');
 
 class Forge_OSS {
