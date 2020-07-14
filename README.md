@@ -90,23 +90,23 @@ Here are few examples (click &#9658; to expand):
    node forge.js 2legged
 
    # Create a bucket. Bucket name must be lower case and valid characters.
-   node forge.js buckets new my_bucket_name
+   node forge.js buckets-new my_bucket_name
 
    # Upload a model.
-   node forge.js objects put Au.obj
+   node forge.js objects-put Au.obj
 
    # Register the model to get it translated.
-   node forge.js objects translate Au.obj
+   node forge.js objects-translate Au.obj
 
    # Wait until the translation completes.
    # Translation is complete when it reaches 'success - 100%'
-   node forge.js objects progress Au.obj
+   node forge.js objects-progress Au.obj
 
    # Create an HTML page with your URN and a read-only access token to view the SVF.
-   node forge.js html get urn:adsk.objects:os.object:my_bucket_name/Au.obj ./bubbles/Au.obj.html
+   node forge.js html urn:adsk.objects:os.object:my_bucket_name/Au.obj ./bubbles/Au.obj.html
 
    # Create an HTML page with your URN and a read-only access token to view the OTG version.
-   node forge.js html get urn:adsk.objects:os.object:my_bucket_name/Au.obj ./bubbles/Au.obj.html --otg
+   node forge.js html urn:adsk.objects:os.object:my_bucket_name/Au.obj ./bubbles/Au.obj.html --otg
 
    # Start local server and load the HTML page.
    open http://localhost:$PORT/Au.obj.html & http-server ./bubbles/
@@ -122,22 +122,22 @@ Here are few examples (click &#9658; to expand):
    node forge.js 3legged auto
 
    # Get the list of Hubs.
-   node forge.js hubs ls
+   node forge.js hubs
 
    # Get the list of projects.
-   node forge.js projects ls $hubid
+   node forge.js projects $hubid
 
    # Get the entire project data tree.
-   node forge.js projects tree $hubid $projectid -f
+   node forge.js projects-tree $hubid $projectid -f
 
    # Refresh the access token
-   node forge.js 3legged refresh
+   node forge.js 3legged-refresh
 
    # Create an HTML page with your URN and a read-only access token to view the SVF.
-   node forge.js html get $versionid ./bubbles/output.html
+   node forge.js html $versionid ./bubbles/output.html
 
    # Create an HTML page with your URN and a read-only access token to view the OTG version.
-   node forge.js html get $versionid ./bubbles/output.html --otg
+   node forge.js html $versionid ./bubbles/output.html --otg
 
    # Start local server and load the HTML page.
    open http://localhost:$PORT/Au.obj.html & http-server ./bubbles/

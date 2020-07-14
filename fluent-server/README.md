@@ -67,19 +67,19 @@ This utility does provide a way to download the SVF and OTG Bubbles on your loca
    node forge.js 3legged auto
 
    # Get the list of Hubs.
-   node forge.js hubs ls
+   node forge.js hubs
 
    # Get the list of projects.
-   node forge.js projects ls $MyHubID
+   node forge.js projects $MyHubID
 
    # Get the Project tree information.
-   node forge.js projects tree $MyHubID $MyProjectID
+   node forge.js projects-tree $MyHubID $MyProjectID
 
    # Download the SVF Bubble
-   node forge.js bubble get $MyVersionID ./bubbles/MyPath
+   node forge.js bubble $MyVersionID ./bubbles/MyPath
 
    # Create an HTML page with your local URN
-   node forge.js html get /MyPath/bubble.json ./bubbles/output.html
+   node forge.js html /MyPath/bubble.json ./bubbles/output.html
 
    # Start local server and load the HTML page.
    open http://localhost:$PORT/output.html & http-server ./bubbles/
@@ -95,19 +95,19 @@ This utility does provide a way to download the SVF and OTG Bubbles on your loca
    node forge.js 3legged auto
 
    # Get the list of Hubs.
-   node forge.js hubs ls
+   node forge.js hubs
 
    # Get the list of projects.
-   node forge.js projects ls $hubid
+   node forge.js projects $hubid
 
    # Get the Project tree information.
-   node forge.js projects tree $hubid $projectid
+   node forge.js projects-tree $hubid $projectid
 
    # Download the SVF Bubble
-   node forge.js bubble get $versionid ./bubbles/MyPath --otg
+   node forge.js bubble $versionid ./bubbles/MyPath --otg
 
    # Create an HTML page with your local URN
-   node forge.js html get /MyPath/$VERSION_NUMBER/bubble.json ./bubbles/output.html
+   node forge.js html /MyPath/$VERSION_NUMBER/bubble.json ./bubbles/output.html
 
    # Start local server and load the HTML page.
    open http://localhost:7124/output.html & PORT=7124 & node fluent-server/start.js ./bubbles/
