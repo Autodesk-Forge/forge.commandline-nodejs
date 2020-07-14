@@ -188,11 +188,11 @@ class Forge_MD {
 	static objectsReferences (filename, options) {
 		let bucketKey = options.bucket || options.parent.bucket || null;
 		let key = options.key || options.parent.key || false;
-		if ( key )
+		if (key)
 			filename = Forge_MD.key2filename(filename);
 		let args = options.rawArgs || options.parent.rawArgs || null;
-		if ( !args )
-			return (null);	
+		if (!args)
+			return (null);
 		let oa2legged = null;
 		let jobs = null;
 		Forge_MD.readBucketKey(bucketKey)
@@ -212,36 +212,36 @@ class Forge_MD {
 				// Collect Masters/Childs
 				let dict = {};
 				let master = filename;
-				dict [master] = [];
-				for ( let i = 4 ; i < args.length ; i++ ) {
-					if ( args [i] === '--child' ) {
-						let childs = args [++i].split (',');
-						for ( let j = 0 ; j < childs.length ; j++ )
-							dict [master].push (childs [j]);
-					} else if ( args [i] === '--master' ) {
-						master = args [++i];
-						dict [master] = [];
+				dict[master] = [];
+				for (let i = 4; i < args.length; i++) {
+					if (args[i] === '--child') {
+						let childs = args[++i].split(',');
+						for (let j = 0; j < childs.length; j++)
+							dict[master].push(childs[j]);
+					} else if (args[i] === '--master') {
+						master = args[++i];
+						dict[master] = [];
 					}
 				}
 				// Build references payload
 				function buildReferenceTree (refDict, entry) {
-					if ( !refDict.hasOwnProperty (entry) )
+					if (!refDict.hasOwnProperty(entry))
 						return (null);
 					let result = [];
-					for ( let i = 0 ; i < refDict [entry].length ; i++ ) {
+					for (let i = 0; i < refDict[entry].length; i++) {
 						let ref = {
-							urn: baseURN + refDict [entry] [i],
-							relativePath: refDict [entry] [i]
+							urn: baseURN + refDict[entry][i],
+							relativePath: refDict[entry][i]
 						};
-						let subref = buildReferenceTree (refDict, refDict [entry] [i]);
-						if ( subref !== null )
+						let subref = buildReferenceTree(refDict, refDict[entry][i]);
+						if (subref !== null)
 							ref.references = subref;
-						result.push (ref);
+						result.push(ref);
 					}
 					return (result);
 				}
 
-				references.references = buildReferenceTree (dict, filename);
+				references.references = buildReferenceTree(dict, filename);
 				return ({ urn: urn, references: references });
 			})
 			.then((_result) => {
@@ -357,7 +357,7 @@ class Forge_MD {
 				console.log(JSON.stringify(manifest.body, null, 4));
 			})
 			.catch((error) => {
-				console.error('Something went wrong while requesting translation for your seed file!', error);
+				console.error('Something went wrong while requesting metadata for your seed file!', error);
 			});
 	}
 

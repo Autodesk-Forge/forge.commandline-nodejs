@@ -104,6 +104,7 @@ class Forge_oauth {
 		if ( implicit ) {
 			uri = uri.replace('response_type=code', 'response_type=token');
 		}
+		//console.log (uri);
 		opn(
 			uri
 			/*, { app: [
