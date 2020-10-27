@@ -14,7 +14,7 @@
 
 ## Description
 
-This sample is made for developers to debug OTG Viewer application locally. You are not authorized to use this server is a production or commercial environment.
+This sample is made for developers to debug OTG Viewer application locally. You are not authorized to use this server in a production or commercial environment.
 
 We do recommend you to read the Viewer copyright and understands limitations in using local copies. Here is the copy of the Viewer copyright notice for your convenience.
 
