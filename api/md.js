@@ -153,7 +153,7 @@ class Forge_MD {
 				let obj = options.obj || options.parent.obj || false;
 				let ids = options.ids || options.parent.ids || -1;
 				if (ids !== -1)
-					ids = ids.split(',');
+				    ids = ids.split(',').map( Number );
 				let unit = options.unit || options.parent.unit || null;
 				let guid = options.guid || options.parent.guid || null;
 				if (obj)
