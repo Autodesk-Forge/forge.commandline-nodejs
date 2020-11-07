@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-MYHOME="`dirname \"$0\"`" # Relative
-export MYHOME="`( cd \"$MYHOME\" && pwd )`" # Absolutized and normalized
-
-# echo "node forge.js ${@}"
-node "${MYHOME}/forge.js" ${@}
