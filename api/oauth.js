@@ -97,7 +97,7 @@ class Forge_oauth {
 		}));
 	}
 
-	static _3legged_authorize (auto, implicit) {
+	static async _3legged_authorize (auto, implicit) {
 		let oa3Legged = new ForgeAPI.AuthClientThreeLegged(Forge_oauth.settings.clientId, Forge_oauth.settings.clientSecret, Forge_oauth.settings.callback, Forge_oauth.settings.opts.scope.split(' '), true);
 		// Generate a URL page that asks for permissions for the specified scopes.
 		let uri = oa3Legged.generateAuthUrl();
@@ -105,7 +105,7 @@ class Forge_oauth {
 			uri = uri.replace('response_type=code', 'response_type=token');
 		}
 		//console.log (uri);
-		opn(
+		await opn(
 			uri
 			/*, { app: [
 				'google chrome',
@@ -158,7 +158,7 @@ class Forge_oauth {
 			}).listen(Forge_oauth.settings.PORT);
 		} else {
 			console.log('Wait for the browser to return a code and run this script again with the code as parameter...');
-			process.exit();
+			setTimeout (() => process.exit(), 1000);
 		}
 	}
 

@@ -852,7 +852,7 @@ class otgBubble {
 			if (!fileurn || !modelurn)
 				return (reject('Missing the required parameter {urn} when calling getViewModelBinary'));
 			// Forge SDK and Unirest auto uncompress file :(
-			// let req =unirest.get ('https://otg.autodesk.com' + path.join ('/modeldata/file/', fileurn, encodeURI (elt)) + '?acmsession=' + modelurn)
+			// let req =unirest.get ('https://otg.autodesk.com' + path.posix.join ('/modeldata/file/', fileurn, encodeURI (elt)) + '?acmsession=' + modelurn)
 			// 	.headers ({
 			// 		'cache-control': 'no-cache',
 			// 		pragma: 'no-cache',
@@ -975,7 +975,7 @@ class otgBubble {
 			if (!fileurn)
 				return (reject('Missing the required parameter {urn} when calling getSharedAssetFile'));
 			if (outFile.endsWith('.png')) {
-				let req = unirest.get('https://otg.autodesk.com' + path.join('/cdn/', elt[0], account_id, type, elt[1]) + '?acmsession=' + modelurn)
+				let req = unirest.get('https://otg.autodesk.com' + path.posix.join('/cdn/', elt[0], account_id, type, elt[1]) + '?acmsession=' + modelurn)
 					.headers({
 						pragma: 'no-cache',
 						Authorization: ('Bearer ' + this._token.getCredentials().access_token)
@@ -1001,7 +1001,7 @@ class otgBubble {
 							method: 'GET',
 							hostname: 'otg.autodesk.com',
 							port: 443,
-							path: (path.join('/cdn/', elt[0], account_id, type, elt[1]) + '?acmsession=' + modelurn),
+							path: (path.posix.join('/cdn/', elt[0], account_id, type, elt[1]) + '?acmsession=' + modelurn),
 							headers: {
 								'Authorization': ('Bearer ' + this._token.getCredentials().access_token),
 								'cache-control': 'no-cache',
@@ -1021,6 +1021,7 @@ class otgBubble {
 									reject(buffer.toString());
 									return;
 								}
+								//utils.writeFile(outFile + '.gz', buffer, 'binary', true)
 								otgBubble.gunzip(buffer, true)
 									.then((result) => {
 										fulfill(result);
