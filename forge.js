@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 //
 // Copyright (c) 2019 Autodesk, Inc.
 //
@@ -30,8 +31,8 @@ const program = require('commander');
 const ForgeSettings = {
 	clientId: process.env.FORGE_CLIENT_ID || 'your_client_id',
 	clientSecret: process.env.FORGE_CLIENT_SECRET || 'your_client_secret',
-	PORT: process.env.PORT || '3006',
-	callback: process.env.FORGE_CALLBACK || ('http://localhost:' + (process.env.PORT || '3006') + '/oauth'),
+	PORT: process.env.PORT || '3000',
+	callback: process.env.FORGE_CALLBACK || ('http://localhost:' + (process.env.PORT || '3000') + '/oauth'),
 
 	grantType: 'client_credentials',
 	opts: { 'scope': 'data:read data:write data:create data:search bucket:create bucket:read bucket:update bucket:delete viewables:read' },
@@ -41,7 +42,7 @@ const ForgeSettings = {
 	//chunkSize: 2 * 1024 * 1024, // 2Mb
 	minChunkSize: 2 * 1024 * 1024, // 2Mb
 
-	viewerVersion: 'v7.3',
+	viewerVersion: 'v7.*',
 };
 
 const ForgeOauth = require('./api/oauth'); // Oauth
@@ -57,6 +58,8 @@ ForgeMD.oauth = ForgeOauth;
 const ForgeOther = require('./api/other'); // Others
 ForgeOther.oauth = ForgeOauth;
 ForgeOther.viewerVersion = ForgeSettings.viewerVersion;
+const ForgeBIM360 = require('./api/bim360'); // BIM360
+ForgeBIM360.oauth = ForgeOauth;
 
 // commander utils
 function registerCommands (p, commands) {
@@ -223,7 +226,8 @@ let commands = [
 			{ option: '-r, --region <region>', description: 'region: US or EMEA [string, default: US]' },
 			{ option: '--switchLoader', description: 'switches the IFC loader from Navisworks to Revit' },
 			{ option: '--generateMasterViews', description: 'generates master views when translating from the Revit' },
-			{ option: '--svf', description: 'translate to the Forge bubble format' },
+			{ option: '--svf', description: 'translate to the Forge SVF bubble format' },
+			{ option: '--svf2', description: 'translate to the Forge SVF2 bubble format' },
 			{ option: '--step', description: 'translate to the STEP format' },
 			{ option: '--protocol <protocol>', description: '203 for configuration controlled design, 214 for core data for automotive mechanical design processes, 242 for managed model based 3D engineering. Default to 214.' },
 			{ option: '--tolerance <tolerance>', description: 'possible values: between 0 and 1 [float, default: 0.001]' },
@@ -347,6 +351,8 @@ let commands = [
 		arguments: '<urn> <outputFolder>',
 		options: [
 			{ option: '-o, --otg', description: 'Download OTG bubble vs SVF Bubble' },
+			{ option: '-2, --svf2', description: 'Download SVF2 bubble vs SVF/OTG Bubble' },
+			//{ option: '-k, --key', description: 'urn represents the objectKey on OSS vs the urn' },
 		]
 	},
 
@@ -356,7 +362,9 @@ let commands = [
 		arguments: '<urn> <outputFilename>',
 		options: [
 			{ option: '-o, --otg', description: 'Use OTG vs SVF' },
+			{ option: '-2, --svf2', description: 'Use SVF2 vs SVF/OTG' },
 			{ option: '-l, --local', description: 'Use a local Viewer copy vs Server served Viewer' },
+			//{ option: '-k, --key', description: 'urn represents the objectKey on OSS vs the urn' },
 		]
 	},
 
@@ -364,13 +372,24 @@ let commands = [
 		name: 'viewer', action: ForgeOther.viewerGet,
 		description: 'Download a local copy of the Forge Viewer',
 		arguments: '<outputFolder>',
+	},
+
+	{
+		name: 'get-container', action: ForgeBIM360.getContainer,
+		description: 'Get BIM360 container',
+		arguments: '<hubId> <projectId>',
+	},
+	{
+		name: 'issues-ls', action: ForgeBIM360.issuesLs,
+		description: 'Get BIM360 issues',
+		arguments: '<containerId>',
 	}
 
 ];
 
 registerCommands(program, commands);
 program
-	.version('4.0.0')
+	.version('4.0.2')
 	//.option ('-u, --usage', 'Usage')
 	//.on ('--help', usage)
 	.parse(process.argv);

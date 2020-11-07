@@ -97,6 +97,17 @@ class Forge_MD {
 					};
 				}
 
+				let svf2 = options.svf2 || options.parent.svf2 || false;
+				if (svf2) {
+					jobs.output.formats.push({
+						type: 'svf2',
+						views: [
+							'2d',
+							'3d'
+						]
+					});
+				}
+
 				let stl = options.stl || options.parent.stl || false;
 				let ascii = options.ascii || options.parent.ascii || false;
 				let fs = options.fs || options.parent.fs || false;
@@ -151,9 +162,11 @@ class Forge_MD {
 					});
 
 				let obj = options.obj || options.parent.obj || false;
-				let ids = options.ids || options.parent.ids || -1;
-				if (ids !== -1)
+				let ids = options.ids || options.parent.ids || [-1];
+				if ( !Array.isArray(ids) ) {
 					ids = ids.split(',');
+					ids = ids.map(elt => parseInt(elt));
+				}
 				let unit = options.unit || options.parent.unit || null;
 				let guid = options.guid || options.parent.guid || null;
 				if (obj)

@@ -131,8 +131,13 @@ class Forge_Other {
 			})
 			.then((_oauthClient) => {
 				//oauthClient = _oauthClient;
-				let SvfOrOtg = (options.otg || options.parent.otg) ? 'otg' : 'svf';
+				let SvfOrOtg = 'svf';
+				SvfOrOtg = (options.otg || options.parent.otg) ? 'otg' : SvfOrOtg;
+				SvfOrOtg = (options.svf2 || options.parent.svf2) ? 'svf2' : SvfOrOtg;
 				let localOptions = (/^(https?):.*$/g.test(urn) || urn[0] === '/') ? '_local' : '';
+				// let isKey = (options.key || options.parent.key);
+				// if ( isKey )
+				// 	urn = utils.safeBase64encode (``);
 				let localServer = (options.local || options.parent.local) ? '/' + Forge_Other.viewerVersion : Forge_Other.viewerServerPath;
 				let data = {
 					urn: urn,
