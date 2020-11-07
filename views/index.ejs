@@ -12,7 +12,8 @@
 	<meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT" />
 	<meta http-equiv="pragma" content="no-cache" />
 
-	<!-- script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha256-pasqAKBDmFT4eHoN2ndd6lN370kFiGUFyTiUHWhU7k8=" crossorigin="anonymous"></script -->
+	<!-- script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+	  integrity="sha256-4+XzXVhsDmqanXGHaHvgh1gMQKX40OUvDEBTu8JcmNs=" crossorigin="anonymous"></script -->
 	<script src="https://code.jquery.com/jquery-2.2.4.min.js"
 		integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
 
@@ -59,10 +60,10 @@
 		}
 
 		function initialize() {
+			const emea = atob(urn.replace('_', '/').replace('-', '+')).indexOf('emea') > -1;
 			let svf_options = {
 				env: 'AutodeskProduction',
-				api: 'derivativeV2' + (atob(urn.replace('_', '/')).indexOf('emea') > -1 ? '_EU' :
-					''), // 'derivativeV2', 'derivativeV2_EU'
+				api: 'derivativeV2' + (emea ? '_EU' : ''), // derivativeV2/derivativeV2_EU
 				useCookie: false, // optional for Chrome browser
 				useCredentials: true,
 				//acmSessionId: urn,
@@ -70,10 +71,20 @@
 				//accessToken: '',
 			};
 			let otg_options = {
-				env: 'FluentProduction',
+				env: 'FluentProduction' + (emea ? 'EU' : ''), // FluentProduction/FluentProductionEU
 				api: 'fluent',
 				useCookie: false, // optional for Chrome browser
 				useCredentials: true,
+				//acmSessionId: urn,
+				getAccessToken: getAccessToken,
+				//disableWebSocket: true, // on url param
+				//disableIndexedDb: true, // on url param
+			};
+			let svf2_options = {
+				env: (emea ? 'MD20ProdEU' : 'MD20ProdUS'),
+				api: 'D3S',
+				//useCookie: false, // optional for Chrome browser
+				//useCredentials: true,
 				//acmSessionId: urn,
 				getAccessToken: getAccessToken,
 				//disableWebSocket: true, // on url param
@@ -92,9 +103,8 @@
 				//disableIndexedDb: true, // on url param
 				endpoint: '<%= endpoint %>',
 			};
-			let options = <%= viewer_options %> ;
+			let options = <%= viewer_options %>;
 			Autodesk.Viewing.Private.ENABLE_INLINE_WORKER = false;
-			
 			Autodesk.Viewing.Initializer(options, loadModel);
 			// No 2d views in OTG
 			if (options === otg_options || options === otg_options_local)
@@ -153,7 +163,7 @@
 			});
 			for (let i = 0; views && i < views.length; i++) {
 				let guid = views[i].data.guid;
-				if (guid.contains('asset'))
+				if (guid.indexOf('asset') > -1 || (guid.contains && guid.contains('asset')))
 					guid = 'asset-' + JSON.parse(guid).asset;
 				let r = $('<div><button id="' + guid + '" title="' +
 					htmlEntities(views[i].data.name) + '">' +
@@ -174,7 +184,7 @@
 		function switchView(evt, role) {
 			evt.stopPropagation();
 			let guid = evt.target.id;
-			if (guid.contains('asset'))
+			if (guid.indexOf('asset') > -1 || (guid.contains && guid.contains('asset')))
 				guid = '{"type":"Design","asset":"' + guid + '"}'
 			let view = oViewer.MyDocument.getRoot().search({
 				type: 'geometry',
