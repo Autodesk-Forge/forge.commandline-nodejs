@@ -42,7 +42,7 @@ const ForgeSettings = {
 	//chunkSize: 2 * 1024 * 1024, // 2Mb
 	minChunkSize: 2 * 1024 * 1024, // 2Mb
 
-	viewerVersion: 'v7.*',
+	viewerVersion: 'v7.3',
 };
 
 const ForgeOauth = require('./api/oauth'); // Oauth
