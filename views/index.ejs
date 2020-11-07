@@ -52,6 +52,7 @@
 	<script>
 		let urn = '<%= urn %>';
 		let oViewer = null;
+		let startAt = null;
 
 		function getAccessToken(onGetAccessToken) {
 			onGetAccessToken('<%= access_token %>', 82000);
@@ -92,6 +93,8 @@
 				endpoint: '<%= endpoint %>',
 			};
 			let options = <%= viewer_options %> ;
+			Autodesk.Viewing.Private.ENABLE_INLINE_WORKER = false;
+			
 			Autodesk.Viewing.Initializer(options, loadModel);
 			// No 2d views in OTG
 			if (options === otg_options || options === otg_options_local)
@@ -124,6 +127,12 @@
 			// oViewer.addEventListener(Autodesk.Viewing.OBJECT_TREE_CREATED_EVENT, (event) => {
 			// 	const tree = oViewer.model.getInstanceTree();
 			// });
+			
+			// Attach event handlers (this would work for all the files except those that doesn't have geometry data).
+			oViewer.addEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, (event) => {
+				let endAt =(new Date ().getTime () - startAt.getTime ()) / 1000;
+				console.log ("GEOMETRY_LOADED_EVENT = " + endAt);
+			});
 
 			oViewer.disableHighlight(true);
 			oViewer.autocam.shotParams.destinationPercent = 1;
@@ -133,6 +142,8 @@
 
 			if (!/^(urn|https?):.*$/g.test(urn) && urn[0] !== '/')
 				urn = 'urn:' + urn;
+				
+			startAt =new Date ();
 			Autodesk.Viewing.Document.load(urn, onDocumentLoaded, onError);
 		}
 
@@ -176,6 +187,9 @@
 		}
 
 		function onModelLoaded(model) {
+			let endAt =(new Date ().getTime () - startAt.getTime ()) / 1000;
+			console.log ("onModelLoaded = " + endAt);
+
 			oViewer.setLightPreset(0);
 			oViewer.setLightPreset(2);
 			oViewer.setQualityLevel( /* ambient shadows */ false, /* antialiasing */ true);

@@ -31,8 +31,8 @@ const _path = require('path');
 const utils = require('../api/utils');
 const CDNS = require('./cdn-registry');
 
-const SERVER_PORT = /*process.env.PORT ||*/ 7124;
-const MODEL_SERVER_PORT = SERVER_PORT + 1;
+const SERVER_PORT = /*process.env.PORT ||*/ 7125;
+const MODEL_SERVER_PORT = SERVER_PORT - 1;
 CDNS.repositories = _path.resolve(process.env.REPOS || process.argv[2] || process.cwd());
 
 let app = express();
