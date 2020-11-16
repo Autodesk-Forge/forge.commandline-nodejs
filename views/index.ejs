@@ -104,7 +104,7 @@
 				endpoint: '<%= endpoint %>',
 			};
 			let options = <%= viewer_options %>;
-			Autodesk.Viewing.Private.ENABLE_INLINE_WORKER = false;
+			//Autodesk.Viewing.Private.ENABLE_INLINE_WORKER = false;
 			Autodesk.Viewing.Initializer(options, loadModel);
 			// No 2d views in OTG
 			if (options === otg_options || options === otg_options_local)

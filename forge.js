@@ -289,6 +289,17 @@ let commands = [
 			{ option: '-p, --properties', description: 'returns a list of properties for each object in an object tree. Properties are returned according to object ID and do not follow a hierarchical structure' },
 		]
 	},
+	{
+		name: 'objects-derivatives', action: ForgeMD.objectsDerivatives,
+		description: 'downloads the derivative specified by the derivativeurn URI parameter, which was generated from the source model specified by the urn URI parameter. To download the file, you need to specify the file’s URN, which you retrieve by calling the GET :urn/manifest endpoint.(2legged)',
+		arguments: '<filename> <derivativesURN> <outputFile',
+		options: [
+			{ option: '-b, --bucket <bucket>', description: 'override bucket name to be used in this session' },
+			{ option: '-k, --key', description: 'filename represents the objectKey on OSS vs the filename' },
+			{ option: '-i, --info', description: 'information about the specified derivative, no download' },
+			{ option: '-u, --uncompress', description: 'dezip response after downloads' },
+		]
+	},
 
 	{ name: 'user', action: ForgeOther.userAboutMe, description: 'get the profile information of an authorizing end user (3legged)', },
 

@@ -335,7 +335,7 @@ class Forge_MD {
 				console.log(JSON.stringify(manifest.body, null, 4));
 			})
 			.catch((error) => {
-				console.error('Something went wrong while requesting translation for your seed file!', error);
+				console.error('Something went wrong while requesting the seed file manifest!', error);
 			});
 	}
 
@@ -371,6 +371,41 @@ class Forge_MD {
 			})
 			.catch((error) => {
 				console.error('Something went wrong while requesting metadata for your seed file!', error);
+			});
+	}
+
+	static objectsDerivatives (filename, derivativesURN, outputFile, options) {
+		let bucketKey = options.bucket || options.parent.bucket || null;
+		let key = options.key || options.parent.key || false;
+		if (key)
+			filename = Forge_MD.key2filename(filename);
+		let info = options.info || options.parent.info || false;
+		let uncompress = options.uncompress || options.parent.uncompress || false;
+
+		let oa2legged = null;
+		Forge_MD.readBucketKey(bucketKey)
+			.then((name) => {
+				bucketKey = name;
+				return (Forge_MD.oauth.getOauth2Legged());
+			})
+			.then((_oa2legged) => {
+				oa2legged = _oa2legged;
+				let urn = Forge_MD.createOSSURN(bucketKey, filename, true);
+				let md = new ForgeAPI.DerivativesApi();
+				if (info)
+					return (md.getDerivativeManifestInfo(urn, derivativesURN, {}, oa2legged, oa2legged.getCredentials()));
+				else
+					return (md.getDerivativeManifest(urn, derivativesURN, { acceptEncoding: 'gzip' }, oa2legged, oa2legged.getCredentials()));
+			})
+			.then((response) => {
+				if ( info ) {
+					console.log(`Resource size: ${response.headers['content-length']} bytes`);
+					return (response.headers['content-length']);
+				} else
+					return (utils.writeFile(outputFile, response.body));
+			})
+			.catch((error) => {
+				console.error('Something went wrong while requesting the derivative file!', error);
 			});
 	}
 
