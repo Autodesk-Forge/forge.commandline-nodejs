@@ -287,8 +287,24 @@ let commands = [
 			{ option: '-k, --key', description: 'filename represents the objectKey on OSS vs the filename' },
 			{ option: '-g, --guid <guid>', description: 'returns an object tree, i.e., a hierarchical list of objects for a model view' },
 			{ option: '-p, --properties', description: 'returns a list of properties for each object in an object tree. Properties are returned according to object ID and do not follow a hierarchical structure' },
+			{ option: '-x, --adsForce', description: 'force retrieve the object tree even though it failed to be extracted (got 404 with error message) previously' },
+			{ option: '-f, --forceget', description: 'to force get the large resource even if it exceeded the expected maximum length (20 MB)' },
+			{ option: '-i, --objectid <id>', description: 'object id which you want to query properties for' },
 		]
 	},
+
+	// {
+	// 	name: 'objects-properties', action: ForgeMD.objectsMetadata,
+	// 	description: 'returns a list of properties for each object in an object tree. Properties are returned according to object ID and do not follow a hierarchical structure (2legged)',
+	// 	arguments: '<filename>',
+	// 	options: [
+	// 		{ option: '-b, --bucket <bucket>', description: 'override bucket name to be used in this session' },
+	// 		{ option: '-k, --key', description: 'filename represents the objectKey on OSS vs the filename' },
+	// 		{ option: '-g, --guid <guid>', description: 'returns an object tree, i.e., a hierarchical list of objects for a model view' },
+	// 		{ option: '-p, --properties', description: 'returns a list of properties for each object in an object tree. Properties are returned according to object ID and do not follow a hierarchical structure' },
+	// 	]
+	// },
+
 	{
 		name: 'objects-derivatives', action: ForgeMD.objectsDerivatives,
 		description: 'downloads the derivative specified by the derivativeurn URI parameter, which was generated from the source model specified by the urn URI parameter. To download the file, you need to specify the file’s URN, which you retrieve by calling the GET :urn/manifest endpoint.(2legged)',

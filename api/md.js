@@ -349,6 +349,16 @@ class Forge_MD {
 		if (properties && !guid)
 			return (console.error('You must provide a guid reference!'));
 
+		let xAdsForce = options.adsForce || options.parent.adsForce || false;
+		let forceget = options.forceget || options.parent.forceget || false;
+		let mdOptions = {
+			xAdsForce: xAdsForce,
+			forceget: forceget
+		}
+		let objectid = options.objectid || options.parent.objectid || null;
+		if (objectid)
+			mdOptions.objectid = objectid;
+		
 		let oa2legged = null;
 		Forge_MD.readBucketKey(bucketKey)
 			.then((name) => {
@@ -360,9 +370,9 @@ class Forge_MD {
 				let urn = Forge_MD.createOSSURN(bucketKey, filename, true);
 				let md = new ForgeAPI.DerivativesApi();
 				if (properties)
-					return (md.getModelviewProperties(urn, guid, {}, oa2legged, oa2legged.getCredentials()));
+					return (md.getModelviewProperties(urn, guid, mdOptions, oa2legged, oa2legged.getCredentials()));
 				else if (guid)
-					return (md.getModelviewMetadata(urn, guid, {}, oa2legged, oa2legged.getCredentials()));
+					return (md.getModelviewMetadata(urn, guid, mdOptions, oa2legged, oa2legged.getCredentials()));
 				else
 					return (md.getMetadata(urn, {}, oa2legged, oa2legged.getCredentials()));
 			})
