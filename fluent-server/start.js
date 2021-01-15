@@ -93,6 +93,8 @@ app.use((req, res, next) => { // eslint-disable-line no-unused-vars
 		if (st.indexOf(`output/otg_files/${cdn.root}/`) !== -1 ) { // svf2
 			st = st.replace(`output/otg_files/${cdn.root}/`, '');
 			cdn.svf2 = true;
+		} else { // OTG
+			st = split.slice(6).join('/');
 		}
 		let filename = _path.resolve(_path.join(cdn.repopath, cdn.root, st));
 		res.sendFile(filename);
@@ -116,8 +118,10 @@ app.use((req, res, next) => { // eslint-disable-line no-unused-vars
 	} else if (queryString.indexOf('urn:adsk.fluent') !== -1) {
 		//console.log('adsk.fluent -> ', req.method, queryString, split[4]);
 		let cdn = CDNS.get(split[4]);
-		//if ( cdn.svf2 )
+		if ( cdn.svf2 )
 			queryString = queryString.replace(/.*\/output\/otg_files\/(.*)\/output/, '/output');
+		else
+			queryString = queryString.replace(/.*\/output/, '/output');
 		queryString = _path.join(cdn.root, queryString);
 		//console.log('adsk.fluent >> ', _path.resolve(_path.join(CDNS.repositories, queryString)));
 	}
