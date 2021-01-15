@@ -88,6 +88,34 @@ This utility does provide a way to download the SVF and OTG Bubbles on your loca
 </details>
 
 <details>
+   <summary>Download and run the SVF2 bubble</summary>
+
+   ``` bash
+   # Do authorization/authentication.
+   node forge.js 2legged
+
+   # Get the list of Hubs.
+   node forge.js buckets-create mybucket persistent
+   node forge.js buckets-current mybucket
+
+   # Upload and translate a file
+   node forge.js objects-put myfile.rvt
+   node forge.js objects-translate myfile.rvt --svf2 # copy the URN for later use
+   node forge.js objects-status myfile.rvt # here run multiple time until it says it completed successfully
+
+   # Download the SVF2 Bubble
+   node forge.js bubble myurn ./bubbles/MyPath --svf2
+
+   # Create an HTML page with your local URN
+   node forge.js html http://localhost:7124/0/bubble.json ./bubbles/output.html
+
+   # Start local server and load the HTML page.
+   open http://localhost:7124/output.html & PORT=7124 & node fluent-server/start.js ./bubbles/
+   ```
+
+</details>
+
+<details>
    <summary>Download and run the OTG bubble</summary>
 
    ``` bash
@@ -110,7 +138,7 @@ This utility does provide a way to download the SVF and OTG Bubbles on your loca
    node forge.js html /MyPath/$VERSION_NUMBER/bubble.json ./bubbles/output.html
 
    # Start local server and load the HTML page.
-   open http://localhost:7124/output.html & PORT=7125 & node fluent-server/start.js ./bubbles/
+   open http://localhost:7124/output.html & PORT=7124 & node fluent-server/start.js ./bubbles/
    ```
 
 </details>
