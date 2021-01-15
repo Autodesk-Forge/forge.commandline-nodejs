@@ -45,7 +45,7 @@ class Forge_Other {
 	static set viewerVersion (val) { Forge_Other._viewerVersion = val; }
 	static get viewerServerPath () { return ('https://developer.api.autodesk.com/modelderivative/v2/viewers'); }
 	static get viewerLocalPath () { return (''); }
-	static get endpoint () { return ('http://localhost:7125'); }
+	static get endpoint () { return ('http://localhost:7124'); }
 
 	// user (3legged)
 	static userAboutMe (options) { // eslint-disable-line no-unused-vars
