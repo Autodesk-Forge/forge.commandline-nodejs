@@ -86,6 +86,9 @@ let extensions =[
 	// Autodesk.Viewing.Extensions.Section
 	// Autodesk.Viewing.Extensions.ZoomWindow
 
+	/* Autodesk.MixpanelProvider */
+											'extensions/MixpanelProvider/MixpanelProvider.js',
+
 ] ;
 extensions.map (function (elt) { if ( elt.endsWith('.js') ) extensions.push (elt + '.map'); }) ;
 
@@ -133,6 +136,9 @@ let extensions_min =[
 	// Autodesk.Viewing.Extensions.Measure
 	// Autodesk.Viewing.Extensions.Section
 	// Autodesk.Viewing.Extensions.ZoomWindow
+
+	/* Autodesk.MixpanelProvider */
+											'extensions/MixpanelProvider/MixpanelProvider.js',
 
 ] ;
 extensions_min.map (function (elt) { if ( elt.endsWith('.js') ) extensions_min.push (elt + '.map'); }) ;
@@ -194,11 +200,17 @@ let textures =[
 	'VCedge1.png',
 	'VChome.png',
 	'VChomeS.png',
+	'VCcompass-pointer-b.png',
+	'VCcompass-base.png',
 	'cardinalPoint.png',
 	'centerMarker_X.png',
 	'radial-fade-grid.png'
 ] ;
 textures =textures.map (function (elt) { return ('res/textures/' + elt) ; }) ;
+
+// res/ui
+let ui = [ 'forge-logo.png', ];
+ui = ui.map(function (elt) { return ('/res/ui/' + elt); });
 
 // res/locales
 let locales =[ 'cs', 'de', 'en', 'es', 'fr', 'it', 'ja', 'ko', 'pl', 'pt-BR', 'ru', 'tr', 'zh-HANS', 'zh-HANT' ] ;
@@ -226,4 +238,5 @@ module.exports =viewer
 	.concat (extensions)
 	.concat (environments)
 	.concat (textures)
+	.concat (ui)
 	.concat (locales) ;

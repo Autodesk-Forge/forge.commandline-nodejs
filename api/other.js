@@ -45,7 +45,7 @@ class Forge_Other {
 	static set viewerVersion (val) { Forge_Other._viewerVersion = val; }
 	static get viewerServerPath () { return ('https://developer.api.autodesk.com/modelderivative/v2/viewers'); }
 	static get viewerLocalPath () { return (''); }
-	static get endpoint () { return ('http://localhost:7124'); }
+	static get endpoint () { return ('http://localhost:7125'); }
 
 	// user (3legged)
 	static userAboutMe (options) { // eslint-disable-line no-unused-vars
@@ -81,8 +81,11 @@ class Forge_Other {
 				oauthClient = _oauthClient;
 				let obj = null;
 				let otg = options.otg || options.parent.otg || false;
+				let svf2 = options.svf2 || options.parent.svf2 || false;
 				if (otg)
 					obj = new Bubble.otg(_progress);
+				else if ( svf2)
+					obj = new Bubble.svf2(_progress);
 				else
 					obj = new Bubble.svf(_progress);
 				obj.downloadBubble(urn, outputFolder + '/', oauthClient.credentials.access_token)

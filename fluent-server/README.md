@@ -46,13 +46,13 @@ We do recommend you to read the Viewer copyright and understands limitations in 
      ```
      npm install
      ```
-  3. Set your PORT variable to 7124
+  3. Set your PORT variable to 7125
      ```
-     export PORT=<7124
+     export PORT=<7125
      ```
      Windows (use <b>Node.js command line</b> from Start menu)
      ```
-     set PORT=7124
+     set PORT=7125
      ```
 
 ## Getting the OTG bubble
@@ -110,7 +110,7 @@ This utility does provide a way to download the SVF and OTG Bubbles on your loca
    node forge.js html /MyPath/$VERSION_NUMBER/bubble.json ./bubbles/output.html
 
    # Start local server and load the HTML page.
-   open http://localhost:7124/output.html & PORT=7124 & node fluent-server/start.js ./bubbles/
+   open http://localhost:7124/output.html & PORT=7125 & node fluent-server/start.js ./bubbles/
    ```
 
 </details>
@@ -123,17 +123,17 @@ The Viewer can take to query parameter options which will change the way the Vie
 
   default: false - This options tells the Viewer to not store meshes, materials, etc... into a local database for faster future loading. Since OTG also share mesh definition via a hash code, models may share this data for faster experience.
 
-  ex: http://localhost:7124/output.html?disableIndexedDb=true
+  ex: http://localhost:7125/output.html?disableIndexedDb=true
 
 * disableWebSocket=boolean
 
   default: false - This options tells the Viewer to only use HTTP request. By default, the Viewer gets meshes / materials definition via WebSockets. In case you only want to us HTTP, turn this option on.
 
-  ex: http://localhost:7124/output.html?disableWebSockets=true
+  ex: http://localhost:7125/output.html?disableWebSockets=true
 
 Both together
 
-ex: http://localhost:7124/output.html?disableIndexedDb=true&disableWebSockets=true
+ex: http://localhost:7125/output.html?disableIndexedDb=true&disableWebSockets=true
 
 ## Tips & tricks
 

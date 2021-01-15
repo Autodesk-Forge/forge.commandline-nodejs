@@ -42,7 +42,7 @@ const ForgeSettings = {
 	//chunkSize: 2 * 1024 * 1024, // 2Mb
 	minChunkSize: 2 * 1024 * 1024, // 2Mb
 
-	viewerVersion: 'v7.3',
+	viewerVersion: 'v7.34.2',
 };
 
 const ForgeOauth = require('./api/oauth'); // Oauth
@@ -260,8 +260,17 @@ let commands = [
 		]
 	},
 	{
-		name: 'objects-progress', action: ForgeMD.objectsTranslateProgress,
-		description: 'translate progress of a seed file (2legged)',
+		name: 'objects-progress', action: ForgeMD.objectsTranslateStatus,
+		description: 'translate progress/status of a seed file (2legged)',
+		arguments: '<filename>',
+		options: [
+			{ option: '-b, --bucket <bucket>', description: 'override bucket name to be used in this session' },
+			{ option: '-k, --key', description: 'filename represents the objectKey on OSS vs the filename' }
+		]
+	},
+	{
+		name: 'objects-status', action: ForgeMD.objectsTranslateStatus,
+		description: 'translate progress/status of a seed file (2legged)',
 		arguments: '<filename>',
 		options: [
 			{ option: '-b, --bucket <bucket>', description: 'override bucket name to be used in this session' },

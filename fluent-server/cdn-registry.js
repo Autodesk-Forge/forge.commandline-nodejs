@@ -28,6 +28,10 @@ const _path = require('path');
 
 class CDNRegistry {
 
+	static get (id) {
+		return (CDNRegistry.cdns[id]);
+	}
+
 	static get cdns () {
 		if (!CDNRegistry._cdns)
 			CDNRegistry._cdns = {};
@@ -53,7 +57,8 @@ class CDNRegistry {
 			viewroot: '',
 			accountid: accountid,
 			refid: refid,
-			//urn: urn
+			//urn: urn,
+			svf2: false,
 		};
 		CDNRegistry._cdns[accountid] = CDNRegistry._cdns[refid];
 		return (CDNRegistry.get(refid));
@@ -61,22 +66,19 @@ class CDNRegistry {
 
 	static buildCDN (id, path) {
 		let cdn = CDNRegistry.get(id);
-		if (cdn.g)
+		if (cdn && cdn.g)
 			return (cdn);
+		
 		let filename = _path.resolve(_path.join(cdn.repopath, cdn.root, path));
 		// The viewer is using harcoded paths rather than reading the manifest
 		// that means we need to either read the manifest synchronously or set
 		// our cdn object that same way the viewer is doing
 		cdn.viewroot = _path.dirname(filename);
-		cdn.rootpath = _path.join(cdn.repopath, cdn.root);
+		cdn.rootpath = cdn.repopath; //_path.join(cdn.repopath, cdn.root);
 		cdn.g = _path.resolve(_path.join(cdn.rootpath, '/cdn/g'));
 		cdn.m = _path.resolve(_path.join(cdn.rootpath, '/cdn/m'));
 		cdn.t = _path.resolve(_path.join(cdn.rootpath, '/cdn/t'));
 		return (cdn);
-	}
-
-	static get (id) {
-		return (CDNRegistry.cdns[id]);
 	}
 
 }

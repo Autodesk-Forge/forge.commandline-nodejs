@@ -269,7 +269,7 @@ class Forge_MD {
 			});
 	}
 
-	static objectsTranslateProgress (filename, options) {
+	static objectsTranslateStatus (filename, options) {
 		let bucketKey = options.bucket || options.parent.bucket || null;
 		let key = options.key || options.parent.key || false;
 		if (key)
@@ -305,7 +305,7 @@ class Forge_MD {
 				}
 			})
 			.catch((error) => {
-				console.error('Something went wrong while requesting translation for your seed file!', error);
+				console.error('Something went wrong while requesting translation status for your seed file!', error);
 			});
 	}
 

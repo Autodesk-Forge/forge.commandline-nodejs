@@ -60,7 +60,10 @@
 		}
 
 		function initialize() {
-			const emea = atob(urn.replace('_', '/').replace('-', '+')).indexOf('emea') > -1;
+			let emea = false;
+			try {
+				emea = atob(urn.replace('_', '/').replace('-', '+')).indexOf('emea') > -1;
+			} catch (ex) {}
 			let svf_options = {
 				env: 'AutodeskProduction',
 				api: 'derivativeV2' + (emea ? '_EU' : ''), // derivativeV2/derivativeV2_EU
@@ -103,11 +106,20 @@
 				//disableIndexedDb: true, // on url param
 				endpoint: '<%= endpoint %>',
 			};
+			let svf2_options_local = {
+				env: 'Local',
+				api: 'fluent',
+				//useCookie: false,  //optional for Chrome browser
+				//useCredentials: false
+				//disableWebSocket: true, // on url param
+				//disableIndexedDb: true, // on url param
+				endpoint: '<%= endpoint %>',
+			};
 			let options = <%= viewer_options %>;
 			//Autodesk.Viewing.Private.ENABLE_INLINE_WORKER = false;
 			Autodesk.Viewing.Initializer(options, loadModel);
 			// No 2d views in OTG
-			if (options === otg_options || options === otg_options_local)
+			if (options === otg_options || options === otg_options_local || options === svf2_options || options === svf2_options_local)
 				$('details#2d').hide();
 		}
 

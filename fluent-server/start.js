@@ -30,9 +30,10 @@ const _fs = require('fs');
 const _path = require('path');
 const utils = require('../api/utils');
 const CDNS = require('./cdn-registry');
+const { query } = require('express');
 
-const SERVER_PORT = /*process.env.PORT ||*/ 7125;
-const MODEL_SERVER_PORT = SERVER_PORT - 1;
+const SERVER_PORT = /*process.env.PORT ||*/ 7124; // HTTP(s)
+const MODEL_SERVER_PORT = SERVER_PORT + 1; // WS(s)
 CDNS.repositories = _path.resolve(process.env.REPOS || process.argv[2] || process.cwd());
 
 let app = express();
@@ -42,14 +43,14 @@ app.set('port', SERVER_PORT || 80);
 
 app.use((req, res, next) => { // eslint-disable-line no-unused-vars
 	let queryString = decodeURIComponent(req.path);
-	queryString = queryString.replace('//', '/');
-	//console.log(req.method, queryString);
-
+	//console.log('In -> ', req.method, queryString);
+	queryString = queryString.replace('//', '/'); //.replace(/\/output\/otg_files\/(.*)\/output/, '/output');
+	
 	if (req.method === 'OPTIONS')
 		return (res.status(200).end());
 	if (queryString.indexOf('cdnws') !== -1)
 		return (console.info('cdnws'), next());
-	if (queryString.endsWith('.js.map')) {
+	if (queryString.endsWith('.js.map') || queryString.endsWith('.css.map')) {
 		utils.fileexists()
 			.then((val) => {
 				if (val === false)
@@ -85,29 +86,43 @@ app.use((req, res, next) => { // eslint-disable-line no-unused-vars
 		return (res.sendFile(_path.join(CDNS.repositories, queryString)));
 	}
 
-
 	// Getting View Manifest
 	if (queryString.endsWith('/otg_model.json')) {
 		let cdn = CDNS.buildCDN(split[4], split.slice(-6).join('/'));
 		let st = split.slice(5).join('/');
+		if (st.indexOf(`output/otg_files/${cdn.root}/`) !== -1 ) { // svf2
+			st = st.replace(`output/otg_files/${cdn.root}/`, '');
+			cdn.svf2 = true;
+		}
 		let filename = _path.resolve(_path.join(cdn.repopath, cdn.root, st));
 		res.sendFile(filename);
 		return;
 	}
 
-	if (queryString.indexOf('urn:adsk.fluent') !== -1) {
-		let cdn = CDNS.buildCDN(split[4], split.slice(-6).join('/'));
-		let st = split.slice(-6);
-		if (split.length === 11)
-			queryString = _path.join(cdn.root, st.join('/'));
-		else if (split.length === 7)
-			queryString = _path.join(cdn.root, 'pdb', split[6]);
-		else if (split.length === 9)
-			queryString = _path.join(cdn.root, split[5], split[6], split[7], split[8]);
-	} else if (queryString.indexOf('/cdn/') === 0) {
+	if (queryString.indexOf('/pdb/') !== -1) {
+		//console.log('/pdb/ -> ', req.method, queryString, split[4]);
+		let cdn = CDNS.get(split[4]);
+		//if (cdn.svf2)
+			queryString = queryString.replace(/.*\/pdb\//, '/pdb/');
+		//console.log('pdb >> ', _path.resolve(_path.join(CDNS.repositories, queryString)));
+	} else if (queryString.indexOf('/cdn/') !== -1) {
+		//console.log('/cdn/ -> ', req.method, queryString, split[3]);
 		let cdn = CDNS.get(split[3]);
-		queryString = _path.join(cdn.root, 'cdn', split[4], split[2], split[5]);
+		//if (cdn.svf2)
+			queryString = queryString.replace(/.*\/cdn\//, '/cdn/');
+		split = queryString.split('/');
+		queryString = _path.join('cdn', split[4], split[2], split[5]);
+		//console.log('cdn >> ', _path.resolve(_path.join(CDNS.repositories, queryString)));
+	} else if (queryString.indexOf('urn:adsk.fluent') !== -1) {
+		//console.log('adsk.fluent -> ', req.method, queryString, split[4]);
+		let cdn = CDNS.get(split[4]);
+		//if ( cdn.svf2 )
+			queryString = queryString.replace(/.*\/output\/otg_files\/(.*)\/output/, '/output');
+		queryString = _path.join(cdn.root, queryString);
+		//console.log('adsk.fluent >> ', _path.resolve(_path.join(CDNS.repositories, queryString)));
 	}
+	
+	// Serve file as is
 	return (res.sendFile(_path.resolve(_path.join(CDNS.repositories, queryString))));
 });
 
@@ -351,6 +366,8 @@ setInterval(() => {
 let server = app.listen(app.get('port'), () => {
 	console.log('API key ' + process.env.FORGE_CLIENT_ID);
 	console.log('Server listening on port ' + server.address().port);
+	console.log('WEB socket on port ' + MODEL_SERVER_PORT);
+	console.log('CDN - Serving Repos from ' + CDNS.repositories);
 });
 
 server.on('error', (err) => {

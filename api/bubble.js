@@ -32,6 +32,7 @@ const zip = require('node-zip');
 //const ejs =require ('ejs') ;
 const mkdirp = require('mkdirp');
 const fs = require('fs');
+//const ws = require('ws');
 const zlib = require('zlib');
 const path = require('path');
 const utils = require('./utils');
@@ -598,6 +599,8 @@ class otgBubble {
 		this._urns = [];
 	}
 
+	get host () { return ('https://otg.autodesk.com'); }
+
 	get urn () { return (this._urn); }
 	set urn (urn) { this._urn = urn; }
 
@@ -800,7 +803,7 @@ class otgBubble {
 		if (urn === undefined || urn === null)
 			return (Promise.reject('Missing the required parameter {urn} when calling getManifest'));
 		let ModelDerivative = new ForgeAPI.DerivativesApi();
-		ModelDerivative.apiClient.basePath = 'https://otg.autodesk.com';
+		ModelDerivative.apiClient.basePath = this.host;
 		return (ModelDerivative.apiClient.callApi(
 			'/modeldata/manifest/{urn}', 'GET', // full manifest
 			//'/modeldata/otgmanifest/{urn}', 'GET', // only OTG manifest
@@ -812,11 +815,12 @@ class otgBubble {
 	}
 
 	getViewModelManifest (fileurn, elt, modelurn, outPath) {
+		const host = this.host;
 		return (new Promise((fulfill, reject) => {
 			if (!fileurn || !modelurn)
 				return (reject('Missing the required parameter {urn} when calling getManifest'));
 			let ModelDerivative = new ForgeAPI.DerivativesApi();
-			ModelDerivative.apiClient.basePath = 'https://otg.autodesk.com';
+			ModelDerivative.apiClient.basePath = host;
 			ModelDerivative.apiClient.callApi(
 				'/modeldata/file/' + fileurn + encodeURI(elt), 'GET',
 				{}, { acmsession: modelurn }, { 'Accept-Encoding': 'gzip, deflate', pragma: 'no-cache' },
@@ -848,11 +852,12 @@ class otgBubble {
 	}
 
 	getViewModelBinary (fileurn, key, elt, modelurn, outFile) {
+		const host = this.host;
 		return (new Promise((fulfill, reject) => {
 			if (!fileurn || !modelurn)
 				return (reject('Missing the required parameter {urn} when calling getViewModelBinary'));
 			// Forge SDK and Unirest auto uncompress file :(
-			// let req =unirest.get ('https://otg.autodesk.com' + path.posix.join ('/modeldata/file/', fileurn, encodeURI (elt)) + '?acmsession=' + modelurn)
+			// let req =unirest.get (host + path.posix.join ('/modeldata/file/', fileurn, encodeURI (elt)) + '?acmsession=' + modelurn)
 			// 	.headers ({
 			// 		'cache-control': 'no-cache',
 			// 		pragma: 'no-cache',
@@ -861,7 +866,7 @@ class otgBubble {
 			// 	});
 			const options = {
 				method: 'GET',
-				hostname: 'otg.autodesk.com',
+				hostname: host.replace(/http[s]*\:\/\//, ''),
 				port: 443,
 				path: ('/modeldata/file/' + fileurn + encodeURI(elt) + '?acmsession=' + modelurn),
 				headers: {
@@ -907,11 +912,12 @@ class otgBubble {
 	}
 
 	getViewModelJson (fileurn, key, elt, modelurn, outFile) {
+		const host = this.host;
 		return (new Promise((fulfill, reject) => {
 			if (!fileurn || !modelurn)
 				return (reject('Missing the required parameter {urn} when calling getManifest'));
 			let ModelDerivative = new ForgeAPI.DerivativesApi();
-			ModelDerivative.apiClient.basePath = 'https://otg.autodesk.com';
+			ModelDerivative.apiClient.basePath = host;
 			ModelDerivative.apiClient.callApi(
 				'/modeldata/file/' + fileurn + encodeURI(elt), 'GET',
 				{}, { acmsession: modelurn }, { 'Accept-Encoding': 'gzip, deflate', pragma: 'no-cache' },
@@ -970,12 +976,13 @@ class otgBubble {
 		let parts = fileurn.split('/');
 		let account_id = parts[1];
 		let type = parts[2];
-		let outFile = path.resolve(path.join(outPath, elt[0], elt[1]));
+		let outFile = path.resolve(path.join(outPath, type, elt[0], elt[1]));
+		const host = this.host;
 		return (new Promise((fulfill, reject) => {
 			if (!fileurn)
 				return (reject('Missing the required parameter {urn} when calling getSharedAssetFile'));
 			if (outFile.endsWith('.png')) {
-				let req = unirest.get('https://otg.autodesk.com' + path.posix.join('/cdn/', elt[0], account_id, type, elt[1]) + '?acmsession=' + modelurn)
+				let req = unirest.get(host + path.posix.join('/cdn/', elt[0], account_id, type, elt[1]) + '?acmsession=' + modelurn)
 					.headers({
 						pragma: 'no-cache',
 						Authorization: ('Bearer ' + this._token.getCredentials().access_token)
@@ -999,7 +1006,7 @@ class otgBubble {
 							return (fulfill(outFile));
 						const options = {
 							method: 'GET',
-							hostname: 'otg.autodesk.com',
+							hostname: host.replace(/http[s]*\:\/\//, ''),
 							port: 443,
 							path: (path.posix.join('/cdn/', elt[0], account_id, type, elt[1]) + '?acmsession=' + modelurn),
 							headers: {
@@ -1043,7 +1050,8 @@ class otgBubble {
 		let parts = fileurn.split('/');
 		let account_id = parts[1];
 		let type = parts[2];
-		let outFile = path.resolve(path.join(outPath, elt[0], elt[1]));
+		let outFile = path.resolve(path.join(outPath, type, elt[0], elt[1]));
+		const host = this.host;
 		return (new Promise((fulfill, reject) => {
 			if (!fileurn)
 				return (reject('Missing the required parameter {urn} when calling getSharedAssetJson'));
@@ -1052,7 +1060,7 @@ class otgBubble {
 					if (bExists)
 						return (fulfill(outFile));
 					let ModelDerivative = new ForgeAPI.DerivativesApi();
-					ModelDerivative.apiClient.basePath = 'https://otg.autodesk.com';
+					ModelDerivative.apiClient.basePath = host;
 					ModelDerivative.apiClient.callApi(
 						path.posix.join('/cdn/', elt[0], account_id, type, elt[1]), 'GET',
 						{}, { acmsession: modelurn }, { 'Accept-Encoding': 'gzip, deflate', pragma: 'no-cache' },
@@ -1081,6 +1089,526 @@ class otgBubble {
 			zlib.gunzip(res, (err, dezipped) => {
 				if (err)
 					return(fulfill(res));
+				try {
+					if (bRaw)
+						fulfill(dezipped);
+					else
+						fulfill(JSON.parse(dezipped.toString('utf-8')));
+				} catch (ex) {
+					fulfill(dezipped);
+				}
+			});
+		}));
+	}
+
+}
+
+class svf2Bubble {
+
+	constructor (progress) {
+		this._urn = '';
+		this._outPath = './';
+		this._token = null;
+		this._progress = progress;
+		this._errors = [];
+
+		this._manifest = null;
+		this._otg_manifest = null;
+		this._otg_models = {};
+		this._urns = [];
+	}
+
+	get host () { return ('https://cdn.derivative.autodesk.com'); }
+
+	get urn () { return (this._urn); }
+	set urn (urn) { this._urn = urn; }
+
+	get manifest () { return (this._manifest); }
+	set manifest (manifest) { this._manifest = manifest; }
+
+	get otg_manifest () { return (this._otg_manifest); }
+	set otg_manifest (manifest) { this._otg_manifest = manifest; }
+
+	get account_id () { return (this.otg_manifest.account_id); }
+	get project_id () { return (this.otg_manifest.project_id); }
+
+	get global_root () { return (this.otg_manifest.paths.global_root); }
+	get global_sharding () { return (this.otg_manifest.paths.global_sharding); }
+	get version_root () { return (this.otg_manifest.paths.version_root); }
+	get shared_root () { return (this.otg_manifest.paths.shared_root); }
+	get region () { return (this.otg_manifest.paths.region); }
+
+	get local_version_root () { return (path.join(this._outPath, this.otg_manifest.paths.version_root.substring(this.otg_manifest.paths.shared_root.length))); }
+	get local_shared_root () { return (this._outPath); }
+	set local_shared_root (outPath) { this._outPath = outPath; }
+	get remote_root_path () { return (this.otg_manifest.paths.version_root.substring(this.otg_manifest.paths.shared_root.length)); }
+
+	geometry_urn (viewId) { return (this.OTG_models[viewId].manifest.shared_assets.geometry); }
+	materials_urn (viewId) { return (this.OTG_models[viewId].manifest.shared_assets.materials); }
+	textures_urn (viewId) { return (this.OTG_models[viewId].manifest.shared_assets.textures); }
+
+	local_geometry_root (viewId) { return (path.join(this._outPath, 'cdn', this.geometry_urn(viewId).substring(this.global_root.length))); }
+	local_materials_root (viewId) { return (path.join(this._outPath, 'cdn', this.materials_urn(viewId).substring(this.global_root.length))); }
+	local_textures_root (viewId) { return (path.join(this._outPath, 'cdn', this.textures_urn(viewId).substring(this.global_root.length))); }
+
+	numFragments (viewId) { return (this.OTG_models[viewId].stats.num_fragments); }
+	numPolys (viewId) { return (this.OTG_models[viewId].stats.num_polys); }
+	numMaterials (viewId) { return (this.OTG_models[viewId].stats.num_materials); }
+	numGeoms (viewId) { return (this.OTG_models[viewId].stats.num_geoms); }
+	numTextures (viewId) { return (this.OTG_models[viewId].stats.num_textures); }
+
+	// get OTG_models () { views.map ((elt) => { return (elt.urn) ; }) }
+	// get OTG_models_keys () { Object.keys (otg_manifest.views) }
+	get OTG_models () { return (this._otg_models); }
+	set OTG_models (val) { this._otg_models = val; }
+
+	downloadBubble (urn, outPath, token) {
+		let self = this;
+		self.local_shared_root = outPath;
+		self.urn = urn;
+		if (token) {
+			self._token = new ForgeAPI.AuthClientTwoLegged('__', '__', ['data:read']);
+			self._token.setCredentials({
+				'token_type': 'Bearer',
+				'expires_in': 1799,
+				'access_token': token
+			});
+		} else {
+			self._token = token.RW;
+		}
+		return (new Promise((fulfill, reject) => {
+			self._progress.msg = 'Downloading manifest';
+			self.getManifest(self.urn)
+				// Collect and Analyze the Design manifest
+				.then((bubble) => {
+					self.manifest = bubble.body;
+					// Code for GET /modeldata/manifest/{urn}
+					self.otg_manifest = bubble.body.children.filter((elt) => { return (elt.role === 'viewable' && elt.otg_manifest); });
+					if (self.otg_manifest.length !== 1)
+						throw new Error('Unexpected OTG manifest format.');
+					self.otg_manifest = self.otg_manifest[0].otg_manifest;
+
+					// Code for GET /modeldata/otgmanifest/{urn}
+					// self.otg_manifest =bubble.body ;
+
+					// Save manifests
+					let outFile = path.resolve(path.join(self.local_shared_root, self.remote_root_path, 'bubble.json'));
+					utils.writeFile(outFile, bubble.body)
+						.catch((err) => console.error('Error:', err.message));
+					outFile = path.resolve(path.join(self.local_shared_root, self.remote_root_path, 'otg_manifest.json'));
+					utils.writeFile(outFile, bubble.body.children[0].otg_manifest)
+						.catch((err) => console.error('Error:', err.message));
+
+					// Find each view Manifest, and linked files (like the AECModelData.json)
+					self.OTG_models = {};
+					let jobs = [];
+					for (let [key, value] of Object.entries(self.otg_manifest.views)) {
+						jobs.push(self.getViewModelManifest(self.version_root, value.urn, self.urn, self.local_version_root));
+						if (value.role === 'graphics' && value.mime === 'application/autodesk-otg')
+							self.OTG_models[key] = jobs.length - 1;
+					}
+
+					// Get placement.json file
+					//outFile = path.resolve(path.join(self.local_shared_root, self.remote_root_path));
+					//jobs.push(self.getViewModelManifest(self.version_root, 'placement.json', self.urn, outFile));
+					return (Promise.all(jobs.map(p => p.catch(() => undefined))));
+				})
+				// Collect and Analyze each view otg_model.json
+				.then((manifestsjson) => {
+					self._urns = [];
+					let jobs = [];
+					// We only need to keep and proceed the otg_model.json files
+					for (let [key, value] of Object.entries(self.OTG_models)) {
+						self.OTG_models[key] = manifestsjson[value];
+						let elt = manifestsjson[value];
+						elt.jobs = [];
+						elt.__dependencies__ = {};
+						if (!elt.manifest || !elt.manifest.assets) // Unexpected OTG manifest format.
+							continue;
+
+						// otg_model.json|manifest.assets (fragments.fl fragments_extra.fl materials_ptrs.hl geometry_ptrs.hl texture_manifest.json pdb/avs.pack pdb/avs.idx pdb/dbid.idx)
+						for (let [assetkey, asset] of Object.entries(elt.manifest.assets)) {
+							// fragments.fl fragments_extra.fl materials_ptrs.hl geometry_ptrs.hl texture_manifest.json
+							if (typeof asset === 'string') {
+								let outFile = path.join(self.local_version_root, elt.__dirname__, asset);
+								//elt.jobs.push (self.getViewModelFile (self.version_root, path.join (elt.__dirname__, asset), self.urn, outFile)) ;
+								elt.jobs.push(function () { return ([self.getViewModelFile, arguments]); }(self.version_root, key, path.posix.join(elt.__dirname__, asset), self.urn, outFile));
+								elt.__dependencies__[assetkey] = key + '%' + path.posix.join(elt.__dirname__, asset);
+								continue;
+							}
+							// pdb/avs.pack pdb/avs.idx pdb/dbid.idx
+							for (let [pdbkey, pdb] of Object.entries(asset)) {
+								let st = path.join(self.local_version_root, elt.__dirname__, pdb);
+								let outFile = path.join(path.dirname(st), /*pdbkey,*/ path.basename(st));
+								st = path.posix.join(elt.__dirname__, pdb);
+								if (self._urns.indexOf(self.version_root + st) !== -1)
+									continue;
+								self._urns.push(self.version_root + st);
+								//elt.jobs.push (self.getViewModelFile (self.version_root, st, self.urn, outFile)) ;
+								elt.jobs.push(function () { return ([self.getViewModelFile, arguments]); }(self.version_root, key, st, self.urn, outFile));
+								elt.__dependencies__[pdbkey] = `${key}%${st}`;
+							}
+						}
+
+						// otg_model.json|manifest.shared_assets (pdb/attrs.json pdb/vals.json pdb/ids.json)
+						for (let [pdbkey, pdb] of Object.entries(elt.manifest.shared_assets.pdb)) {
+							let st = path.posix.join(self.remote_root_path, elt.__dirname__, pdb);
+							let outFile = path.join(self.local_version_root, elt.__dirname__, pdb);
+							if (self._urns.indexOf(self.shared_root + st) !== -1)
+								continue;
+							self._urns.push(self.shared_root + st);
+							//elt.jobs.push (self.getViewModelFile (self.shared_root, st, self.urn, outFile)) ;
+							elt.jobs.push(function () { return ([self.getViewModelFile, arguments]); }(self.shared_root, key, st, self.urn, outFile));
+							elt.__dependencies__[pdbkey] = `${key}%${st}`;
+						}
+
+						jobs = [...jobs, ...elt.jobs];
+					}
+
+					return (utils.promiseAllLimit(jobs, 10, (elt, index, arr) => utils.PromiseStatus(elt[0].apply(self, elt[1])))); // eslint-disable-line no-unused-vars
+				})
+				.then((results) => {
+					let jobs = [];
+					for (let [key, value] of Object.entries(self.OTG_models)) {
+						for (let [asset, ijob] of Object.entries(value.__dependencies__)) { // eslint-disable-line no-unused-vars
+							let result = results.filter(elt => elt[0] === value.__dependencies__[asset]);
+							value.__dependencies__[asset] = result[0][1];
+						}
+
+						if (value.stats.num_materials) {
+							let materialHashes = self.decomposeHashFile(value.__dependencies__.materials_ptrs, self.global_sharding);
+							materialHashes = materialHashes.filter(elt => elt[0] !== '' && elt[1] !== '');
+							materialHashes.map((elt) => {
+								//self.getSharedAssetFile (self.materials_urn (key), elt, self.urn, self.local_materials_root (key)) ;
+								jobs.push(function () { return ([self.getSharedAssetJson, arguments]); }(self.materials_urn(key), elt, self.urn, self.local_materials_root(key)));
+								return (null);
+							});
+						}
+						if (value.stats.num_geoms) {
+							let geometryHashes = self.decomposeHashFile(value.__dependencies__.geometry_ptrs, self.global_sharding);
+							geometryHashes = geometryHashes.filter(elt => elt[0] !== '' && elt[1] !== '');
+							geometryHashes.map((elt) => {
+								//self.getSharedAssetFile (self.geometry_urn (key), elt, self.urn, self.local_geometry_root (key)) ;
+								jobs.push(function () { return ([self.getSharedAssetFile, arguments]); }(self.geometry_urn(key), elt, self.urn, self.local_geometry_root(key)));
+								return (null);
+							});
+						}
+						if (value.stats.num_textures && value.__dependencies__.hasOwnProperty('texture_manifest')) { // eslint-disable-line no-prototype-builtins
+							for (let [fn, hash] of Object.entries(value.__dependencies__.texture_manifest)) { // eslint-disable-line no-unused-vars
+								let elt = [
+									hash.substring(0, self.global_sharding),
+									hash.substring(self.global_sharding)
+								];
+								jobs.push(function () { return ([self.getSharedAssetFile, arguments]); }(self.textures_urn(key), elt, self.urn, self.local_textures_root(key)));
+							}
+						}
+						//break;
+					}
+
+					return (utils.promiseAllLimit(jobs, 10, (elt, index, arr) => utils.PromiseStatus(elt[0].apply(self, elt[1])))); // eslint-disable-line no-unused-vars
+				})
+				.then((files) => { // eslint-disable-line no-unused-vars
+					console.log('Download complete.');
+				})
+				.catch((err) => {
+					console.error('Error:', err.message || err.statusMessage);
+					self._errors.push(err.message || err.statusMessage);
+					reject(self);
+				});
+		}));
+	}
+
+	getManifest (urn) {
+		if (urn === undefined || urn === null)
+			return (Promise.reject('Missing the required parameter {urn} when calling getManifest'));
+		let ModelDerivative = new ForgeAPI.DerivativesApi();
+		ModelDerivative.apiClient.basePath = this.host;
+		return (ModelDerivative.apiClient.callApi(
+			'/modeldata/manifest/{urn}', 'GET', // full manifest
+			//'/modeldata/otgmanifest/{urn}', 'GET', // only OTG manifest
+			{ urn: urn }, {}, { /*'Accept-Encoding': 'gzip, deflate'*/ pragma: 'no-cache' },
+			{}, null,
+			[], ['application/vnd.api+json', 'application/json'], null,
+			this._token, this._token.getCredentials()
+		));
+	}
+
+	getViewModelManifest (fileurn, elt, modelurn, outPath) {
+		const host = this.host;
+		return (new Promise((fulfill, reject) => {
+			if (!fileurn || !modelurn)
+				return (reject('Missing the required parameter {urn} when calling getManifest'));
+			let ModelDerivative = new ForgeAPI.DerivativesApi();
+			ModelDerivative.apiClient.basePath = host;
+			ModelDerivative.apiClient.callApi(
+				'/modeldata/file/' + encodeURIComponent(fileurn) + encodeURIComponent(elt), 'GET',
+				{}, { acmsession: modelurn }, { 'Accept-Encoding': 'gzip, deflate', pragma: 'no-cache' },
+				{}, null,
+				[], [ /*'application/vnd.api+json', 'application/json'*/], null,
+				this._token, this._token.getCredentials()
+			)
+				.then((res) => {
+					return (utils.gunzip(res.body));
+				})
+				.then((json) => {
+					json.__dirname__ = path.dirname(elt);
+					fulfill(json);
+
+					let outFile = path.resolve(path.join(outPath, elt));
+					console.log(' > ', outFile);
+					return (utils.writeFile(outFile, json));
+				})
+				.catch((error) => {
+					let outFile = path.join(outPath, elt);
+					console.error(' !! ', outFile, ' (', error.statusMessage || error.message || '' , ')');
+					reject(error);
+				});
+		}));
+	}
+
+	// Reference: https://zenhax.com/viewtopic.php?t=27
+	static isGzip (buf) {
+		return (buf[0] === 0x1f /*31*/ && buf[1] === 0x8b /*139*/);
+	}
+
+	getViewModelBinary (fileurn, key, elt, modelurn, outFile) {
+		const host = this.host;
+		return (new Promise((fulfill, reject) => {
+			if (!fileurn || !modelurn)
+				return (reject('Missing the required parameter {urn} when calling getViewModelBinary'));
+			// Forge SDK and Unirest auto uncompress file :(
+			// let req =unirest.get (host + path.posix.join ('/modeldata/file/', fileurn, encodeURI (elt)) + '?acmsession=' + modelurn)
+			// 	.headers ({
+			// 		'cache-control': 'no-cache',
+			// 		pragma: 'no-cache',
+			// 		//'Accept-Encoding': 'gzip, deflate',
+			// 		Authorization: ('Bearer ' + this._token.getCredentials ().access_token)
+			// 	});
+			const options = {
+				method: 'GET',
+				hostname: host.replace(/http[s]*\:\/\//, ''),
+				port: 443,
+				path: ('/modeldata/file/' + encodeURIComponent(fileurn) + encodeURIComponent(elt) + '?acmsession=' + modelurn),
+				headers: {
+					'Authorization': ('Bearer ' + this._token.getCredentials().access_token),
+					'cache-control': 'no-cache',
+					pragma: 'no-cache',
+				}
+			};
+			https.get(options, (res) => {
+				//res.setEncoding('binary');
+				let data = [];
+				res
+					.on('data', (chunk) => {
+						data.push(chunk);
+					})
+					.on('end', () => { // eslint-disable-line no-unused-vars
+						let buffer = Buffer.concat(data);
+						if (buffer.slice(0, 5).toString() === '<?xml') {
+							console.error(' !! ', outFile);
+							reject(buffer.toString());
+							return;
+						}
+						if (svf2Bubble.isGzip(buffer)) {
+							utils.gunzip(buffer, true)
+								.then((result) => {
+									fulfill([`${key}%${elt}`, result]);
+									console.log(' >> ', outFile, elt);
+									utils.writeFile(outFile, result, 'binary', true);
+								})
+								.catch((err) => {
+									console.error(err);
+									reject(err);
+								});
+						} else {
+							fulfill([`${key}%${elt}`, buffer]);
+							console.log(' >> ', outFile);
+							utils.writeFile(outFile, buffer, 'binary', true);
+						}
+					});
+
+			});
+		}));
+	}
+
+	getViewModelJson (fileurn, key, elt, modelurn, outFile) {
+		const host = this.host;
+		return (new Promise((fulfill, reject) => {
+			if (!fileurn || !modelurn)
+				return (reject('Missing the required parameter {urn} when calling getManifest'));
+			let ModelDerivative = new ForgeAPI.DerivativesApi();
+			ModelDerivative.apiClient.basePath = host;
+			ModelDerivative.apiClient.callApi(
+				'/modeldata/file/' + encodeURIComponent(fileurn) + encodeURIComponent(elt), 'GET',
+				{}, { acmsession: modelurn }, { 'Accept-Encoding': 'gzip, deflate', pragma: 'no-cache' },
+				{}, null,
+				[], ['application/json'], null,
+				this._token, this._token.getCredentials()
+			)
+				.then((res) => {
+					return (utils.gunzip(res.body, true));
+				})
+				.then((data) => {
+					return (utils.writeFile(outFile, data, 'binary', true));
+				})
+				.then((data) => {
+					console.log(' >> ', outFile);
+					fulfill([`${key}%${elt}`, JSON.parse(data.toString('utf-8'))]);
+				})
+				.catch((error) => {
+					console.error(' !! ', outFile);
+					reject(error);
+				});
+		}));
+	}
+
+	getViewModelFile (fileurn, key, elt, modelurn, outFile) {
+		if (path.extname(outFile) === '.json')
+			return (this.getViewModelJson(fileurn, key, elt, modelurn, path.resolve(outFile)));
+		else
+			return (this.getViewModelBinary(fileurn, key, elt, modelurn, path.resolve(outFile)));
+	}
+
+	decomposeHashFile (content, sharding) {
+		let byteStride = content[1] << 8 | content[0];
+		if (byteStride % 4) {
+			console.error(`Expected byte size to be multiple of 4, but got ${byteStride}`);
+			return ([]);
+		}
+		//let version = content[3] << 8 | content[2];
+		//let stride = byteStride / 4;
+		let nb = content[5] << 8 | content[4];
+
+		let bdata = new Uint8Array(byteStride);
+
+		let results = [];
+		for (let i = 1; i <= nb; i++) {
+			//let streamOffset = i * byteStride;
+			//let endOffset = streamOffset + byteStride;
+			bdata.set(content.slice(i * byteStride, (i + 1) * byteStride));
+			let st = Array.prototype.map.call(bdata, x => ('00' + x.toString(16)).slice(-2)).join('');
+			results.push([st.slice(0, sharding), st.slice(sharding)]);
+		}
+		return (results);
+	}
+
+	getSharedAssetFile (fileurn, elt, modelurn, outPath) {
+		let parts = fileurn.split('/');
+		let account_id = parts[1];
+		let type = parts[2];
+		let outFile = path.resolve(path.join(outPath, type, elt[0], elt[1]));
+		const host = this.host;
+		return (new Promise((fulfill, reject) => {
+			if (!fileurn)
+				return (reject('Missing the required parameter {urn} when calling getSharedAssetFile'));
+			if (outFile.endsWith('.png')) {
+				let req = unirest.get(host + path.posix.join('/cdn/', elt[0], account_id, type, elt[1]) + '?acmsession=' + modelurn)
+					.headers({
+						pragma: 'no-cache',
+						Authorization: ('Bearer ' + this._token.getCredentials().access_token)
+					});
+				if (outFile.endsWith('.png'))
+					req.encoding('binary');
+				req.send()
+					.then((res) => {
+						fulfill(res.body);
+						console.log(' >> ', outFile);
+						return (utils.writeFile(outFile, res.body, 'binary', true));
+					})
+					.catch((error) => {
+						console.error(' !! ', outFile);
+						reject(error);
+					});
+			} else {
+				utils.fileexists(outFile)
+					.then((bExists) => {
+						if (bExists && elt[0] !== 5000)
+							return (fulfill(outFile));
+						const options = {
+							method: 'GET',
+							hostname: host.replace(/http[s]*\:\/\//, ''),
+							port: 443,
+							path: (path.posix.join('/cdn/', elt[0], account_id, type, elt[1]) + '?acmsession=' + modelurn),
+							headers: {
+								'Authorization': ('Bearer ' + this._token.getCredentials().access_token),
+								'cache-control': 'no-cache',
+								pragma: 'no-cache',
+							}
+						};
+						https.get(options, (res) => {
+							//res.setEncoding('binary');
+							let data = [];
+
+							res.on('data', (chunk) => {
+								data.push(chunk);
+							}).on('end', () => {
+								let buffer = Buffer.concat(data);
+								if (buffer.slice(0, 5).toString() === '<?xml') {
+									console.error(' !! ', outFile);
+									reject(buffer.toString());
+									return;
+								}
+								//utils.writeFile(outFile + '.gz', buffer, 'binary', true)
+								svf2Bubble.gunzip(buffer, true)
+									.then((result) => {
+										fulfill(result);
+										console.log(' >> ', outFile);
+										return (utils.writeFile(outFile, result, 'binary', true));
+									})
+									.catch((error) => {
+										console.error(' !! ', outFile);
+										reject(error);
+									});
+							});
+						});
+					});
+			}
+		}));
+	}
+
+	getSharedAssetJson (fileurn, elt, modelurn, outPath) {
+		let parts = fileurn.split('/');
+		let account_id = parts[1];
+		let type = parts[2];
+		let outFile = path.resolve(path.join(outPath, type, elt[0], elt[1]));
+		const host = this.host;
+		return (new Promise((fulfill, reject) => {
+			if (!fileurn)
+				return (reject('Missing the required parameter {urn} when calling getSharedAssetJson'));
+			utils.fileexists(outFile)
+				.then((bExists) => {
+					if (bExists)
+						return (fulfill(outFile));
+					let ModelDerivative = new ForgeAPI.DerivativesApi();
+					ModelDerivative.apiClient.basePath = host;
+					ModelDerivative.apiClient.callApi(
+						path.posix.join('/cdn/', elt[0], account_id, type, elt[1]), 'GET',
+						{}, { acmsession: modelurn }, { 'Accept-Encoding': 'gzip, deflate', pragma: 'no-cache' },
+						{}, null,
+						[], ['application/json'], null,
+						this._token, this._token.getCredentials()
+					)
+						.then((res) => {
+							return (utils.gunzip(res.body));
+						})
+						.then((json) => {
+							fulfill(json);
+							console.log(' >> ', outFile);
+							return (utils.writeFile(outFile, json));
+						})
+						.catch((error) => {
+							console.error(' !! ', outFile);
+							reject(error);
+						});
+				});
+		}));
+	}
+
+	static gunzip (res, bRaw = false) {
+		return (new Promise((fulfill, reject) => { // eslint-disable-line no-unused-vars
+			zlib.gunzip(res, (err, dezipped) => {
+				if (err)
+					return (fulfill(res));
 				try {
 					if (bRaw)
 						fulfill(dezipped);
@@ -1256,6 +1784,7 @@ class otgBubble {
 
 module.exports = {
 	svf: svfBubble,
+	svf2: svf2Bubble,
 	otg: otgBubble,
 	//utils: bubbleUtils
 };
