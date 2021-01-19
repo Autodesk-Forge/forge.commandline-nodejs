@@ -60,9 +60,10 @@
 		}
 
 		function initialize() {
-			let emea = false;
+			let emea = <%= region %>;
 			try {
-				emea = atob(urn.replace('_', '/').replace('-', '+')).indexOf('emea') > -1;
+				if ( emea === false )
+					emea = atob(urn.replace('_', '/').replace('-', '+')).indexOf('emea') > -1; // BIM360 override
 			} catch (ex) {}
 			let svf_options = {
 				env: 'AutodeskProduction',

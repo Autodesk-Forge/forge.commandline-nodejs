@@ -82,10 +82,11 @@ class Forge_Other {
 				let obj = null;
 				let otg = options.otg || options.parent.otg || false;
 				let svf2 = options.svf2 || options.parent.svf2 || false;
+				let region = options.region || options.parent.region || 'US';
 				if (otg)
 					obj = new Bubble.otg(_progress);
 				else if ( svf2)
-					obj = new Bubble.svf2(_progress);
+					obj = new Bubble.svf2(_progress, region);
 				else
 					obj = new Bubble.svf(_progress);
 				obj.downloadBubble(urn, outputFolder + '/', oauthClient.credentials.access_token)
@@ -137,6 +138,7 @@ class Forge_Other {
 				let SvfOrOtg = 'svf';
 				SvfOrOtg = (options.otg || options.parent.otg) ? 'otg' : SvfOrOtg;
 				SvfOrOtg = (options.svf2 || options.parent.svf2) ? 'svf2' : SvfOrOtg;
+				let region = options.region || options.parent.region || 'US';
 				let localOptions = (/^(https?):.*$/g.test(urn) || urn[0] === '/') ? '_local' : '';
 				// let isKey = (options.key || options.parent.key);
 				// if ( isKey )
@@ -148,7 +150,8 @@ class Forge_Other {
 					version: Forge_Other.viewerVersion,
 					viewer_path: localServer,
 					endpoint: Forge_Other.endpoint,
-					viewer_options: (SvfOrOtg + '_options' + localOptions)
+					viewer_options: (SvfOrOtg + '_options' + localOptions),
+					region: (region === 'EMEA')
 				};
 				return (render(data, outputFilename));
 			})

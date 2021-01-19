@@ -386,6 +386,7 @@ let commands = [
 		description: 'download the bubble (2legged/3legged)',
 		arguments: '<urn> <outputFolder>',
 		options: [
+			{ option: '-r, --region <region>', description: 'region: US or EMEA [string, default: US]' },
 			{ option: '-o, --otg', description: 'Download OTG bubble vs SVF Bubble' },
 			{ option: '-2, --svf2', description: 'Download SVF2 bubble vs SVF/OTG Bubble' },
 			//{ option: '-k, --key', description: 'urn represents the objectKey on OSS vs the urn' },
@@ -397,6 +398,7 @@ let commands = [
 		description: 'generate HTML/viewables (2legged/3legged)',
 		arguments: '<urn> <outputFilename>',
 		options: [
+			{ option: '-r, --region <region>', description: 'region: US or EMEA [string, default: US]' },
 			{ option: '-o, --otg', description: 'Use OTG vs SVF' },
 			{ option: '-2, --svf2', description: 'Use SVF2 vs SVF/OTG' },
 			{ option: '-l, --local', description: 'Use a local Viewer copy vs Server served Viewer' },

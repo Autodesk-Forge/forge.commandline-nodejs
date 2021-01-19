@@ -1105,7 +1105,7 @@ class otgBubble {
 
 class svf2Bubble {
 
-	constructor (progress) {
+	constructor (progress, region = 'US') {
 		this._urn = '';
 		this._outPath = './';
 		this._token = null;
@@ -1116,8 +1116,10 @@ class svf2Bubble {
 		this._otg_manifest = null;
 		this._otg_models = {};
 		this._urns = [];
+		this._region = region;
 	}
 
+	//get host () { return ('https://cdn.derivative.autodesk.com' + (this._region === 'EMEA' ? '/regions/eu' : '')); }
 	get host () { return ('https://cdn.derivative.autodesk.com'); }
 
 	get urn () { return (this._urn); }
@@ -1161,6 +1163,8 @@ class svf2Bubble {
 	// get OTG_models_keys () { Object.keys (otg_manifest.views) }
 	get OTG_models () { return (this._otg_models); }
 	set OTG_models (val) { this._otg_models = val; }
+
+	regionalizeURL (url) { return ((this._region === 'EMEA' ? '/regions/eu' : '') + url); }
 
 	downloadBubble (urn, outPath, token) {
 		let self = this;
@@ -1324,7 +1328,7 @@ class svf2Bubble {
 		let ModelDerivative = new ForgeAPI.DerivativesApi();
 		ModelDerivative.apiClient.basePath = this.host;
 		return (ModelDerivative.apiClient.callApi(
-			'/modeldata/manifest/{urn}', 'GET', // full manifest
+			this.regionalizeURL('/modeldata/manifest/{urn}'), 'GET', // full manifest
 			//'/modeldata/otgmanifest/{urn}', 'GET', // only OTG manifest
 			{ urn: urn }, {}, { /*'Accept-Encoding': 'gzip, deflate'*/ pragma: 'no-cache' },
 			{}, null,
@@ -1334,6 +1338,7 @@ class svf2Bubble {
 	}
 
 	getViewModelManifest (fileurn, elt, modelurn, outPath) {
+		const self = this;
 		const host = this.host;
 		return (new Promise((fulfill, reject) => {
 			if (!fileurn || !modelurn)
@@ -1341,11 +1346,11 @@ class svf2Bubble {
 			let ModelDerivative = new ForgeAPI.DerivativesApi();
 			ModelDerivative.apiClient.basePath = host;
 			ModelDerivative.apiClient.callApi(
-				'/modeldata/file/' + encodeURIComponent(fileurn) + encodeURIComponent(elt), 'GET',
+				self.regionalizeURL('/modeldata/file/' + encodeURIComponent(fileurn) + encodeURIComponent(elt)), 'GET',
 				{}, { acmsession: modelurn }, { 'Accept-Encoding': 'gzip, deflate', pragma: 'no-cache' },
 				{}, null,
 				[], [ /*'application/vnd.api+json', 'application/json'*/], null,
-				this._token, this._token.getCredentials()
+				self._token, this._token.getCredentials()
 			)
 				.then((res) => {
 					return (utils.gunzip(res.body));
@@ -1372,6 +1377,7 @@ class svf2Bubble {
 	}
 
 	getViewModelBinary (fileurn, key, elt, modelurn, outFile) {
+		const self = this;
 		const host = this.host;
 		return (new Promise((fulfill, reject) => {
 			if (!fileurn || !modelurn)
@@ -1388,9 +1394,9 @@ class svf2Bubble {
 				method: 'GET',
 				hostname: host.replace(/http[s]*\:\/\//, ''),
 				port: 443,
-				path: ('/modeldata/file/' + encodeURIComponent(fileurn) + encodeURIComponent(elt) + '?acmsession=' + modelurn),
+				path: self.regionalizeURL('/modeldata/file/' + encodeURIComponent(fileurn) + encodeURIComponent(elt) + '?acmsession=' + modelurn),
 				headers: {
-					'Authorization': ('Bearer ' + this._token.getCredentials().access_token),
+					'Authorization': ('Bearer ' + self._token.getCredentials().access_token),
 					'cache-control': 'no-cache',
 					pragma: 'no-cache',
 				}
@@ -1432,6 +1438,7 @@ class svf2Bubble {
 	}
 
 	getViewModelJson (fileurn, key, elt, modelurn, outFile) {
+		const self = this;
 		const host = this.host;
 		return (new Promise((fulfill, reject) => {
 			if (!fileurn || !modelurn)
@@ -1439,11 +1446,11 @@ class svf2Bubble {
 			let ModelDerivative = new ForgeAPI.DerivativesApi();
 			ModelDerivative.apiClient.basePath = host;
 			ModelDerivative.apiClient.callApi(
-				'/modeldata/file/' + encodeURIComponent(fileurn) + encodeURIComponent(elt), 'GET',
+				self.regionalizeURL('/modeldata/file/' + encodeURIComponent(fileurn) + encodeURIComponent(elt)), 'GET',
 				{}, { acmsession: modelurn }, { 'Accept-Encoding': 'gzip, deflate', pragma: 'no-cache' },
 				{}, null,
 				[], ['application/json'], null,
-				this._token, this._token.getCredentials()
+				self._token, self._token.getCredentials()
 			)
 				.then((res) => {
 					return (utils.gunzip(res.body, true));
@@ -1493,19 +1500,20 @@ class svf2Bubble {
 	}
 
 	getSharedAssetFile (fileurn, elt, modelurn, outPath) {
+		const self = this;
+		const host = this.host;
 		let parts = fileurn.split('/');
 		let account_id = parts[1];
 		let type = parts[2];
 		let outFile = path.resolve(path.join(outPath, type, elt[0], elt[1]));
-		const host = this.host;
 		return (new Promise((fulfill, reject) => {
 			if (!fileurn)
 				return (reject('Missing the required parameter {urn} when calling getSharedAssetFile'));
 			if (outFile.endsWith('.png')) {
-				let req = unirest.get(host + path.posix.join('/cdn/', elt[0], account_id, type, elt[1]) + '?acmsession=' + modelurn)
+				let req = unirest.get(host + self.regionalizeURL(path.posix.join('/cdn/', elt[0], account_id, type, elt[1])) + '?acmsession=' + modelurn)
 					.headers({
 						pragma: 'no-cache',
-						Authorization: ('Bearer ' + this._token.getCredentials().access_token)
+						Authorization: ('Bearer ' + self._token.getCredentials().access_token)
 					});
 				if (outFile.endsWith('.png'))
 					req.encoding('binary');
@@ -1528,9 +1536,9 @@ class svf2Bubble {
 							method: 'GET',
 							hostname: host.replace(/http[s]*\:\/\//, ''),
 							port: 443,
-							path: (path.posix.join('/cdn/', elt[0], account_id, type, elt[1]) + '?acmsession=' + modelurn),
+							path: self.regionalizeURL(path.posix.join('/cdn/', elt[0], account_id, type, elt[1]) + '?acmsession=' + modelurn),
 							headers: {
-								'Authorization': ('Bearer ' + this._token.getCredentials().access_token),
+								'Authorization': ('Bearer ' + self._token.getCredentials().access_token),
 								'cache-control': 'no-cache',
 								pragma: 'no-cache',
 							}
@@ -1567,11 +1575,12 @@ class svf2Bubble {
 	}
 
 	getSharedAssetJson (fileurn, elt, modelurn, outPath) {
+		const self = this;
+		const host = this.host;
 		let parts = fileurn.split('/');
 		let account_id = parts[1];
 		let type = parts[2];
 		let outFile = path.resolve(path.join(outPath, type, elt[0], elt[1]));
-		const host = this.host;
 		return (new Promise((fulfill, reject) => {
 			if (!fileurn)
 				return (reject('Missing the required parameter {urn} when calling getSharedAssetJson'));
@@ -1582,11 +1591,11 @@ class svf2Bubble {
 					let ModelDerivative = new ForgeAPI.DerivativesApi();
 					ModelDerivative.apiClient.basePath = host;
 					ModelDerivative.apiClient.callApi(
-						path.posix.join('/cdn/', elt[0], account_id, type, elt[1]), 'GET',
+						self.regionalizeURL(path.posix.join('/cdn/', elt[0], account_id, type, elt[1])), 'GET',
 						{}, { acmsession: modelurn }, { 'Accept-Encoding': 'gzip, deflate', pragma: 'no-cache' },
 						{}, null,
 						[], ['application/json'], null,
-						this._token, this._token.getCredentials()
+						self._token, self._token.getCredentials()
 					)
 						.then((res) => {
 							return (utils.gunzip(res.body));
@@ -1606,18 +1615,22 @@ class svf2Bubble {
 
 	static gunzip (res, bRaw = false) {
 		return (new Promise((fulfill, reject) => { // eslint-disable-line no-unused-vars
-			zlib.gunzip(res, (err, dezipped) => {
-				if (err)
-					return (fulfill(res));
-				try {
-					if (bRaw)
+			try {
+				zlib.gunzip(res, (err, dezipped) => {
+					if (err)
+						return (fulfill(res));
+					try {
+						if (bRaw)
+							fulfill(dezipped);
+						else
+							fulfill(JSON.parse(dezipped.toString('utf-8')));
+					} catch (ex) {
 						fulfill(dezipped);
-					else
-						fulfill(JSON.parse(dezipped.toString('utf-8')));
-				} catch (ex) {
-					fulfill(dezipped);
-				}
-			});
+					}
+				});
+			} catch (ex) {
+				fulfill(res);
+			}
 		}));
 	}
 
