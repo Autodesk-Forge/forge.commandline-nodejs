@@ -533,8 +533,6 @@ class Forge_OSS {
 		let key = options.key || options.parent.key || false;
 		if (key)
 			filename = Forge_OSS.key2filename(filename);
-		let signed = options.signed || options.parent.signed || false;
-		let region = options.region || options.parent.region || 'US';
 
 		let oa2legged = null;
 		let ossObjects = new ForgeAPI.ObjectsApi();
@@ -546,10 +544,7 @@ class Forge_OSS {
 			})
 			.then((_oa2legged) => {
 				oa2legged = _oa2legged;
-				if (signed)
-					return (ossObjects.deleteSignedResource(filename, region, oa2legged, oa2legged.getCredentials()));
-				else
-					return (ossObjects.deleteObject(bucketKey, filename, oa2legged, oa2legged.getCredentials()));
+				return (ossObjects.deleteObject(bucketKey, filename, oa2legged, oa2legged.getCredentials()));
 			})
 			.then((response) => { // eslint-disable-line no-unused-vars
 				//console.log (JSON.stringify (response.body, null, 4)) ;
@@ -595,24 +590,24 @@ class Forge_OSS {
 			});
 	}
 
-	// static unsignObject (id, options) {
-	// 	let region = options.region || options.parent.region || 'US';
+	static unsignObject (id, options) {
+		let region = options.region || options.parent.region || 'US';
 
-	// 	let oa2legged = null;
-	// 	let ossObjects = new ForgeAPI.ObjectsApi();
-	// 	Forge_OSS.oauth.getOauth2Legged()
-	// 		.then((_oa2legged) => {
-	// 			oa2legged = _oa2legged;
-	// 			return (ossObjects.deleteSignedResource(id, { region: region }, oa2legged, oa2legged.getCredentials()));
-	// 		})
-	// 		.then((response) => { // eslint-disable-line no-unused-vars
-	// 			console.log(response.body);
-	// 			console.log('Your object has been unsigned');
-	// 		})
-	// 		.catch((error) => {
-	// 			console.error('Something went wrong while unsigning your object!', error);
-	// 		});
-	// }
+		let oa2legged = null;
+		let ossObjects = new ForgeAPI.ObjectsApi();
+		Forge_OSS.oauth.getOauth2Legged()
+			.then((_oa2legged) => {
+				oa2legged = _oa2legged;
+				return (ossObjects.deleteSignedResource(id, region, oa2legged, oa2legged.getCredentials()));
+			})
+			.then((response) => { // eslint-disable-line no-unused-vars
+				console.log(response.body);
+				console.log('Your object has been unsigned');
+			})
+			.catch((error) => {
+				console.error('Something went wrong while unsigning your object!', error);
+			});
+	}
 
 	static readBucketKey (bucketKeyDefault) {
 		return (new Promise((fulfill, reject) => {
