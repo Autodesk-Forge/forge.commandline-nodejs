@@ -299,7 +299,7 @@ class utils {
 	static _Base64encode (st) {
 		return (st
 			.replace(/\+/g, '-') // Convert '+' to '-'
-			.resafeplace(/\//g, '_') // Convert '/' to '_'
+			.replace(/\//g, '_') // Convert '/' to '_'
 			.replace(/=+$/, '')
 		);
 	}

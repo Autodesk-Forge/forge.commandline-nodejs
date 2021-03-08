@@ -340,82 +340,163 @@ class Forge_OSS {
 		}));
 	}
 
+	static objectsPut_fullSigned (key, region, size, rstream) {
+		return (new Promise((fulfill, reject) => {
+			let ossObjects = new ForgeAPI.ObjectsApi();
+			ossObjects.uploadSignedResource(key, size, rstream, { xAdsRegion: region })
+				.then((result) => {
+					fulfill(result);
+				})
+				.catch((error) => {
+					reject(error);
+				});
+		}));
+	}
+
 	static objectsPut (filename, options) {
 		let bucketKey = options.bucket || options.parent.bucket || null;
 		let strippath = options.strippath || options.parent.strippath || false;
+		let signed = options.signed || options.parent.signed || false;
+		let region = options.region || options.parent.region || 'US';
 		let ossname = filename;
 		if (strippath)
 			ossname = path.basename(filename);
 		let oa2legged = null;
 		let ossObjects = new ForgeAPI.ObjectsApi();
-		Forge_OSS.readBucketKey(bucketKey)
-			.then((name) => {
-				bucketKey = name;
-				console.log('Uploading object to oss: ' + name + ' - ' + filename);
-				return (Forge_OSS.oauth.getOauth2Legged());
-			})
-			.then((_oa2legged) => {
-				oa2legged = _oa2legged;
-				return (utils.filesize(filename));
-			})
-			.then((size) => {
-				if (size <= 0)
-					throw new Error('Object size is empty!');
-				if (size <= Forge_OSS.chunkSize) {
-					let rstream = fs.createReadStream(filename);
-					return (Forge_OSS.objectsPut_full(oa2legged, bucketKey, ossname, size, rstream));
-				}
-				let nb = Math.floor(size / Forge_OSS.chunkSize);
-				if ((size % Forge_OSS.chunkSize) !== 0)
-					nb++;
-				let arr = [];
-				let uuid = uuidv4();
-				for (let i = 0; i < nb; i++) {
-					let start = i * Forge_OSS.chunkSize;
-					let end = start + Forge_OSS.chunkSize - 1;
-					if (end > size - 1)
-						end = size - 1;
-					let opts = {
-						ContentRange: 'bytes ' + start + '-' + end + '/' + size,
-						size: end - start + 1,
-						start: start,
-						end: end
-					};
+		if ( signed ) {
+			console.log('Uploading object to oss signed resource: ' + signed + ' - ' + filename);
+			Forge_OSS.oauth.getOauth2Legged()
+				.then((_oa2legged) => {
+					oa2legged = _oa2legged;
+					return (utils.filesize(filename));
+				})
+				.then((size) => {
+					if (size <= 0)
+						throw new Error('Object size is empty!');
+					if (size <= Forge_OSS.chunkSize) {
+						let rstream = fs.createReadStream(filename);
+						return (Forge_OSS.objectsPut_fullSigned(signed, region, size, rstream));
+					}
+					let nb = Math.floor(size / Forge_OSS.chunkSize);
+					if ((size % Forge_OSS.chunkSize) !== 0)
+						nb++;
+					let arr = [];
+					let uuid = uuidv4();
+					for (let i = 0; i < nb; i++) {
+						let start = i * Forge_OSS.chunkSize;
+						let end = start + Forge_OSS.chunkSize - 1;
+						if (end > size - 1)
+							end = size - 1;
+						let opts = {
+							ContentRange: 'bytes ' + start + '-' + end + '/' + size,
+							size: end - start + 1,
+							start: start,
+							end: end
+						};
 
-					// Still in parallel, but results processed in series with 'utils.promiseSerie'
-					//arr.push (ossObjects.uploadChunk (bucketKey, ossname, chunkSize, opts.ContentRange, sessionId, rstream, {}, oa2legged, oa2legged.getCredentials ())) ;
+						// Still in parallel, but results processed in series with 'utils.promiseSerie'
+						//arr.push (ossObjects.uploadSignedResourcesChunk (signed: signed, chunkSize, opts.ContentRange, sessionId, rstream, {}, oa2legged, oa2legged.getCredentials ())) ;
 
-					arr.push({ opts: opts, bucketKey: bucketKey, ossname: ossname, sessionId: uuid, oa2legged: oa2legged });
-				}
+						arr.push({ opts: opts, signed: signed, sessionId: uuid });
+					}
 
-				return (utils.promiseSerie(arr, (item, index) => { // eslint-disable-line no-unused-vars
-					return (new Promise((fulfill, reject) => {
-						// If still in parallel, but results processed in series with 'utils.promiseSerie', use item.then()
+					return (utils.promiseSerie(arr, (item, index) => { // eslint-disable-line no-unused-vars
+						return (new Promise((fulfill, reject) => {
+							// If still in parallel, but results processed in series with 'utils.promiseSerie', use item.then()
 
-						//console.log (JSON.stringify (item, null, 4)) ;
-						let rstream = fs.createReadStream(filename, { start: item.opts.start, end: item.opts.end });
-						ossObjects.uploadChunk(item.bucketKey, item.ossname, item.opts.size, item.opts.ContentRange, item.sessionId, rstream, {}, item.oa2legged, item.oa2legged.getCredentials())
-							.then((content) => {
-								console.log('Chunk ' + item.opts.ContentRange + ' accepted...');
-								if (content.statusCode === 202)
-									return (fulfill(item.opts.ContentRange));
-								fulfill(content);
-							})
-							.catch((error) => {
-								reject(error);
-							});
+							//console.log (JSON.stringify (item, null, 4)) ;
+							let rstream = fs.createReadStream(filename, { start: item.opts.start, end: item.opts.end });
+							ossObjects.uploadSignedResourcesChunk(item.signed, item.opts.ContentRange, item.sessionId, rstream, { xAdsRegion: region })
+								.then((content) => {
+									console.log('Chunk ' + item.opts.ContentRange + ' accepted...');
+									if (content.statusCode === 202)
+										return (fulfill(item.opts.ContentRange));
+									fulfill(content);
+								})
+								.catch((error) => {
+									reject(error);
+								});
+						}));
 					}));
-				}));
+				})
+				.then((info) => {
+					if (Array.isArray(info))
+						info = info.pop();
+					console.log(JSON.stringify(info.body, null, 4));
+				})
+				.catch((error) => {
+					console.error('Something went wrong while uploading your object!', error);
+				});
+		} else {
+			Forge_OSS.readBucketKey(bucketKey)
+				.then((name) => {
+					bucketKey = name;
+					console.log('Uploading object to oss resource: ' + name + ' - ' + filename);
+					return (Forge_OSS.oauth.getOauth2Legged());
+				})
+				.then((_oa2legged) => {
+					oa2legged = _oa2legged;
+					return (utils.filesize(filename));
+				})
+				.then((size) => {
+					if (size <= 0)
+						throw new Error('Object size is empty!');
+					if (size <= Forge_OSS.chunkSize) {
+						let rstream = fs.createReadStream(filename);
+						return (Forge_OSS.objectsPut_full(oa2legged, bucketKey, ossname, size, rstream));
+					}
+					let nb = Math.floor(size / Forge_OSS.chunkSize);
+					if ((size % Forge_OSS.chunkSize) !== 0)
+						nb++;
+					let arr = [];
+					let uuid = uuidv4();
+					for (let i = 0; i < nb; i++) {
+						let start = i * Forge_OSS.chunkSize;
+						let end = start + Forge_OSS.chunkSize - 1;
+						if (end > size - 1)
+							end = size - 1;
+						let opts = {
+							ContentRange: 'bytes ' + start + '-' + end + '/' + size,
+							size: end - start + 1,
+							start: start,
+							end: end
+						};
 
-			})
-			.then((info) => {
-				if (Array.isArray(info))
-					info = info.pop();
-				console.log(JSON.stringify(info.body, null, 4));
-			})
-			.catch((error) => {
-				console.error('Something went wrong while uploading your object!', error);
-			});
+						// Still in parallel, but results processed in series with 'utils.promiseSerie'
+						//arr.push (ossObjects.uploadChunk (bucketKey, ossname, chunkSize, opts.ContentRange, sessionId, rstream, {}, oa2legged, oa2legged.getCredentials ())) ;
+
+						arr.push({ opts: opts, bucketKey: bucketKey, ossname: ossname, sessionId: uuid, oa2legged: oa2legged });
+					}
+
+					return (utils.promiseSerie(arr, (item, index) => { // eslint-disable-line no-unused-vars
+						return (new Promise((fulfill, reject) => {
+							// If still in parallel, but results processed in series with 'utils.promiseSerie', use item.then()
+
+							//console.log (JSON.stringify (item, null, 4)) ;
+							let rstream = fs.createReadStream(filename, { start: item.opts.start, end: item.opts.end });
+							ossObjects.uploadChunk(item.bucketKey, item.ossname, item.opts.size, item.opts.ContentRange, item.sessionId, rstream, {}, item.oa2legged, item.oa2legged.getCredentials())
+								.then((content) => {
+									console.log('Chunk ' + item.opts.ContentRange + ' accepted...');
+									if (content.statusCode === 202)
+										return (fulfill(item.opts.ContentRange));
+									fulfill(content);
+								})
+								.catch((error) => {
+									reject(error);
+								});
+						}));
+					}));
+
+				})
+				.then((info) => {
+					if (Array.isArray(info))
+						info = info.pop();
+					console.log(JSON.stringify(info.body, null, 4));
+				})
+				.catch((error) => {
+					console.error('Something went wrong while uploading your object!', error);
+				});
+		}
 	}
 
 	static objectsCopy (filename, target, options) {
@@ -452,6 +533,8 @@ class Forge_OSS {
 		let key = options.key || options.parent.key || false;
 		if (key)
 			filename = Forge_OSS.key2filename(filename);
+		let signed = options.signed || options.parent.signed || false;
+		let region = options.region || options.parent.region || 'US';
 
 		let oa2legged = null;
 		let ossObjects = new ForgeAPI.ObjectsApi();
@@ -463,7 +546,10 @@ class Forge_OSS {
 			})
 			.then((_oa2legged) => {
 				oa2legged = _oa2legged;
-				return (ossObjects.deleteObject(bucketKey, filename, oa2legged, oa2legged.getCredentials()));
+				if (signed)
+					return (ossObjects.deleteSignedResource(filename, region, oa2legged, oa2legged.getCredentials()));
+				else
+					return (ossObjects.deleteObject(bucketKey, filename, oa2legged, oa2legged.getCredentials()));
 			})
 			.then((response) => { // eslint-disable-line no-unused-vars
 				//console.log (JSON.stringify (response.body, null, 4)) ;
@@ -500,31 +586,33 @@ class Forge_OSS {
 			})
 			.then((response) => { // eslint-disable-line no-unused-vars
 				console.log (JSON.stringify (response.body, null, 4)) ;
-				console.log('Your object has been signed');
+				let key = response.body.signedUrl;
+				key = key.substring(key.indexOf('/signedresources/') + 17, key.indexOf('?') === -1 ? undefined : key.indexOf('?'));
+				console.log(`Your object has been signed with key # ${key}`);
 			})
 			.catch((error) => {
 				console.error('Something went wrong while signing your object!', error);
 			});
 	}
 
-	static unsignObject (id, options) {
-		let region = options.region || options.parent.region || 'US';
+	// static unsignObject (id, options) {
+	// 	let region = options.region || options.parent.region || 'US';
 
-		let oa2legged = null;
-		let ossObjects = new ForgeAPI.ObjectsApi();
-		Forge_OSS.oauth.getOauth2Legged()
-			.then((_oa2legged) => {
-				oa2legged = _oa2legged;
-				return (ossObjects.deleteSignedResource(id, { region: region }, oa2legged, oa2legged.getCredentials()));
-			})
-			.then((response) => { // eslint-disable-line no-unused-vars
-				console.log(response.body);
-				console.log('Your object has been unsigned');
-			})
-			.catch((error) => {
-				console.error('Something went wrong while unsigning your object!', error);
-			});
-	}
+	// 	let oa2legged = null;
+	// 	let ossObjects = new ForgeAPI.ObjectsApi();
+	// 	Forge_OSS.oauth.getOauth2Legged()
+	// 		.then((_oa2legged) => {
+	// 			oa2legged = _oa2legged;
+	// 			return (ossObjects.deleteSignedResource(id, { region: region }, oa2legged, oa2legged.getCredentials()));
+	// 		})
+	// 		.then((response) => { // eslint-disable-line no-unused-vars
+	// 			console.log(response.body);
+	// 			console.log('Your object has been unsigned');
+	// 		})
+	// 		.catch((error) => {
+	// 			console.error('Something went wrong while unsigning your object!', error);
+	// 		});
+	// }
 
 	static readBucketKey (bucketKeyDefault) {
 		return (new Promise((fulfill, reject) => {

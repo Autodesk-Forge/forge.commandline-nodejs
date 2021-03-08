@@ -172,7 +172,9 @@ let commands = [
 		options: [
 			{ option: '-b, --bucket <bucket>', description: 'override bucket name to be used in this session' },
 			{ option: '-k, --key', description: 'filename represents the objectKey on OSS vs the filename' },
-			{ option: '-s, --strippath', description: 'strip path from filename' }
+			{ option: '-s, --strippath', description: 'strip path from filename' },
+			{ option: '-d, --signed <signed>', description: 'signed resource key (requires region, if not US)' },
+			{ option: '-r, --region <region>', description: 'region: US or EMEA [string, default: US]' },
 		]
 	},
 	{
@@ -190,7 +192,9 @@ let commands = [
 		arguments: '<filename>',
 		options: [
 			{ option: '-b, --bucket <bucket>', description: 'override bucket name to be used in this session' },
-			{ option: '-k, --key', description: 'filename represents the objectKey on OSS vs the filename' }
+			{ option: '-k, --key', description: 'filename represents the objectKey on OSS vs the filename' },
+			{ option: '-s, --signed', description: 'signed resource key (requires region, if not US)' },
+			{ option: '-r, --region <region>', description: 'region: US or EMEA [string, default: US]' },
 		]
 	},
 	{
@@ -200,19 +204,19 @@ let commands = [
 		options: [
 			{ option: '-b, --bucket <bucket>', description: 'override bucket name to be used in this session' },
 			{ option: '-k, --key', description: 'filename represents the objectKey on OSS vs the filename' },
-			{ option: '-a, --access', description: 'access for signed resource Acceptable values: read, write, readwrite Default value: read' },
+			{ option: '-a, --access <access>', description: 'access for signed resource Acceptable values: read, write, readwrite Default value: read' },
 			{ option: '-e, --minutesexpiration <minutesexpiration>', description: 'expiration time in minutes; default: 60' },
 			{ option: '-s, --singleuse', description: 'expires after it is used the first time if true. Default value: false' }
 		]
 	},
-	{
-		name: 'objects-unsign', action: ForgeOSS.signObject,
-		description: 'unsign a seed file (2legged)',
-		arguments: '<id>',
-		options: [
-			{ option: '-r, --region <region>', description: 'region: US or EMEA [string, default: US]' },
-		]
-	},
+	// {
+	// 	name: 'objects-unsign', action: ForgeOSS.unsignObject,
+	// 	description: 'unsign a seed file (2legged)',
+	// 	arguments: '<id>',
+	// 	options: [
+	// 		{ option: '-r, --region <region>', description: 'region: US or EMEA [string, default: US]' },
+	// 	]
+	// },
 	{
 		name: 'objects-translate', action: ForgeMD.objectsTranslate,
 		description: 'translate a seed file (2legged)',

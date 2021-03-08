@@ -354,7 +354,7 @@ class Forge_MD {
 		let mdOptions = {
 			xAdsForce: xAdsForce,
 			forceget: forceget
-		}
+		};
 		let objectid = options.objectid || options.parent.objectid || null;
 		if (objectid)
 			mdOptions.objectid = objectid;
@@ -412,7 +412,7 @@ class Forge_MD {
 					console.log(`Resource size: ${response.headers['content-length']} bytes`);
 					return (response.headers['content-length']);
 				} else
-					return (utils.writeFile(outputFile, response.body));
+					return (utils.writeFile(outputFile, response.body, null, true));
 			})
 			.catch((error) => {
 				console.error('Something went wrong while requesting the derivative file!', error);
