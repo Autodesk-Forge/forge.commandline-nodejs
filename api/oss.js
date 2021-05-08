@@ -25,9 +25,10 @@
 /*jshint esversion: 6 */
 
 const ForgeAPI = require('forge-apis');
-const fs = require('fs');
-const url = require('url');
-const path = require('path');
+const _fs = require('fs');
+const _url = require('url');
+const _path = require('path');
+const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const utils = require('./utils');
 
@@ -41,29 +42,73 @@ class Forge_OSS {
 	static set minChunkSize (val) { Forge_OSS._minChunkSize = val; }
 
 	// buckets (2legged)
+	static _bucketsList (params) {
+		return (new Promise((resolve, reject) => {
+			let ossBuckets = new ForgeAPI.BucketsApi();
+			ossBuckets.getBuckets(params.opts, params.oa2legged, params.oa2legged.getCredentials())
+				.then((info) => {
+					params.results = [...params.results, ...info.body.items];
+					if (info.body.hasOwnProperty('next')) {
+						let url_parts = _url.parse(info.body.next, true);
+						let _startAt = url_parts.query.startAt;
+						params.opts.startAt = _startAt;
+						Forge_OSS._bucket_bucketsListsLs(params)
+							.then((r) => resolve(params.results));
+					} else {
+						resolve(params.results);
+					}
+				})
+				.catch((error) => {
+					reject(error);
+				});
+		}));
+	}
+
 	static bucketsList (options) {
 		let limit = options.limit || options.parent.limit || 10;
 		let startAt = options.startAt || options.parent.startAt || null;
 		let region = options.region || options.parent.region || 'US';
 		let opts = { 'limit': limit, 'startAt': startAt, 'region': region };
-		console.log('Listing from ' + (startAt || 'beginning') + ' to ' + limit);
+		let all = options.all || options.parent.all || false;
+		!all && console.log('Listing from ' + (startAt || 'beginning') + ' to ' + limit);
+		all && console.log('List all bucket content');
+		let json = options.json || options.parent.json || false;
+		let current = options.current || options.parent.current || null;
+
 		Forge_OSS.oauth.getOauth2Legged()
 			.then((oa2legged) => {
 				let ossBuckets = new ForgeAPI.BucketsApi();
-				return (ossBuckets.getBuckets(opts, oa2legged, oa2legged.getCredentials()));
+				if (all)
+					return (Forge_OSS._bucketsList({ results: [], opts: { startAt: startAt, limit: 100, region: region }, oa2legged: oa2legged }));
+				else
+					return (ossBuckets.getBuckets(opts, oa2legged, oa2legged.getCredentials()));
 			})
-			.then((buckets) => {
-				console.log(JSON.stringify(buckets.body.items, null, 4));
-				if (!buckets.body.hasOwnProperty('next')) { // eslint-disable-line no-prototype-builtins
+			.then((info) => {
+				//console.log(JSON.stringify(info.body, null, 4));
+				const items = all ? info : info.body.items;
+				const output = items.map((elt) => {
+					return ({
+						bucketKey: elt.bucketKey,
+						policyKey: elt.policyKey,
+						createdDate: (new Date(elt.createdDate)).toISOString(),
+					});
+				});
+				if (json)
+					console.log(JSON.stringify(items, null, 4));
+				else
+					console.table(output);
+				if (!info.body || !info.body.hasOwnProperty('next')) { // eslint-disable-line no-prototype-builtins
 					console.log('Your search is complete, no more items to list');
 				} else {
-					let url_parts = url.parse(buckets.body.next, true);
+					let url_parts = _url.parse(info.body.next, true);
 					let _startAt = url_parts.query.startAt;
 					console.log('Your next search startAt is: ' + _startAt);
 				}
+				if ( current !== null )
+					Forge_OSS.bucketsCurrent(output[current].bucketKey, {});
 			})
 			.catch((error) => {
-				console.error('Failed to get bucket list!', error);
+				console.error('Something went wrong while listing your bucket content!', error);
 			});
 	}
 
@@ -167,12 +212,37 @@ class Forge_OSS {
 			});
 	}
 
+	static _bucketsLs (params) {
+		return (new Promise ((resolve, reject) => {
+			let ossObjects = new ForgeAPI.ObjectsApi();
+			ossObjects.getObjects(params.bucketKey, params.opts, params.oa2legged, params.oa2legged.getCredentials())
+				.then((info) => {
+					params.results = [...params.results, ...info.body.items];
+					if (info.body.hasOwnProperty('next')) {
+						let url_parts = _url.parse(info.body.next, true);
+						let _startAt = url_parts.query.startAt;
+						params.opts.startAt = _startAt;
+						Forge_OSS._bucketsLs(params)
+							.then((r) => resolve(params.results));
+					} else {
+						resolve(params.results);
+					}
+				})
+				.catch((error) => {
+					reject(error);
+				});
+		}));
+	}
+
 	static bucketsLs (bucketKey, options) {
 		let limit = options.limit || options.parent.limit || 10;
 		let startAt = options.startAt || options.parent.startAt || null;
 		let beginsWith = options.beginsWith || options.parent.beginsWith || null;
 		let opts = { 'limit': limit, 'startAt': startAt, 'beginsWith': beginsWith };
-		console.log('Listing from ' + (startAt || 'beginning') + ' to ' + limit);
+		let all = options.all || options.parent.all || false;
+		!all && console.log('Listing from ' + (startAt || 'beginning') + ' to ' + limit);
+		all && console.log('List all bucket content');
+		let json = options.json || options.parent.json || false;
 		Forge_OSS.readBucketKey(bucketKey)
 			.then((name) => {
 				bucketKey = name;
@@ -181,14 +251,30 @@ class Forge_OSS {
 			})
 			.then((oa2legged) => {
 				let ossObjects = new ForgeAPI.ObjectsApi();
-				return (ossObjects.getObjects(bucketKey, opts, oa2legged, oa2legged.getCredentials()));
+				if ( all )
+					return (Forge_OSS._bucketsLs({ results: [], bucketKey: bucketKey, opts: { startAt: startAt, limit: 100, beginsWith: beginsWith }, oa2legged: oa2legged }));
+				else
+					return (ossObjects.getObjects(bucketKey, opts, oa2legged, oa2legged.getCredentials()));
 			})
 			.then((info) => {
-				console.log(JSON.stringify(info.body.items, null, 4));
-				if (!info.body.hasOwnProperty('next')) { // eslint-disable-line no-prototype-builtins
+				//console.log(JSON.stringify(info.body.items, null, 4));
+				const items = all ? info : info.body.items;
+				const output = items.map((elt) => {
+					return ({
+						objectKey: elt.objectKey,
+						size: (elt.size / 1024 / 1024).toFixed(2) + ' Mb',
+						sha1: elt.sha1,
+						urn: utils.safeBase64encode(elt.objectId)
+					});
+				});
+				if ( json )
+					console.log(JSON.stringify(items, null, 4));
+				else
+					console.table(output);
+				if (!info.body || !info.body.hasOwnProperty('next')) { // eslint-disable-line no-prototype-builtins
 					console.log('Your search is complete, no more items to list');
 				} else {
-					let url_parts = url.parse(info.body.next, true);
+					let url_parts = _url.parse(info.body.next, true);
 					let _startAt = url_parts.query.startAt;
 					console.log('Your next search startAt is: ' + _startAt);
 				}
@@ -272,7 +358,7 @@ class Forge_OSS {
 				let size = info.body.size;
 				if (size <= 0)
 					throw new Error('Object size is empty!');
-				wstream = fs.createWriteStream(outputFile);
+				wstream = _fs.createWriteStream(outputFile);
 				if (size <= Forge_OSS.chunkSize)
 					return (Forge_OSS.objectsGet_full(oa2legged, bucketKey, filename, wstream));
 				let nb = Math.floor(size / Forge_OSS.chunkSize);
@@ -360,7 +446,7 @@ class Forge_OSS {
 		let region = options.region || options.parent.region || 'US';
 		let ossname = filename;
 		if (strippath)
-			ossname = path.basename(filename);
+			ossname = _path.basename(filename);
 		let oa2legged = null;
 		let ossObjects = new ForgeAPI.ObjectsApi();
 		if ( signed ) {
@@ -374,7 +460,7 @@ class Forge_OSS {
 					if (size <= 0)
 						throw new Error('Object size is empty!');
 					if (size <= Forge_OSS.chunkSize) {
-						let rstream = fs.createReadStream(filename);
+						let rstream = _fs.createReadStream(filename);
 						return (Forge_OSS.objectsPut_fullSigned(signed, region, size, rstream));
 					}
 					let nb = Math.floor(size / Forge_OSS.chunkSize);
@@ -405,7 +491,7 @@ class Forge_OSS {
 							// If still in parallel, but results processed in series with 'utils.promiseSerie', use item.then()
 
 							//console.log (JSON.stringify (item, null, 4)) ;
-							let rstream = fs.createReadStream(filename, { start: item.opts.start, end: item.opts.end });
+							let rstream = _fs.createReadStream(filename, { start: item.opts.start, end: item.opts.end });
 							ossObjects.uploadSignedResourcesChunk(item.signed, item.opts.ContentRange, item.sessionId, rstream, { xAdsRegion: region })
 								.then((content) => {
 									console.log('Chunk ' + item.opts.ContentRange + ' accepted...');
@@ -442,7 +528,7 @@ class Forge_OSS {
 					if (size <= 0)
 						throw new Error('Object size is empty!');
 					if (size <= Forge_OSS.chunkSize) {
-						let rstream = fs.createReadStream(filename);
+						let rstream = _fs.createReadStream(filename);
 						return (Forge_OSS.objectsPut_full(oa2legged, bucketKey, ossname, size, rstream));
 					}
 					let nb = Math.floor(size / Forge_OSS.chunkSize);
@@ -473,7 +559,7 @@ class Forge_OSS {
 							// If still in parallel, but results processed in series with 'utils.promiseSerie', use item.then()
 
 							//console.log (JSON.stringify (item, null, 4)) ;
-							let rstream = fs.createReadStream(filename, { start: item.opts.start, end: item.opts.end });
+							let rstream = _fs.createReadStream(filename, { start: item.opts.start, end: item.opts.end });
 							ossObjects.uploadChunk(item.bucketKey, item.ossname, item.opts.size, item.opts.ContentRange, item.sessionId, rstream, {}, item.oa2legged, item.oa2legged.getCredentials())
 								.then((content) => {
 									console.log('Chunk ' + item.opts.ContentRange + ' accepted...');
@@ -609,6 +695,19 @@ class Forge_OSS {
 			});
 	}
 
+	static sha1 (filename, options) {
+		const shasum = crypto.createHash('sha1');
+		const s = _fs.ReadStream(filename);
+		s.on('data', (data) => shasum.update(data));
+		s.on('end', () => console.log(`${filename} sha1: ${shasum.digest('hex')}`));
+	}
+
+	static _sha1 (strorbuffer) {
+		const shasum = crypto.createHash('sha1');
+		shasum.update(strorbuffer);
+		return (shasum.digest('hex'));
+	}
+
 	static readBucketKey (bucketKeyDefault) {
 		return (new Promise((fulfill, reject) => {
 			if (bucketKeyDefault !== undefined && bucketKeyDefault !== null && bucketKeyDefault !== '') {
@@ -644,14 +743,14 @@ class Forge_OSS {
 
 	static filename2key (filename, bFilenameOnly) {
 		if (bFilenameOnly === true)
-			return (encodeURIComponent(path.basename(filename)));
+			return (encodeURIComponent(_path.basename(filename)));
 		return (encodeURIComponent(filename));
 	}
 
 	static key2filename (key, pathname) {
 		let filename = decodeURIComponent(key);
 		if (pathname)
-			return (path.join(pathname, filename));
+			return (_path.join(pathname, filename));
 		return (filename);
 	}
 

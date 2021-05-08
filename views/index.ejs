@@ -171,9 +171,9 @@
 		}
 
 		function onDocumentLoaded(doc) {
-			let views = doc.getRoot().search({
-				type: 'geometry'
-			});
+			doc.downloadAecModelData();
+			
+			let views = doc.getRoot().search({ type: 'geometry' });
 			for (let i = 0; views && i < views.length; i++) {
 				let guid = views[i].data.guid;
 				if (guid.indexOf('asset') > -1 || (guid.contains && guid.contains('asset')))
@@ -221,6 +221,8 @@
 			oViewer.setGhosting(true);
 			oViewer.setEnvMapBackground(false);
 			oViewer.setSelectionColor(new THREE.Color(0xEBB30B));
+
+			oViewer.loadExtension('Autodesk.DocumentBrowser');
 		}
 
 		function onError(errorCode) {

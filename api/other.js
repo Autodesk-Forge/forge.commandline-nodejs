@@ -37,6 +37,9 @@ const Bubble = require('./bubble');
 const viewerFileList =require ('./viewer') ;
 const utils = require('./utils');
 
+const Forge_OSS = require('./oss');
+const Forge_MD = require('./md');
+
 class Forge_Other {
 
 	static get oauth () { return (Forge_Other._oauth); }
@@ -65,12 +68,23 @@ class Forge_Other {
 
 	// svf/otg bubble
 	static bubble (urn, outputFolder, options) {
+		let bucketKey = options.bucket || options.parent.bucket || null;
+		let key = options.key || options.parent.key || false;
+
 		console.log('Downloading Bubble for urn: ' + urn);
-		if (urn.substring(0, 4) === 'urn:')
-			urn = utils.safeBase64encode(urn);
 		let _progress = {};
 		let oauthClient = null;
-		Forge_Other.oauth.getCredentials()
+		Forge_OSS.readBucketKey(bucketKey)
+			.then((name) => {
+				bucketKey = name;
+				if (key) {
+					urn = Forge_OSS.key2filename(urn);
+					urn = Forge_OSS.createOSSURN(bucketKey, urn, true);
+				}
+				if (urn.substring(0, 4) === 'urn:')
+					urn = utils.safeBase64encode(urn);
+				return (Forge_Other.oauth.getCredentials());
+			})
 			.then((credentials) => {
 				if (!credentials.refresh_token)
 					return (Forge_Other.oauth.getOauth2Legged());
@@ -106,6 +120,8 @@ class Forge_Other {
 
 	// html/viewer
 	static htmlGet (urn, outputFilename, options) { // eslint-disable-line no-unused-vars
+		let bucketKey = options.bucket || options.parent.bucket || null;
+		let key = options.key || options.parent.key || false;
 
 		let render = (data, _outputFilename) => { // eslint-disable-line no-unused-vars
 			return (new Promise((fulfill, reject) => {
@@ -122,11 +138,19 @@ class Forge_Other {
 			}));
 		};
 
-		console.log('Creating Viewer: ' + urn);
-		if (urn.substring(0, 4) === 'urn:')
-			urn = utils.safeBase64encode(urn);
+		console.log('Creating Viewer HTML: ' + urn);
 		//let oauthClient = null;
-		Forge_Other.oauth.getCredentials()
+		Forge_OSS.readBucketKey(bucketKey)
+			.then((name) => {
+				bucketKey = name;
+				if (key) {
+					urn = Forge_OSS.key2filename(urn);
+					urn = Forge_OSS.createOSSURN(bucketKey, urn, true);
+				}
+				if (urn.substring(0, 4) === 'urn:')
+					urn = utils.safeBase64encode(urn);
+				return (Forge_Other.oauth.getCredentials());
+			})
 			.then((credentials) => {
 				if (!credentials.refresh_token)
 					return (Forge_Other.oauth.getOauth2Legged());
@@ -221,6 +245,17 @@ class Forge_Other {
 				});
 		})) ;
 	}
+
+	// static pipeline (filename) {
+	// 	const ossname = _path.basename(filename);
+	// 	Forge_OSS.objectsPut(filename, { strippath: true })
+	// 	 	.then((result) => {
+	// 			  return (Forge_MD.objectsTranslate(ossname, { svf2: true }));
+	// 		})
+	// 		.catch ((err) => {
+	// 			console.error('Something went wrong while uploading your object!', error);
+	// 		});
+	// }
 
 }
 

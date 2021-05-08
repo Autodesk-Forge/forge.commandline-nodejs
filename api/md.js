@@ -25,7 +25,7 @@
 /*jshint esversion: 6 */
 
 const ForgeAPI = require('forge-apis');
-const path = require('path');
+const _path = require('path');
 const utils = require('./utils');
 
 class Forge_MD {
@@ -46,10 +46,11 @@ class Forge_MD {
 		let master = options.master || options.parent.master || null;
 		let force = options.force || options.parent.force || false;
 		let references = options.references || options.parent.references || false;
-		let switchLoader = options.switchLoader || options.parent.switchLoader || false;
+		let ifcRevit = options.ifcRevit || options.parent.ifcRevit || false;
+		let ifcNavis = options.ifcNavis || options.parent.ifcNavis || false;
 		let generateMasterViews = options.generateMasterViews || options.parent.generateMasterViews || false;
 		let region = options.region || options.parent.region || 'US';
-		let compressed = (path.extname(filename).toLowerCase() === '.zip' || path.extname(filename).toLowerCase() === '.rar');
+		let compressed = (_path.extname(filename).toLowerCase() === '.zip' || _path.extname(filename).toLowerCase() === '.rar');
 		if (compressed && master === null)
 			return (console.error('You must provide a master file reference!'));
 
@@ -92,9 +93,11 @@ class Forge_MD {
 						]
 					});
 					jobs.output.advanced = {
-						switchLoader: switchLoader,
 						generateMasterViews: generateMasterViews
 					};
+					
+					ifcRevit && (jobs.output.advanced.conversionMethod = 'modern');
+					ifcNavis && (jobs.output.advanced.conversionMethod = 'legacy');
 				}
 
 				let svf2 = options.svf2 || options.parent.svf2 || false;
@@ -106,6 +109,12 @@ class Forge_MD {
 							'3d'
 						]
 					});
+					jobs.output.advanced = {
+						generateMasterViews: generateMasterViews
+					};
+
+					ifcRevit && (jobs.output.advanced.conversionMethod = 'modern');
+					ifcNavis && (jobs.output.advanced.conversionMethod = 'legacy');
 				}
 
 				let stl = options.stl || options.parent.stl || false;
@@ -454,14 +463,14 @@ class Forge_MD {
 
 	static filename2key (filename, bFilenameOnly) {
 		if (bFilenameOnly === true)
-			return (encodeURIComponent(path.basename(filename)));
+			return (encodeURIComponent(_path.basename(filename)));
 		return (encodeURIComponent(filename));
 	}
 
 	static key2filename (key, pathname) {
 		let filename = decodeURIComponent(key);
 		if (pathname)
-			return (path.join(pathname, filename));
+			return (_path.join(pathname, filename));
 		return (filename);
 	}
 

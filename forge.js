@@ -90,6 +90,7 @@ let commands = [
 	},
 
 	{ name: '2legged', action: ForgeOauth._2legged, description: 'get an application access token (2legged)' },
+	{ name: '2legged-verify', action: ForgeOauth._2leggedVerify, description: 'verify access token (2legged)' },
 	{ name: '2legged-logout', action: ForgeOauth._2leggedRelease, description: 'release the application access token (2legged)' },
 
 	{
@@ -100,6 +101,7 @@ let commands = [
 			{ option: '-i, --implicit', description: 'run an implicit grant vs code grant' }
 		]
 	},
+	{ name: '3legged-verify', action: ForgeOauth._3leggedVerify, description: 'verify access token (3legged)' },
 	{ name: '3legged-logout', action: ForgeOauth._2leggedRelease, description: 'release the application access token (3legged)' },
 
 	{
@@ -108,7 +110,10 @@ let commands = [
 		options: [
 			{ option: '-s, --startAt <startAt>', description: 'startAt: where to start in the list [string, default: none]' },
 			{ option: '-l, --limit <limit>', description: 'limit: how many to return [integer, default: 10]' },
-			{ option: '-r, --region <region>', description: 'region: US or EMEA [string, default: US]' }
+			{ option: '-r, --region <region>', description: 'region: US or EMEA [string, default: US]' },
+			{ option: '-a, --all', description: 'get them all!' },
+			{ option: '-j, --json', description: 'display results as JSON vs table' },
+			{ option: '-c, --current <current>', description: 'index from list to set as current bucket (i.e. buckets-current command)' },
 		]
 	},
 	{
@@ -143,7 +148,9 @@ let commands = [
 		options: [
 			{ option: '-s, --startAt <startAt>', description: 'startAt: where to start in the list [string, default: none]' },
 			{ option: '-l, --limit <limit>', description: 'limit: how many to return [integer, default: 10]' },
-			{ option: '-b, --beginsWith <beginsWith>', description: 'beginsWith: String to filter the objectKeys.' }
+			{ option: '-b, --beginsWith <beginsWith>', description: 'beginsWith: String to filter the objectKeys.' },
+			{ option: '-a, --all', description: 'get them all!' },
+			{ option: '-j, --json', description: 'display results as JSON vs table' },
 		]
 	},
 
@@ -193,8 +200,6 @@ let commands = [
 		options: [
 			{ option: '-b, --bucket <bucket>', description: 'override bucket name to be used in this session' },
 			{ option: '-k, --key', description: 'filename represents the objectKey on OSS vs the filename' },
-			{ option: '-s, --signed', description: 'signed resource key (requires region, if not US)' },
-			{ option: '-r, --region <region>', description: 'region: US or EMEA [string, default: US]' },
 		]
 	},
 	{
@@ -209,14 +214,14 @@ let commands = [
 			{ option: '-s, --singleuse', description: 'expires after it is used the first time if true. Default value: false' }
 		]
 	},
-	// {
-	// 	name: 'objects-unsign', action: ForgeOSS.unsignObject,
-	// 	description: 'unsign a seed file (2legged)',
-	// 	arguments: '<id>',
-	// 	options: [
-	// 		{ option: '-r, --region <region>', description: 'region: US or EMEA [string, default: US]' },
-	// 	]
-	// },
+	{
+		name: 'objects-unsign', action: ForgeOSS.unsignObject,
+		description: 'unsign a seed file (2legged)',
+		arguments: '<id>',
+		options: [
+			{ option: '-r, --region <region>', description: 'region: US or EMEA [string, default: US]' },
+		]
+	},
 	{
 		name: 'objects-translate', action: ForgeMD.objectsTranslate,
 		description: 'translate a seed file (2legged)',
@@ -228,7 +233,8 @@ let commands = [
 			{ option: '-f, --force', description: 'force translation' },
 			{ option: '-c, --references', description: 'force using references configuration in the translation' },
 			{ option: '-r, --region <region>', description: 'region: US or EMEA [string, default: US]' },
-			{ option: '--switchLoader', description: 'switches the IFC loader from Navisworks to Revit' },
+			{ option: '--ifcRevit', description: 'use Revit vs Navisworks to do IFC conversion' },
+			{ option: '--ifcNavis', description: 'use Navisworks vs Revit to do IFC conversion' },
 			{ option: '--generateMasterViews', description: 'generates master views when translating from the Revit' },
 			{ option: '--svf', description: 'translate to the Forge SVF bubble format' },
 			{ option: '--svf2', description: 'translate to the Forge SVF2 bubble format' },
@@ -330,6 +336,12 @@ let commands = [
 		]
 	},
 
+	{
+		name: 'objects-sha1', action: ForgeOSS.sha1, 
+		description: 'calc file SHA1',
+		arguments: '<filename>'
+	},
+
 	{ name: 'user', action: ForgeOther.userAboutMe, description: 'get the profile information of an authorizing end user (3legged)', },
 
 	{ name: 'hubs', action: ForgeDM.hubsLs, description: 'get list of hubs (3legged)', },
@@ -393,7 +405,8 @@ let commands = [
 			{ option: '-r, --region <region>', description: 'region: US or EMEA [string, default: US]' },
 			{ option: '-o, --otg', description: 'Download OTG bubble vs SVF Bubble' },
 			{ option: '-2, --svf2', description: 'Download SVF2 bubble vs SVF/OTG Bubble' },
-			//{ option: '-k, --key', description: 'urn represents the objectKey on OSS vs the urn' },
+			{ option: '-b, --bucket <bucket>', description: 'override bucket name to be used in this session' },
+			{ option: '-k, --key', description: 'urn represents the objectKey on OSS vs the urn' },
 		]
 	},
 
@@ -406,7 +419,8 @@ let commands = [
 			{ option: '-o, --otg', description: 'Use OTG vs SVF' },
 			{ option: '-2, --svf2', description: 'Use SVF2 vs SVF/OTG' },
 			{ option: '-l, --local', description: 'Use a local Viewer copy vs Server served Viewer' },
-			//{ option: '-k, --key', description: 'urn represents the objectKey on OSS vs the urn' },
+			{ option: '-b, --bucket <bucket>', description: 'override bucket name to be used in this session' },
+			{ option: '-k, --key', description: 'urn represents the objectKey on OSS vs the urn' },
 		]
 	},
 

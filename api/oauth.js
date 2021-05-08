@@ -32,6 +32,8 @@ const url = require('url');
 const path = require('path');
 const ejs = require('ejs');
 const utils = require('./utils');
+const jwksClient = require('jwks-rsa');
+const jwt = require('jsonwebtoken');
 
 class Forge_oauth {
 
@@ -43,15 +45,15 @@ class Forge_oauth {
 		Forge_oauth._settings = val;
 	}
 
-	static localToken (token, refresh, options) { // eslint-disable-line no-unused-vars
+	static localToken (token, refreshToken, options) { // eslint-disable-line no-unused-vars
 		utils.json('credentials')
 			.then((credentials) => {
 				if (token)
 					credentials.access_token = token;
 				let bearer = 'Bearer ' + credentials.access_token;
 				console.log('Your current access token is: ' + bearer);
-				if (refresh)
-					credentials.refresh_token = refresh;
+				if (refreshToken)
+					credentials.refresh_token = refreshToken;
 				else if (credentials.refresh_token)
 					delete credentials.refresh_token;
 				let dt = moment().add(credentials.expires_in, 'seconds');
@@ -81,6 +83,61 @@ class Forge_oauth {
 		console.log('Your 2 legged token has been released!');
 	}
 
+	static _2leggedVerify (options) { // eslint-disable-line no-unused-vars
+		console.log('Verifying JWT token');
+		let _oa2legged = null;
+		Forge_oauth.getOauth2Legged()
+			.then((oa2legged) => {
+				_oa2legged = oa2legged;
+				// 	//let oa2Legged = new ForgeAPI.AuthClientTwoLegged(Forge_oauth.settings.clientId, Forge_oauth.settings.clientSecret, Forge_oauth.settings.opts.scope.split(' '), true);
+				// 	//return (ossBuckets.getBuckets(opts, oa2legged, oa2legged.getCredentials()));
+				// 	const ModelDerivative = new ForgeAPI.DerivativesApi();
+				// 	return (ModelDerivative.apiClient.callApi(
+				// 		'/authentication/v2/keys', 'GET',
+				// 		{}, {}, {},
+				// 		{}, null,
+				// 		[], ['application/vnd.api+json', 'application/json'], null,
+				// 		oa2legged, oa2legged.getCredentials()
+				// 	));
+				// })
+				// .then((result) => {
+				// https://forge.autodesk.com/en/docs/oauth/v2/developers_guide/asymmetric-encryption/#validate-access-token
+
+				const token = _oa2legged.getCredentials().access_token;
+				const well_known_jwks_url = 'https://developer.api.autodesk.com/authentication/v2/keys';
+				const decoded = jwt.decode(token, { complete: true });
+				//console.log(`decoded ${JSON.stringify(decoded, null, 4)}`);
+				const header = decoded.header;
+
+				const verifyOptions = {
+					algorithms: ['RS256'],
+					header: decoded.header
+				};
+				const client = jwksClient({ jwksUri: well_known_jwks_url });
+
+				const getKey = (header, callback) => {
+					client.getSigningKey(header.kid, (err, key) => {
+						const signingKey = key.publicKey || key.rsaPublicKey;
+						//console.log(`signingKey ${signingKey}`);
+						callback(null, signingKey);
+					});
+				};
+				jwt.verify(token, getKey, verifyOptions, (err, fullyDecoded) => {
+					// This will display the decoded JWT token.
+					//console.log(`fullyDecoded ${JSON.stringify(fullyDecoded, null, 4)}`);
+					if (typeof fullyDecoded !== 'undefined' && fullyDecoded) {
+						console.log('Valid token');
+						console.log(JSON.stringify(fullyDecoded, null, 4));
+					} else {
+						console.error('Invalid token');
+					}
+				});
+			})
+			.catch((error) => {
+				console.error('Failed to verify token!', error);
+			});
+	}
+
 	// oauth 3 legged
 	static render (template, data, res) {
 		template = template || 'signed-in.ejs';
@@ -101,7 +158,7 @@ class Forge_oauth {
 		let oa3Legged = new ForgeAPI.AuthClientThreeLegged(Forge_oauth.settings.clientId, Forge_oauth.settings.clientSecret, Forge_oauth.settings.callback, Forge_oauth.settings.opts.scope.split(' '), true);
 		// Generate a URL page that asks for permissions for the specified scopes.
 		let uri = oa3Legged.generateAuthUrl();
-		if ( implicit ) {
+		if (implicit) {
 			uri = uri.replace('response_type=code', 'response_type=token');
 		}
 		//console.log (uri);
@@ -118,9 +175,9 @@ class Forge_oauth {
 			/*let server =*/http.createServer((req, res) => {
 				if (req.method === 'GET' && req.url.indexOf(q.path) !== -1) {
 					let query = url.parse(req.url, true);
-					if ( implicit && Object.keys(query.query).length === 0 ) {
+					if (implicit && Object.keys(query.query).length === 0) {
 						return (Forge_oauth.render('implicit.ejs', {}, res));
-					} else if ( implicit && Object.keys(query.query).length !== 0 ) {
+					} else if (implicit && Object.keys(query.query).length !== 0) {
 						Forge_oauth.setCredentials(query.query, '3 legged');
 						let data = {
 							result: 'You are Signed in',
@@ -158,7 +215,7 @@ class Forge_oauth {
 			}).listen(Forge_oauth.settings.PORT);
 		} else {
 			console.log('Wait for the browser to return a code and run this script again with the code as parameter...');
-			setTimeout (() => process.exit(), 1000);
+			setTimeout(() => process.exit(), 1000);
 		}
 	}
 
@@ -194,6 +251,59 @@ class Forge_oauth {
 					reject(error);
 				});
 		}));
+	}
+
+	static _3leggedVerify (options) { // eslint-disable-line no-unused-vars
+		console.log('Verifying JWT token');
+		let _oa3legged = null;
+		Forge_oauth.getOauth3Legged()
+			.then((oa3legged) => {
+				_oa3legged = oa3legged;
+				// 	const ModelDerivative = new ForgeAPI.DerivativesApi();
+				// 	return (ModelDerivative.apiClient.callApi(
+				// 		'/authentication/v2/keys', 'GET',
+				// 		{}, {}, {},
+				// 		{}, null,
+				// 		[], ['application/vnd.api+json', 'application/json'], null,
+				// 		oa3legged, oa3legged.credentials
+				// 	));
+				// })
+				// .then((result) => {
+				// https://forge.autodesk.com/en/docs/oauth/v2/developers_guide/asymmetric-encryption/#validate-access-token
+
+				const token = _oa3legged.credentials.access_token;
+				const well_known_jwks_url = 'https://developer.api.autodesk.com/authentication/v2/keys';
+				const decoded = jwt.decode(token, { complete: true });
+				//console.log(`decoded ${JSON.stringify(decoded, null, 4)}`);
+				const header = decoded.header;
+
+				const verifyOptions = {
+					algorithms: ['RS256'],
+					header: decoded.header
+				};
+				const client = jwksClient({ jwksUri: well_known_jwks_url });
+
+				const getKey = (header, callback) => {
+					client.getSigningKey(header.kid, (err, key) => {
+						const signingKey = key.publicKey || key.rsaPublicKey;
+						//console.log(`signingKey ${signingKey}`);
+						callback(null, signingKey);
+					});
+				};
+				jwt.verify(token, getKey, verifyOptions, (err, fullyDecoded) => {
+					// This will display the decoded JWT token.
+					//console.log(`fullyDecoded ${JSON.stringify(fullyDecoded, null, 4)}`);
+					if (typeof fullyDecoded !== 'undefined' && fullyDecoded) {
+						console.log('Valid token');
+						console.log(JSON.stringify(fullyDecoded, null, 4));
+					} else {
+						console.error('Invalid token');
+					}
+				});
+			})
+			.catch((error) => {
+				console.error('Failed to verify token!', error);
+			});
 	}
 
 	static _3legged_release (options) { // eslint-disable-line no-unused-vars
