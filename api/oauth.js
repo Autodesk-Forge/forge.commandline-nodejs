@@ -22,7 +22,7 @@
 // by Cyrille Fauvel
 // Autodesk Forge Partner Development
 //
-/*jshint esversion: 6 */
+/*jshint esversion: 9 */
 
 const ForgeAPI = require('forge-apis');
 const moment = require('moment');

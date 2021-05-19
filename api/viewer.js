@@ -22,27 +22,27 @@
 // by Cyrille Fauvel
 // Autodesk Forge Partner Development
 //
-/*jshint esversion: 6 */
+/*jshint esversion: 9 */
 /* eslint-disable indent */
 
 // config.BaseEndPoint
-let viewer =[
+let viewer = [
 	'style.css',
 	'viewer3D.js',
 	'lmvworker.js',
-] ;
-viewer.map (function (elt) { if ( elt.endsWith('.js') ) viewer.push (elt + '.map'); }) ;
+];
+viewer.map(function (elt) { if (elt.endsWith('.js')) viewer.push(elt + '.map'); });
 
 // eslint-disable-next-line no-unused-vars
-let viewer_min =[
+let viewer_min = [
 	'style.min.css',
 	'viewer3D.min.js',
 	'lmvworker.min.js',
-] ;
-viewer_min.map (function (elt) { if ( elt.endsWith('.js') ) viewer_min.push (elt + '.map'); }) ;
+];
+viewer_min.map(function (elt) { if (elt.endsWith('.js')) viewer_min.push(elt + '.map'); });
 
 // extensions
-let extensions =[
+let extensions = [
 	// From viewer3d #57374
 	'extensions/FirstPerson/FirstPerson.js',
 
@@ -64,14 +64,14 @@ let extensions =[
 	/* Autodesk.FirstPerson */				'extensions/FirstPerson/FirstPerson.js',
 	/* Autodesk.BimWalk */					'extensions/BimWalk/BimWalk.js',
 	/* Autodesk.Debug */					//'extensions/Debug/Debug.js',
-											//'extensions/Debug/Debug.css',
+	//'extensions/Debug/Debug.css',
 	/* Autodesk.InitialVisibility */		//'extensions/InitialVisibility/InitialVisibility.js',
-											'extensions/ViewCubeUi/ViewCubeUi.js',
-											'extensions/Measure/Measure.js',
-											'extensions/LayerManager/LayerManager.js',
-											'extensions/Section/Section.js',
-											'extensions/CompGeom/CompGeom.js',
-											'extensions/Snapping/Snapping.js',
+	'extensions/ViewCubeUi/ViewCubeUi.js',
+	'extensions/Measure/Measure.js',
+	'extensions/LayerManager/LayerManager.js',
+	'extensions/Section/Section.js',
+	'extensions/CompGeom/CompGeom.js',
+	'extensions/Snapping/Snapping.js',
 
 	// These are already included in viewer3D
 	// Autodesk.Viewing.Extensions.CAM360
@@ -87,13 +87,13 @@ let extensions =[
 	// Autodesk.Viewing.Extensions.ZoomWindow
 
 	/* Autodesk.MixpanelProvider */
-											'extensions/MixpanelProvider/MixpanelProvider.js',
+	'extensions/MixpanelProvider/MixpanelProvider.js',
 
-] ;
-extensions.map (function (elt) { if ( elt.endsWith('.js') ) extensions.push (elt + '.map'); }) ;
+];
+extensions.map(function (elt) { if (elt.endsWith('.js')) extensions.push(elt + '.map'); });
 
 // eslint-disable-next-line no-unused-vars
-let extensions_min =[
+let extensions_min = [
 	// From viewer3d #57374
 	'extensions/FirstPerson/FirstPerson.min.js',
 
@@ -115,14 +115,14 @@ let extensions_min =[
 	/* Autodesk.FirstPerson */				'extensions/FirstPerson/FirstPerson.min.js',
 	/* Autodesk.BimWalk */					'extensions/BimWalk/BimWalk.min.js',
 	/* Autodesk.Debug */					//'extensions/Debug/Debug.min.js',
-											//'extensions/Debug/Debug.min.css',
+	//'extensions/Debug/Debug.min.css',
 	/* Autodesk.InitialVisibility */		//'extensions/InitialVisibility/InitialVisibility.min.js',
-											'extensions/ViewCubeUi/ViewCubeUi.min.js',
-											'extensions/Measure/Measure.min.js',
-											'extensions/LayerManager/LayerManager.min.js',
-											'extensions/Section/Section.min.js',
-											'extensions/CompGeom/CompGeom.min.js',
-											'extensions/Snapping/Snapping.min.js',
+	'extensions/ViewCubeUi/ViewCubeUi.min.js',
+	'extensions/Measure/Measure.min.js',
+	'extensions/LayerManager/LayerManager.min.js',
+	'extensions/Section/Section.min.js',
+	'extensions/CompGeom/CompGeom.min.js',
+	'extensions/Snapping/Snapping.min.js',
 
 	// These are already included in viewer3D
 	// Autodesk.Viewing.Extensions.CAM360
@@ -138,13 +138,13 @@ let extensions_min =[
 	// Autodesk.Viewing.Extensions.ZoomWindow
 
 	/* Autodesk.MixpanelProvider */
-											'extensions/MixpanelProvider/MixpanelProvider.js',
+	'extensions/MixpanelProvider/MixpanelProvider.js',
 
-] ;
-extensions_min.map (function (elt) { if ( elt.endsWith('.js') ) extensions_min.push (elt + '.map'); }) ;
+];
+extensions_min.map(function (elt) { if (elt.endsWith('.js')) extensions_min.push(elt + '.map'); });
 
 // res/environments/
-let environments =[
+let environments = [
 	'CoolLight_irr.logluv.dds',
 	'CoolLight_mipdrop.logluv.dds',
 	'DarkSky_irr.logluv.dds',
@@ -187,11 +187,11 @@ let environments =[
 	'riverbank_mipdrop.logluv.dds',
 	'seaport_irr.logluv.dds',
 	'seaport_mipdrop.logluv.dds'
-] ;
-environments =environments.map (function (elt) { return ('res/environments/' + elt) ; }) ;
+];
+environments = environments.map(function (elt) { return ('res/environments/' + elt); });
 
 // res/textures/
-let textures =[
+let textures = [
 	'VCarrows.png',
 	'VCarrowsS0.png',
 	'VCarrowsS1.png',
@@ -205,38 +205,38 @@ let textures =[
 	'cardinalPoint.png',
 	'centerMarker_X.png',
 	'radial-fade-grid.png'
-] ;
-textures =textures.map (function (elt) { return ('res/textures/' + elt) ; }) ;
+];
+textures = textures.map(function (elt) { return ('res/textures/' + elt); });
 
 // res/ui
-let ui = [ 'forge-logo.png', ];
+let ui = ['forge-logo.png',];
 ui = ui.map(function (elt) { return ('/res/ui/' + elt); });
 
 // res/locales
-let locales =[ 'cs', 'de', 'en', 'es', 'fr', 'it', 'ja', 'ko', 'pl', 'pt-BR', 'ru', 'tr', 'zh-HANS', 'zh-HANT' ] ;
+let locales = ['cs', 'de', 'en', 'es', 'fr', 'it', 'ja', 'ko', 'pl', 'pt-BR', 'ru', 'tr', 'zh-HANS', 'zh-HANT'];
 // res/locales/[locales]/
-let localesJson =[
+let localesJson = [
 	'allstrings.json',
 	//'VCcross.dds',
 	//'VCcross.png',
 	'VCcrossRGBA8small.dds'
-] ;
+];
 
-locales =locales.reduce (
+locales = locales.reduce(
 	(prev, elt, index, arr) => { // eslint-disable-line no-unused-vars
-		return (prev.concat (
-			localesJson.map ((elt2) => {
-				return ('res/locales/' + elt + '/' + elt2) ;
+		return (prev.concat(
+			localesJson.map((elt2) => {
+				return ('res/locales/' + elt + '/' + elt2);
 			})
-		)) ;
+		));
 	},
 	[]
-) ;
+);
 
 //-
-module.exports =viewer
-	.concat (extensions)
-	.concat (environments)
-	.concat (textures)
-	.concat (ui)
-	.concat (locales) ;
+module.exports = viewer
+	.concat(extensions)
+	.concat(environments)
+	.concat(textures)
+	.concat(ui)
+	.concat(locales);

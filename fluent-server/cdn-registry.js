@@ -22,7 +22,7 @@
 // by Cyrille Fauvel
 // Autodesk Forge Partner Development
 //
-/*jshint esversion: 6 */
+/*jshint esversion: 9 */
 
 const _path = require('path');
 
@@ -68,7 +68,7 @@ class CDNRegistry {
 		let cdn = CDNRegistry.get(id);
 		if (cdn && cdn.g)
 			return (cdn);
-		
+
 		let filename = _path.resolve(_path.join(cdn.repopath, cdn.root, path));
 		// The viewer is using harcoded paths rather than reading the manifest
 		// that means we need to either read the manifest synchronously or set

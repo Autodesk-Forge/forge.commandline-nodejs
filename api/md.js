@@ -22,7 +22,7 @@
 // by Cyrille Fauvel
 // Autodesk Forge Partner Development
 //
-/*jshint esversion: 6 */
+/*jshint esversion: 9 */
 
 const ForgeAPI = require('forge-apis');
 const _path = require('path');
@@ -95,7 +95,7 @@ class Forge_MD {
 					jobs.output.advanced = {
 						generateMasterViews: generateMasterViews
 					};
-					
+
 					ifcRevit && (jobs.output.advanced.conversionMethod = 'modern');
 					ifcNavis && (jobs.output.advanced.conversionMethod = 'legacy');
 				}
@@ -172,7 +172,7 @@ class Forge_MD {
 
 				let obj = options.obj || options.parent.obj || false;
 				let ids = options.ids || options.parent.ids || [-1];
-				if ( !Array.isArray(ids) ) {
+				if (!Array.isArray(ids)) {
 					ids = ids.split(',');
 					ids = ids.map(elt => parseInt(elt));
 				}
@@ -367,7 +367,7 @@ class Forge_MD {
 		let objectid = options.objectid || options.parent.objectid || null;
 		if (objectid)
 			mdOptions.objectid = objectid;
-		
+
 		let oa2legged = null;
 		Forge_MD.readBucketKey(bucketKey)
 			.then((name) => {
@@ -417,7 +417,7 @@ class Forge_MD {
 					return (md.getDerivativeManifest(urn, derivativesURN, { acceptEncoding: 'gzip' }, oa2legged, oa2legged.getCredentials()));
 			})
 			.then((response) => {
-				if ( info ) {
+				if (info) {
 					console.log(`Resource size: ${response.headers['content-length']} bytes`);
 					return (response.headers['content-length']);
 				} else

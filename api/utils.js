@@ -22,7 +22,7 @@
 // by Cyrille Fauvel
 // Autodesk Forge Partner Development
 //
-/*jshint esversion: 6 */
+/*jshint esversion: 9 */
 
 const rimraf = require('rimraf');
 const mkdirp = require('mkdirp');
@@ -148,6 +148,43 @@ class utils {
 		);
 	}
 
+	static settings (key, value, options) { // eslint-disable-line no-unused-vars
+		if (value) {
+			process.env[key] = value;
+			utils.json('settings')
+				.then((config) => {
+					config[key] = value;
+					const fn = utils.data('settings');
+					utils.writeFile(fn, config)
+						.catch((err) => { });
+				})
+				.catch((err) => {
+					const fn = utils.data('settings');
+					const obj = {};
+					obj[key] = value;
+					utils.writeFile(fn, obj)
+						.catch((err) => { });
+				});
+			console.log(`You set the current ${key} to: ${value}`);
+		} else {
+			if (key && process.env[key])
+				return (process.env[key]);
+			else if (key)
+				return (undefined);
+
+			return (new Promise((fulfill, reject) => {
+				utils.json('settings')
+					.then((config) => {
+						Object.keys(config).map((key) => process.env[key] = config[key]);
+						fulfill(config);
+					})
+					.catch((err) => {
+						fulfill({});
+					});
+			}));
+		}
+	}
+
 	static gunzip (res, bRaw = false) {
 		return (new Promise((fulfill, reject) => {
 			zlib.gunzip(res, (err, dezipped) => {
@@ -260,7 +297,7 @@ class utils {
 					else
 						reject(err);
 				} else {
-					fs.unlink(filename, (err2) => {}); // eslint-disable-line no-unused-vars
+					fs.unlink(filename, (err2) => { }); // eslint-disable-line no-unused-vars
 					fulfill(true);
 				}
 			});
@@ -276,7 +313,7 @@ class utils {
 					else
 						reject(err);
 				} else {
-					fs.rename(oldname, newname, (err2) => {}); // eslint-disable-line no-unused-vars
+					fs.rename(oldname, newname, (err2) => { }); // eslint-disable-line no-unused-vars
 					fulfill(true);
 				}
 			});
@@ -493,7 +530,7 @@ class utils {
 				this.itmp[i] = i;
 			}
 
-			
+
 			function waitOneMore (data) { // eslint-disable-line no-shadow
 				Promise.race(data.tmp)
 					// eslint-disable-next-line no-unused-vars
@@ -508,7 +545,7 @@ class utils {
 							}
 						}
 						let loop = false;
-						for (let n = 0; n < nb.length && this.index < this.length; n++ , this.index++) {
+						for (let n = 0; n < nb.length && this.index < this.length; n++, this.index++) {
 							this.tmp[nb[n]] = this.cb(array[this.index], this.index, array);
 							this.itmp[nb[n]] = this.index;
 							loop = this.index;

@@ -22,7 +22,7 @@
 // by Cyrille Fauvel
 // Autodesk Forge Partner Development
 //
-/*jshint esversion: 6 */
+/*jshint esversion: 9 */
 /* eslint-disable no-multi-spaces */
 /*jshint -W014 */
 
@@ -34,7 +34,7 @@ const _path = require('path');
 const zlib = require('zlib');
 
 const Bubble = require('./bubble');
-const viewerFileList =require ('./viewer') ;
+const viewerFileList = require('./viewer');
 const utils = require('./utils');
 
 const Forge_OSS = require('./oss');
@@ -99,7 +99,7 @@ class Forge_Other {
 				let region = options.region || options.parent.region || 'US';
 				if (otg)
 					obj = new Bubble.otg(_progress);
-				else if ( svf2)
+				else if (svf2)
 					obj = new Bubble.svf2(_progress, region);
 				else
 					obj = new Bubble.svf(_progress);
@@ -190,28 +190,28 @@ class Forge_Other {
 	// viewer
 	static viewerGet (outputFolder, options) { // eslint-disable-line no-unused-vars
 		console.log('Downloading Viewer');
-		outputFolder = _path.resolve (_path.join(outputFolder, Forge_Other.viewerVersion));
+		outputFolder = _path.resolve(_path.join(outputFolder, Forge_Other.viewerVersion));
 
-		let urns =viewerFileList.map ((item) => {
-			return (Forge_Other.DownloadViewerItem (`/derivativeservice/v2/viewers/${item}?v=${Forge_Other.viewerVersion}`, outputFolder, item)) ;
-		}) ;
-		Promise.all (urns)
-			.then ((_urns) => { // eslint-disable-line no-unused-vars
-				console.log ('Download completed succesfully.');
+		let urns = viewerFileList.map((item) => {
+			return (Forge_Other.DownloadViewerItem(`/derivativeservice/v2/viewers/${item}?v=${Forge_Other.viewerVersion}`, outputFolder, item));
+		});
+		Promise.all(urns)
+			.then((_urns) => { // eslint-disable-line no-unused-vars
+				console.log('Download completed succesfully.');
 				//fulfill (data) ;
 			})
-			.catch ((error) => { // eslint-disable-line no-unused-vars
-				console.error ('Something wrong happened during viewer files download') ;
+			.catch((error) => { // eslint-disable-line no-unused-vars
+				console.error('Something wrong happened during viewer files download');
 				//reject (error) ;
 			})
-		;
+			;
 	}
 
 	static DownloadViewerItem (uri, outPath, item) {
-		return (new Promise (function (fulfill, reject) {
-			let accepted = [ 'application/octet-stream', 'image/png', 'text/html', 'text/css', 'text/javascript', 'application/json' ] ;
-			let ModelDerivative =new ForgeAPI.DerivativesApi () ;
-			ModelDerivative.apiClient.callApi (
+		return (new Promise(function (fulfill, reject) {
+			let accepted = ['application/octet-stream', 'image/png', 'text/html', 'text/css', 'text/javascript', 'application/json'];
+			let ModelDerivative = new ForgeAPI.DerivativesApi();
+			ModelDerivative.apiClient.callApi(
 				uri, 'GET',
 				{}, {}, {},
 				{}, null,
@@ -220,30 +220,30 @@ class Forge_Other {
 				null, null
 			)
 				//.pipe (zlib.createGunzip ())
-				.then ((response) => {
-					let body =response.body ;
-					if ( ['gzip', 'deflate'].indexOf (response.headers ['content-encoding']) !== -1 )
-						body =zlib.gunzipSync (response.body) ;
+				.then((response) => {
+					let body = response.body;
+					if (['gzip', 'deflate'].indexOf(response.headers['content-encoding']) !== -1)
+						body = zlib.gunzipSync(response.body);
 
-					if (   response.headers ['content-type'] === 'text/javascript'
-						|| response.headers ['content-type'] === 'text/css'
+					if (response.headers['content-type'] === 'text/javascript'
+						|| response.headers['content-type'] === 'text/css'
 					)
-						body =body.toString ('utf8') ;
-					if (   response.headers ['content-type'] === 'application/json'
-						|| response.headers ['content-type'] === 'application/json; charset=utf-8'
+						body = body.toString('utf8');
+					if (response.headers['content-type'] === 'application/json'
+						|| response.headers['content-type'] === 'application/json; charset=utf-8'
 					)
-						body =JSON.stringify (body) ;
-					console.log (` >> ${_path.join(outPath, item)}`) ;
-					return (utils.writeFile (_path.join(outPath, item), body, null, true)) ;
+						body = JSON.stringify(body);
+					console.log(` >> ${_path.join(outPath, item)}`);
+					return (utils.writeFile(_path.join(outPath, item), body, null, true));
 				})
-				.then ((response) => { // eslint-disable-line no-unused-vars
-					fulfill (item) ;
+				.then((response) => { // eslint-disable-line no-unused-vars
+					fulfill(item);
 				})
-				.catch ((error) => {
-					console.error (error, `with: ${uri}`) ;
-					reject (error) ;
+				.catch((error) => {
+					console.error(error, `with: ${uri}`);
+					reject(error);
 				});
-		})) ;
+		}));
 	}
 
 	// static pipeline (filename) {

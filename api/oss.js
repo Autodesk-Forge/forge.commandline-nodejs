@@ -22,7 +22,7 @@
 // by Cyrille Fauvel
 // Autodesk Forge Partner Development
 //
-/*jshint esversion: 6 */
+/*jshint esversion: 9 */
 
 const ForgeAPI = require('forge-apis');
 const _fs = require('fs');
@@ -104,7 +104,7 @@ class Forge_OSS {
 					let _startAt = url_parts.query.startAt;
 					console.log('Your next search startAt is: ' + _startAt);
 				}
-				if ( current !== null )
+				if (current !== null)
 					Forge_OSS.bucketsCurrent(output[current].bucketKey, {});
 			})
 			.catch((error) => {
@@ -213,7 +213,7 @@ class Forge_OSS {
 	}
 
 	static _bucketsLs (params) {
-		return (new Promise ((resolve, reject) => {
+		return (new Promise((resolve, reject) => {
 			let ossObjects = new ForgeAPI.ObjectsApi();
 			ossObjects.getObjects(params.bucketKey, params.opts, params.oa2legged, params.oa2legged.getCredentials())
 				.then((info) => {
@@ -251,7 +251,7 @@ class Forge_OSS {
 			})
 			.then((oa2legged) => {
 				let ossObjects = new ForgeAPI.ObjectsApi();
-				if ( all )
+				if (all)
 					return (Forge_OSS._bucketsLs({ results: [], bucketKey: bucketKey, opts: { startAt: startAt, limit: 100, beginsWith: beginsWith }, oa2legged: oa2legged }));
 				else
 					return (ossObjects.getObjects(bucketKey, opts, oa2legged, oa2legged.getCredentials()));
@@ -267,7 +267,7 @@ class Forge_OSS {
 						urn: utils.safeBase64encode(elt.objectId)
 					});
 				});
-				if ( json )
+				if (json)
 					console.log(JSON.stringify(items, null, 4));
 				else
 					console.table(output);
@@ -449,7 +449,7 @@ class Forge_OSS {
 			ossname = _path.basename(filename);
 		let oa2legged = null;
 		let ossObjects = new ForgeAPI.ObjectsApi();
-		if ( signed ) {
+		if (signed) {
 			console.log('Uploading object to oss signed resource: ' + signed + ' - ' + filename);
 			Forge_OSS.oauth.getOauth2Legged()
 				.then((_oa2legged) => {
@@ -666,7 +666,7 @@ class Forge_OSS {
 				return (ossObjects.createSignedResource(bucketKey, filename, postBucketsSigned, { access: access }, oa2legged, oa2legged.getCredentials()));
 			})
 			.then((response) => { // eslint-disable-line no-unused-vars
-				console.log (JSON.stringify (response.body, null, 4)) ;
+				console.log(JSON.stringify(response.body, null, 4));
 				let key = response.body.signedUrl;
 				key = key.substring(key.indexOf('/signedresources/') + 17, key.indexOf('?') === -1 ? undefined : key.indexOf('?'));
 				console.log(`Your object has been signed with key # ${key}`);

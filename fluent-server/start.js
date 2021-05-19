@@ -22,7 +22,7 @@
 // by Cyrille Fauvel
 // Autodesk Forge Partner Development
 //
-/*jshint esversion: 6 */
+/*jshint esversion: 9 */
 
 const express = require('express');
 const ws = require('ws');
@@ -45,7 +45,7 @@ app.use((req, res, next) => { // eslint-disable-line no-unused-vars
 	let queryString = decodeURIComponent(req.path);
 	//console.log('In -> ', req.method, queryString);
 	queryString = queryString.replace('//', '/'); //.replace(/\/output\/otg_files\/(.*)\/output/, '/output');
-	
+
 	if (req.method === 'OPTIONS')
 		return (res.status(200).end());
 	if (queryString.indexOf('cdnws') !== -1)
@@ -70,7 +70,7 @@ app.use((req, res, next) => { // eslint-disable-line no-unused-vars
 		try {
 			// Read the manifest file synchronously - not the best thing to do, but no choice!
 			if (queryString.startsWith('/modeldata/manifest'))
-				queryString =queryString.substring('/modeldata/manifest'.length);
+				queryString = queryString.substring('/modeldata/manifest'.length);
 			let json = _fs.readFileSync(_path.join(CDNS.repositories, queryString), 'utf8');
 			json = JSON.parse(json);
 			let otg_manifest = json.children.filter((elt) => { return (elt.role === 'viewable' && elt.otg_manifest); });
@@ -90,7 +90,7 @@ app.use((req, res, next) => { // eslint-disable-line no-unused-vars
 	if (queryString.endsWith('/otg_model.json')) {
 		let cdn = CDNS.buildCDN(split[4], split.slice(-6).join('/'));
 		let st = split.slice(5).join('/');
-		if (st.indexOf(`output/otg_files/${cdn.root}/`) !== -1 ) { // svf2
+		if (st.indexOf(`output/otg_files/${cdn.root}/`) !== -1) { // svf2
 			st = st.replace(`output/otg_files/${cdn.root}/`, '');
 			cdn.svf2 = true;
 		} else { // OTG
@@ -105,27 +105,27 @@ app.use((req, res, next) => { // eslint-disable-line no-unused-vars
 		//console.log('/pdb/ -> ', req.method, queryString, split[4]);
 		let cdn = CDNS.get(split[4]);
 		//if (cdn.svf2)
-			queryString = queryString.replace(/.*\/pdb\//, '/pdb/');
+		queryString = queryString.replace(/.*\/pdb\//, '/pdb/');
 		//console.log('pdb >> ', _path.resolve(_path.join(CDNS.repositories, queryString)));
 	} else if (queryString.indexOf('/cdn/') !== -1) {
 		//console.log('/cdn/ -> ', req.method, queryString, split[3]);
 		let cdn = CDNS.get(split[3]);
 		//if (cdn.svf2)
-			queryString = queryString.replace(/.*\/cdn\//, '/cdn/');
+		queryString = queryString.replace(/.*\/cdn\//, '/cdn/');
 		split = queryString.split('/');
 		queryString = _path.join('cdn', split[4], split[2], split[5]);
 		//console.log('cdn >> ', _path.resolve(_path.join(CDNS.repositories, queryString)));
 	} else if (queryString.indexOf('urn:adsk.fluent') !== -1) {
 		//console.log('adsk.fluent -> ', req.method, queryString, split[4]);
 		let cdn = CDNS.get(split[4]);
-		if ( cdn.svf2 )
+		if (cdn.svf2)
 			queryString = queryString.replace(/.*\/output\/otg_files\/(.*)\/output/, '/output');
 		else
 			queryString = queryString.replace(/.*\/output/, '/output');
 		queryString = _path.join(cdn.root, queryString);
 		//console.log('adsk.fluent >> ', _path.resolve(_path.join(CDNS.repositories, queryString)));
 	}
-	
+
 	// Serve file as is
 	return (res.sendFile(_path.resolve(_path.join(CDNS.repositories, queryString))));
 });
@@ -165,8 +165,8 @@ function sendBatch (ows, items, resourceType) {
 	header.writeInt32LE(resourceType.charCodeAt(0) & 0xff, 4);
 	header.writeInt32LE(items.length, 8);
 
-	if ( items.length > 1 )
-		console.log (items.length);
+	if (items.length > 1)
+		console.log(items.length);
 	let offset = 0;
 	for (let i = 0; i < items.length; i++) {
 		if (resourceType === 'g' && offset % 4 !== 0)
@@ -189,7 +189,7 @@ function sendBatch (ows, items, resourceType) {
 
 function queueItemForSend (ows, data, resourceType) {
 	//if (data.length > SMALL_MESSAGE_SIZE) {
-		sendBatch(ows, [data], resourceType); // eslint-disable-line indent
+	sendBatch(ows, [data], resourceType); // eslint-disable-line indent
 	// } else {
 	// 	// Group the pending items by resource type, because
 	// 	// we can't mix resource types in a message batch

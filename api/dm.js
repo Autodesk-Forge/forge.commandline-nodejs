@@ -22,7 +22,7 @@
 // by Cyrille Fauvel
 // Autodesk Forge Partner Development
 //
-/*jshint esversion: 6 */
+/*jshint esversion: 9 */
 
 const ForgeAPI = require('forge-apis');
 const utils = require('./utils');
@@ -39,6 +39,9 @@ class Forge_DM {
 
 	// hubs (3legged)
 	static hubsLs (options) { // eslint-disable-line no-unused-vars
+		let json = options.json || options.parent.json || false;
+		let current = options.current || options.parent.current || null;
+
 		Forge_DM.oauth.getOauth3Legged()
 			.then((oa3Legged) => {
 				let hubs = new ForgeAPI.HubsApi();
@@ -73,7 +76,18 @@ class Forge_DM {
 						state: true
 					});
 				});
-				console.log(JSON.stringify(hubsForTree, null, 4));
+				if (json) {
+					console.log(JSON.stringify(hubsForTree, null, 4));
+				} else {
+					const output = hubsForTree.map((elt) => {
+						delete elt.href;
+						return (elt);
+					});
+					console.table(output);
+				}
+				if (current !== null)
+					utils.settings('hubid', hubsForTree[current].id, {});
+
 				return (utils.writeFile(utils.data('hubs'), hubsForTree));
 			})
 			.catch((error) => {
@@ -82,7 +96,12 @@ class Forge_DM {
 	}
 
 	// projects
-	static projectsLs (hubId, options) { // eslint-disable-line no-unused-vars
+	static async projectsLs (hubId, options) {
+		await utils.settings();
+		hubId = hubId || utils.settings('hubid', null, {});
+		let json = options.json || options.parent.json || false;
+		let current = options.current || options.parent.current || null;
+
 		Forge_DM.oauth.getOauth3Legged()
 			.then((oa3Legged) => {
 				let projects = new ForgeAPI.ProjectsApi();
@@ -108,7 +127,18 @@ class Forge_DM {
 						state: true
 					});
 				});
-				console.log(JSON.stringify(projectsForTree, null, 4));
+				if (json) {
+					console.log(JSON.stringify(projectsForTree, null, 4));
+				} else {
+					const output = projectsForTree.map((elt) => {
+						delete elt.href;
+						return (elt);
+					});
+					console.table(output);
+				}
+				if (current !== null)
+					utils.settings('projectid', projectsForTree[current].id, {});
+
 				return (utils.writeFile(utils.data('projects-' + hubId), projectsForTree));
 			})
 			.catch((error) => {
@@ -116,7 +146,14 @@ class Forge_DM {
 			});
 	}
 
-	static projectsRoots (hubId, projectId, options) { // eslint-disable-line no-unused-vars
+	static async projectsRoots (hubId, projectId, options) {
+		await utils.settings();
+		hubId = hubId === '-' ? undefined : hubId;
+		hubId = hubId || utils.settings('hubid', null, {});
+		projectId = projectId || utils.settings('projectid', null, {});
+		let json = options.json || options.parent.json || false;
+		let current = options.current || options.parent.current || null;
+
 		Forge_DM.oauth.getOauth3Legged()
 			.then((oa3Legged) => {
 				let projects = new ForgeAPI.ProjectsApi();
@@ -133,7 +170,17 @@ class Forge_DM {
 						state: true
 					});
 				});
-				console.log(JSON.stringify(folderItemsForTree, null, 4));
+				if (json) {
+					console.log(JSON.stringify(folderItemsForTree, null, 4));
+				} else {
+					const output = folderItemsForTree.map((elt) => {
+						delete elt.href;
+						return (elt);
+					});
+					console.table(output);
+				}
+				if (current !== null)
+					utils.settings('folderid', folderItemsForTree[current].id, {});
 				return (utils.writeFile(utils.data('roots-' + projectId), folderItemsForTree));
 			})
 			.catch((error) => {
@@ -141,7 +188,12 @@ class Forge_DM {
 			});
 	}
 
-	static projectsTree (hubId, projectId, options) {
+	static async projectsTree (hubId, projectId, options) {
+		await utils.settings();
+		hubId = hubId === '-' ? undefined : hubId;
+		hubId = hubId || utils.settings('hubid', null, {});
+		projectId = projectId || utils.settings('projectid', null, {});
+
 		let reformat = options.format || options.parent.format || false;
 		console.log('Collecting data...');
 
@@ -274,7 +326,14 @@ class Forge_DM {
 	}
 
 	// folders
-	static foldersLs (projectId, folderId, options) { // eslint-disable-line no-unused-vars
+	static async foldersLs (projectId, folderId, options) {
+		await utils.settings();
+		projectId = projectId === '-' ? undefined : projectId;
+		projectId = projectId || utils.settings('projectid', null, {});
+		folderId = folderId || utils.settings('folderid', null, {});
+		let json = options.json || options.parent.json || false;
+		let current = options.current || options.parent.current || null;
+
 		let unsupported = Forge_DM.getUnsupported();
 		Forge_DM.oauth.getOauth3Legged()
 			.then((oa3Legged) => {
@@ -296,7 +355,18 @@ class Forge_DM {
 						});
 					}
 				});
-				console.log(JSON.stringify(folderItemsForTree, null, 4));
+				if (json) {
+					console.log(JSON.stringify(folderItemsForTree, null, 4));
+				} else {
+					const output = folderItemsForTree.map((elt) => {
+						delete elt.href;
+						return (elt);
+					});
+					console.table(output);
+				}
+				if (current !== null)
+					utils.settings(folderItemsForTree[current].type === 'folders' ? 'folderid' : 'itemid', folderItemsForTree[current].id, {});
+
 				return (utils.writeFile(utils.data('contents-' + folderId), folderItemsForTree));
 			})
 			.catch((error) => {
@@ -305,7 +375,14 @@ class Forge_DM {
 	}
 
 	// versions
-	static versionsInfo (projectId, itemId, options) { // eslint-disable-line no-unused-vars
+	static async versionsInfo (projectId, itemId, options) {
+		await utils.settings();
+		projectId = projectId === '-' ? undefined : projectId;
+		projectId = projectId || utils.settings('projectid', null, {});
+		itemId = itemId || utils.settings('itemid', null, {});
+		let json = options.json || options.parent.json || false;
+		let current = options.current || options.parent.current || null;
+
 		let unsupported = Forge_DM.getUnsupported();
 		Forge_DM.oauth.getOauth3Legged()
 			.then((oa3Legged) => {
@@ -334,7 +411,17 @@ class Forge_DM {
 						state: false
 					});
 				});
-				console.log(JSON.stringify(versionsForTree, null, 4));
+				if (json) {
+					console.log(JSON.stringify(versionsForTree, null, 4));
+				} else {
+					const output = versionsForTree.map((elt) => {
+						delete elt.href;
+						return (elt);
+					});
+					console.table(output);
+				}
+				if (current !== null)
+					utils.settings('versionid', versionsForTree[current].id, {});
 				return (utils.writeFile(utils.data('versions-' + itemId), versionsForTree));
 			})
 			.catch((error) => {

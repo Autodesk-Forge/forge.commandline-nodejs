@@ -22,7 +22,7 @@
 // by Cyrille Fauvel
 // Autodesk Forge Partner Development
 //
-/*jshint esversion: 6 */
+/*jshint esversion: 9 */
 /*jshint -W014 */
 /*jshint -W083 */
 
@@ -70,7 +70,7 @@ class svfBubble {
 			self._progress.msg = 'Downloading manifest';
 			self.getManifest(urn)
 				.then((bubble) => {
-					utils.writeFile (path.join (outPath, 'bubble.json'), bubble.body) ;
+					utils.writeFile(path.join(outPath, 'bubble.json'), bubble.body);
 					self._progress.msg = 'Listing all derivative files';
 					self.listAllDerivativeFiles(bubble.body, (error, result) => {
 						self._progress._filesToFetch = result.list.length;
@@ -740,7 +740,7 @@ class otgBubble {
 							self._urns.push(self.shared_root + st);
 							//elt.jobs.push (self.getViewModelFile (self.shared_root, st, self.urn, outFile)) ;
 							elt.jobs.push(function () { return ([self.getViewModelFile, arguments]); }(self.shared_root, key, st, self.urn, outFile));
-							elt.__dependencies__[pdbkey] = `${key}%${st }`;
+							elt.__dependencies__[pdbkey] = `${key}%${st}`;
 						}
 
 						jobs = [...jobs, ...elt.jobs];
@@ -753,12 +753,12 @@ class otgBubble {
 					for (let [key, value] of Object.entries(self.OTG_models)) {
 						for (let [asset, ijob] of Object.entries(value.__dependencies__)) { // eslint-disable-line no-unused-vars
 							let result = results.filter(elt => elt[0] === value.__dependencies__[asset]);
-							value.__dependencies__[asset] =result [0] [1];
+							value.__dependencies__[asset] = result[0][1];
 						}
 
 						if (value.stats.num_materials) {
 							let materialHashes = self.decomposeHashFile(value.__dependencies__.materials_ptrs, self.global_sharding);
-							materialHashes = materialHashes.filter (elt => elt[0] !== '' && elt[1] !== '');
+							materialHashes = materialHashes.filter(elt => elt[0] !== '' && elt[1] !== '');
 							materialHashes.map((elt) => {
 								//self.getSharedAssetFile (self.materials_urn (key), elt, self.urn, self.local_materials_root (key)) ;
 								jobs.push(function () { return ([self.getSharedAssetJson, arguments]); }(self.materials_urn(key), elt, self.urn, self.local_materials_root(key)));
@@ -767,7 +767,7 @@ class otgBubble {
 						}
 						if (value.stats.num_geoms) {
 							let geometryHashes = self.decomposeHashFile(value.__dependencies__.geometry_ptrs, self.global_sharding);
-							geometryHashes = geometryHashes.filter (elt => elt[0] !== '' && elt[1] !== '');
+							geometryHashes = geometryHashes.filter(elt => elt[0] !== '' && elt[1] !== '');
 							geometryHashes.map((elt) => {
 								//self.getSharedAssetFile (self.geometry_urn (key), elt, self.urn, self.local_geometry_root (key)) ;
 								jobs.push(function () { return ([self.getSharedAssetFile, arguments]); }(self.geometry_urn(key), elt, self.urn, self.local_geometry_root(key)));
@@ -892,7 +892,7 @@ class otgBubble {
 						if (otgBubble.isGzip(buffer)) {
 							utils.gunzip(buffer, true)
 								.then((result) => {
-									fulfill([ `${key}%${elt}`, result ]);
+									fulfill([`${key}%${elt}`, result]);
 									console.log(' >> ', outFile, elt);
 									utils.writeFile(outFile, result, 'binary', true);
 								})
@@ -901,7 +901,7 @@ class otgBubble {
 									reject(err);
 								});
 						} else {
-							fulfill([ `${key}%${elt}`, buffer ]);
+							fulfill([`${key}%${elt}`, buffer]);
 							console.log(' >> ', outFile);
 							utils.writeFile(outFile, buffer, 'binary', true);
 						}
@@ -933,7 +933,7 @@ class otgBubble {
 				})
 				.then((data) => {
 					console.log(' >> ', outFile);
-					fulfill([ `${key}%${elt}`, JSON.parse(data.toString('utf-8')) ]);
+					fulfill([`${key}%${elt}`, JSON.parse(data.toString('utf-8'))]);
 				})
 				.catch((error) => {
 					console.error(' !! ', outFile);
@@ -1000,8 +1000,8 @@ class otgBubble {
 						reject(error);
 					});
 			} else {
-				utils.fileexists (outFile)
-					.then ((bExists) => {
+				utils.fileexists(outFile)
+					.then((bExists) => {
 						if (bExists && elt[0] !== 5000)
 							return (fulfill(outFile));
 						const options = {
@@ -1055,8 +1055,8 @@ class otgBubble {
 		return (new Promise((fulfill, reject) => {
 			if (!fileurn)
 				return (reject('Missing the required parameter {urn} when calling getSharedAssetJson'));
-			utils.fileexists (outFile)
-				.then ((bExists) => {
+			utils.fileexists(outFile)
+				.then((bExists) => {
 					if (bExists)
 						return (fulfill(outFile));
 					let ModelDerivative = new ForgeAPI.DerivativesApi();
@@ -1088,7 +1088,7 @@ class otgBubble {
 		return (new Promise((fulfill, reject) => { // eslint-disable-line no-unused-vars
 			zlib.gunzip(res, (err, dezipped) => {
 				if (err)
-					return(fulfill(res));
+					return (fulfill(res));
 				try {
 					if (bRaw)
 						fulfill(dezipped);
@@ -1365,7 +1365,7 @@ class svf2Bubble {
 				})
 				.catch((error) => {
 					let outFile = path.join(outPath, elt);
-					console.error(' !! ', outFile, ' (', error.statusMessage || error.message || '' , ')');
+					console.error(' !! ', outFile, ' (', error.statusMessage || error.message || '', ')');
 					reject(error);
 				});
 		}));

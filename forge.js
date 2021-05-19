@@ -23,7 +23,7 @@
 // by Cyrille Fauvel
 // Autodesk Forge Partner Development
 //
-/*jshint esversion: 6 */
+/*jshint esversion: 9 */
 
 process.setMaxListeners(100);
 const program = require('commander');
@@ -337,35 +337,59 @@ let commands = [
 	},
 
 	{
-		name: 'objects-sha1', action: ForgeOSS.sha1, 
+		name: 'objects-sha1', action: ForgeOSS.sha1,
 		description: 'calc file SHA1',
 		arguments: '<filename>'
 	},
 
 	{ name: 'user', action: ForgeOther.userAboutMe, description: 'get the profile information of an authorizing end user (3legged)', },
 
-	{ name: 'hubs', action: ForgeDM.hubsLs, description: 'get list of hubs (3legged)', },
-	{ name: 'hubs-ls', action: ForgeDM.hubsLs, description: 'get list of hubs (3legged)', },
+	{
+		name: 'hubs', action: ForgeDM.hubsLs, description: 'get list of hubs (3legged)',
+		options: [
+			{ option: '-j, --json', description: 'display results as JSON vs table' },
+			{ option: '-c, --current <current>', description: 'index from list to set as current bucket (i.e. buckets-current command)' },
+		],
+	},
+	{
+		name: 'hubs-ls', action: ForgeDM.hubsLs, description: 'get list of hubs (3legged)',
+		options: [
+			{ option: '-j, --json', description: 'display results as JSON vs table' },
+			{ option: '-c, --current <current>', description: 'index from list to set as current bucket (i.e. buckets-current command)' },
+		],
+	},
 
 	{
 		name: 'projects', action: ForgeDM.projectsLs,
 		description: 'get list of projects (3legged)',
-		arguments: '<hubId>'
+		arguments: '[hubId]',
+		options: [
+			{ option: '-j, --json', description: 'display results as JSON vs table' },
+			{ option: '-c, --current <current>', description: 'index from list to set as current bucket (i.e. buckets-current command)' },
+		],
 	},
 	{
 		name: 'projects-ls', action: ForgeDM.projectsLs,
 		description: 'get list of projects (3legged)',
-		arguments: '<hubId>'
+		arguments: '[hubId]',
+		options: [
+			{ option: '-j, --json', description: 'display results as JSON vs table' },
+			{ option: '-c, --current <current>', description: 'index from list to set as current bucket (i.e. buckets-current command)' },
+		],
 	},
 	{
 		name: 'projects-roots', action: ForgeDM.projectsRoots,
 		description: 'get list of project root folders (3legged)',
-		arguments: '<hubId> <projectId>'
+		arguments: '[hubId] [projectId]',
+		options: [
+			{ option: '-j, --json', description: 'display results as JSON vs table' },
+			{ option: '-c, --current <current>', description: 'index from list to set as current bucket (i.e. buckets-current command)' },
+		],
 	},
 	{
 		name: 'projects-tree', action: ForgeDM.projectsTree,
 		description: 'get the hub/project content tree, can take a while (3legged)',
-		arguments: '<hubId> <projectId>',
+		arguments: '[hubId] [projectId]',
 		options: [
 			{ option: '-f, --format', description: 'reformat output' }
 		]
@@ -374,27 +398,57 @@ let commands = [
 	{
 		name: 'folders', action: ForgeDM.foldersLs,
 		description: 'get list of folder content (3legged)',
-		arguments: '<projectId> <folderId>',
+		arguments: '[projectId] [folderId]',
+		options: [
+			{ option: '-j, --json', description: 'display results as JSON vs table' },
+			{ option: '-c, --current <current>', description: 'index from list to set as current bucket (i.e. buckets-current command)' },
+		],
 	},
 	{
 		name: 'folders-ls', action: ForgeDM.foldersLs,
 		description: 'get list of folder content (3legged)',
-		arguments: '<projectId> <folderId>',
+		arguments: '[projectId] [folderId]',
+		options: [
+			{ option: '-j, --json', description: 'display results as JSON vs table' },
+			{ option: '-c, --current <current>', description: 'index from list to set as current bucket (i.e. buckets-current command)' },
+		],
 	},
 
 	{
 		name: 'versions', action: ForgeDM.versionsInfo,
 		description: 'get list of item versions (3legged)',
-		arguments: '<projectId> <itemId>',
+		arguments: '[projectId] [itemId]',
+		options: [
+			{ option: '-j, --json', description: 'display results as JSON vs table' },
+			{ option: '-c, --current <current>', description: 'index from list to set as current bucket (i.e. buckets-current command)' },
+		],
+	},
+	{
+		name: 'versions-ls', action: ForgeDM.versionsInfo,
+		description: 'get list of item versions (3legged)',
+		arguments: '[projectId] [itemId]',
+		options: [
+			{ option: '-j, --json', description: 'display results as JSON vs table' },
+			{ option: '-c, --current <current>', description: 'index from list to set as current bucket (i.e. buckets-current command)' },
+		],
 	},
 	{
 		name: 'version-ls', action: ForgeDM.versionsInfo,
 		description: 'get list of item versions (3legged)',
-		arguments: '<projectId> <itemId>',
-	}, {
+		arguments: '[projectId] [itemId]',
+		options: [
+			{ option: '-j, --json', description: 'display results as JSON vs table' },
+			{ option: '-c, --current <current>', description: 'index from list to set as current bucket (i.e. buckets-current command)' },
+		],
+	},
+	{
 		name: 'versions-info', action: ForgeDM.versionsInfo,
 		description: 'get list of item versions (3legged)',
-		arguments: '<projectId> <itemId>',
+		arguments: '[projectId] [itemId]',
+		options: [
+			{ option: '-j, --json', description: 'display results as JSON vs table' },
+			{ option: '-c, --current <current>', description: 'index from list to set as current bucket (i.e. buckets-current command)' },
+		],
 	},
 
 	{

@@ -22,7 +22,7 @@
 // by Cyrille Fauvel
 // Autodesk Forge Partner Development
 //
-/*jshint esversion: 6 */
+/*jshint esversion: 9 */
 
 const ForgeAPI = require('forge-apis');
 const { BIM360Client } = require('forge-server-utils');
@@ -45,12 +45,12 @@ class Forge_BIM360 {
 		Forge_BIM360.oauth.getOauth3Legged()
 			.then((oa3Legged) => {
 				let projects = new ForgeAPI.ProjectsApi();
-				return (projects.getProject (hubId, projectId, oa3Legged, oa3Legged.credentials));
+				return (projects.getProject(hubId, projectId, oa3Legged, oa3Legged.credentials));
 			})
 			.then((project) => {
 				//console.log(JSON.stringify(project, null, 4));
 				let issues = project.body.data.relationships.issues.data;
-				if ( issues.type != 'issueContainerId' )
+				if (issues.type != 'issueContainerId')
 					return;
 				console.log(JSON.stringify(issues, null, 4));
 			})
@@ -63,12 +63,12 @@ class Forge_BIM360 {
 	static issuesLs (containerId, options) { // eslint-disable-line no-unused-vars
 		Forge_BIM360.oauth.getOauth3Legged()
 			.then((oa3Legged) => {
-				let bim360 = new BIM360Client ({ token: oa3Legged.credentials.access_token });
-				return (bim360.listIssues (containerId));
+				let bim360 = new BIM360Client({ token: oa3Legged.credentials.access_token });
+				return (bim360.listIssues(containerId));
 			})
 			.then((issues) => {
 				console.log(JSON.stringify(issues, null, 4));
-				
+
 			})
 			.catch((error) => {
 				console.log(error);
