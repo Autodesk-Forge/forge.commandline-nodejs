@@ -509,12 +509,16 @@ let commands = [
 	{
 		name: 'get-container', action: ForgeBIM360.getContainer,
 		description: 'Get BIM360 container',
-		arguments: '<hubId> <projectId>',
+		arguments: '[hubId] [projectId]',
+		options: [
+			{ option: '-j, --json', description: 'display results as JSON vs table' },
+			{ option: '-c, --current <current>', description: 'index from list to set as default' },
+		],
 	},
 	{
 		name: 'issues-ls', action: ForgeBIM360.issuesLs,
 		description: 'Get BIM360 issues',
-		arguments: '<containerId>',
+		arguments: '[containerId]',
 	}
 
 ];

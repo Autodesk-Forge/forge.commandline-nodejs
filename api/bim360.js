@@ -41,7 +41,14 @@ class Forge_BIM360 {
 	// Issues
 
 	// container (3legged)
-	static getContainer (hubId, projectId, options) { // eslint-disable-line no-unused-vars
+	static async getContainer (hubId, projectId, options) {
+		await utils.settings();
+		hubId = hubId === '-' ? undefined : hubId;
+		hubId = hubId || utils.settings('hubid', null, {});
+		projectId = projectId || utils.settings('projectid', null, {});
+		const json = options.json || options.parent.json || false;
+		const current = options.current || options.parent.current || null;
+
 		Forge_BIM360.oauth.getOauth3Legged()
 			.then((oa3Legged) => {
 				let projects = new ForgeAPI.ProjectsApi();
@@ -52,7 +59,12 @@ class Forge_BIM360 {
 				let issues = project.body.data.relationships.issues.data;
 				if (issues.type != 'issueContainerId')
 					return;
-				console.log(JSON.stringify(issues, null, 4));
+				if (json)
+					console.log(JSON.stringify([issues], null, 4));
+				else
+					console.table([issues]);
+				if ( current != null )
+					utils.settings('containerid', issues.id, {});
 			})
 			.catch((error) => {
 				console.log(error);
@@ -60,7 +72,10 @@ class Forge_BIM360 {
 	}
 
 	// issues (3legged)
-	static issuesLs (containerId, options) { // eslint-disable-line no-unused-vars
+	static async issuesLs (containerId, options) { // eslint-disable-line no-unused-vars
+		await utils.settings();
+		containerId = containerId || utils.settings('containerid', null, {});
+		
 		Forge_BIM360.oauth.getOauth3Legged()
 			.then((oa3Legged) => {
 				let bim360 = new BIM360Client({ token: oa3Legged.credentials.access_token });
