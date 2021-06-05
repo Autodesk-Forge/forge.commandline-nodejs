@@ -38,7 +38,9 @@ class Forge_MD {
 		Forge_MD._oauth = val;
 	}
 
-	static objectsTranslate (filename, options) {
+	static async objectsTranslate (filename, options) {
+		await utils.settings();
+		filename = filename || utils.settings('objectKey', null, {});
 		let bucketKey = options.bucket || options.parent.bucket || null;
 		let key = options.key || options.parent.key || false;
 		if (key)
@@ -207,7 +209,9 @@ class Forge_MD {
 			});
 	}
 
-	static objectsReferences (filename, options) {
+	static async objectsReferences (filename, options) {
+		await utils.settings();
+		filename = filename || utils.settings('objectKey', null, {});
 		let bucketKey = options.bucket || options.parent.bucket || null;
 		let key = options.key || options.parent.key || false;
 		if (key)
@@ -278,7 +282,9 @@ class Forge_MD {
 			});
 	}
 
-	static objectsTranslateStatus (filename, options) {
+	static async objectsTranslateStatus (filename, options) {
+		await utils.settings();
+		filename = filename || utils.settings('objectKey', null, {});
 		let bucketKey = options.bucket || options.parent.bucket || null;
 		let key = options.key || options.parent.key || false;
 		if (key)
@@ -318,7 +324,9 @@ class Forge_MD {
 			});
 	}
 
-	static objectsManifest (filename, options) {
+	static async objectsManifest (filename, options) {
+		await utils.settings();
+		filename = filename || utils.settings('objectKey', null, {});
 		let bucketKey = options.bucket || options.parent.bucket || null;
 		let key = options.key || options.parent.key || false;
 		if (key)
@@ -348,7 +356,9 @@ class Forge_MD {
 			});
 	}
 
-	static objectsMetadata (filename, options) {
+	static async objectsMetadata (filename, options) {
+		await utils.settings();
+		filename = filename || utils.settings('objectKey', null, {});
 		let bucketKey = options.bucket || options.parent.bucket || null;
 		let key = options.key || options.parent.key || false;
 		if (key)
@@ -393,7 +403,10 @@ class Forge_MD {
 			});
 	}
 
-	static objectsDerivatives (filename, derivativesURN, outputFile, options) {
+	static async objectsDerivatives (filename, derivativesURN, outputFile, options) {
+		await utils.settings();
+		filename = filename === '-' ? undefined : hubId;
+		filename = filename || utils.settings('objectKey', null, {});
 		let bucketKey = options.bucket || options.parent.bucket || null;
 		let key = options.key || options.parent.key || false;
 		if (key)

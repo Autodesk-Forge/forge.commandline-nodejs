@@ -151,13 +151,14 @@ let commands = [
 			{ option: '-b, --beginsWith <beginsWith>', description: 'beginsWith: String to filter the objectKeys.' },
 			{ option: '-a, --all', description: 'get them all!' },
 			{ option: '-j, --json', description: 'display results as JSON vs table' },
+			{ option: '-c, --current <current>', description: 'index from list to set as current object' },
 		]
 	},
 
 	{
 		name: 'objects-info', action: ForgeOSS.objectsInfo,
 		description: 'seed file information (2legged)',
-		arguments: '<filename>',
+		arguments: '[filename]',
 		options: [
 			{ option: '-b, --bucket <bucket>', description: 'override bucket name to be used in this session' },
 			{ option: '-k, --key', description: 'filename represents the objectKey on OSS vs the filename' }
@@ -196,7 +197,7 @@ let commands = [
 	{
 		name: 'objects-delete', action: ForgeOSS.objectsDelete,
 		description: 'delete a seed file (2legged)',
-		arguments: '<filename>',
+		arguments: '[filename]',
 		options: [
 			{ option: '-b, --bucket <bucket>', description: 'override bucket name to be used in this session' },
 			{ option: '-k, --key', description: 'filename represents the objectKey on OSS vs the filename' },
@@ -205,7 +206,7 @@ let commands = [
 	{
 		name: 'objects-sign', action: ForgeOSS.signObject,
 		description: 'sign a seed file (2legged)',
-		arguments: '<filename>',
+		arguments: '[filename]',
 		options: [
 			{ option: '-b, --bucket <bucket>', description: 'override bucket name to be used in this session' },
 			{ option: '-k, --key', description: 'filename represents the objectKey on OSS vs the filename' },
@@ -225,7 +226,7 @@ let commands = [
 	{
 		name: 'objects-translate', action: ForgeMD.objectsTranslate,
 		description: 'translate a seed file (2legged)',
-		arguments: '<filename>',
+		arguments: '[filename]',
 		options: [
 			{ option: '-b, --bucket <bucket>', description: 'override bucket name to be used in this session' },
 			{ option: '-k, --key', description: 'filename represents the objectKey on OSS vs the filename' },
@@ -261,7 +262,7 @@ let commands = [
 	{
 		name: 'objects-references', action: ForgeMD.objectsReferences,
 		description: 'create references for a composite design in Model Derivative (2legged)',
-		arguments: '<filename>',
+		arguments: '[filename]',
 		options: [
 			{ option: '-b, --bucket <bucket>', description: 'override bucket name to be used in this session' },
 			{ option: '-k, --key', description: 'filename represents the objectKey on OSS vs the filename' },
@@ -272,7 +273,7 @@ let commands = [
 	{
 		name: 'objects-progress', action: ForgeMD.objectsTranslateStatus,
 		description: 'translate progress/status of a seed file (2legged)',
-		arguments: '<filename>',
+		arguments: '[filename]',
 		options: [
 			{ option: '-b, --bucket <bucket>', description: 'override bucket name to be used in this session' },
 			{ option: '-k, --key', description: 'filename represents the objectKey on OSS vs the filename' }
@@ -281,7 +282,7 @@ let commands = [
 	{
 		name: 'objects-status', action: ForgeMD.objectsTranslateStatus,
 		description: 'translate progress/status of a seed file (2legged)',
-		arguments: '<filename>',
+		arguments: '[filename]',
 		options: [
 			{ option: '-b, --bucket <bucket>', description: 'override bucket name to be used in this session' },
 			{ option: '-k, --key', description: 'filename represents the objectKey on OSS vs the filename' }
@@ -290,7 +291,7 @@ let commands = [
 	{
 		name: 'objects-manifest', action: ForgeMD.objectsManifest,
 		description: 'information about derivatives that correspond to a specific seed file, including derivative URNs and statuses (2legged)',
-		arguments: '<filename>',
+		arguments: '[filename]',
 		options: [
 			{ option: '-b, --bucket <bucket>', description: 'override bucket name to be used in this session' },
 			{ option: '-k, --key', description: 'filename represents the objectKey on OSS vs the filename' },
@@ -300,7 +301,7 @@ let commands = [
 	{
 		name: 'objects-metadata', action: ForgeMD.objectsMetadata,
 		description: 'list of model view (metadata) IDs for a design model (2legged)',
-		arguments: '<filename>',
+		arguments: '[filename]',
 		options: [
 			{ option: '-b, --bucket <bucket>', description: 'override bucket name to be used in this session' },
 			{ option: '-k, --key', description: 'filename represents the objectKey on OSS vs the filename' },
@@ -327,7 +328,7 @@ let commands = [
 	{
 		name: 'objects-derivatives', action: ForgeMD.objectsDerivatives,
 		description: 'downloads the derivative specified by the derivativeurn URI parameter, which was generated from the source model specified by the urn URI parameter. To download the file, you need to specify the file’s URN, which you retrieve by calling the GET :urn/manifest endpoint.(2legged)',
-		arguments: '<filename> <derivativesURN> <outputFile',
+		arguments: '<filename> <derivativesURN> <outputFile>',
 		options: [
 			{ option: '-b, --bucket <bucket>', description: 'override bucket name to be used in this session' },
 			{ option: '-k, --key', description: 'filename represents the objectKey on OSS vs the filename' },
@@ -446,6 +447,27 @@ let commands = [
 		description: 'get list of item versions (3legged)',
 		arguments: '[projectId] [itemId]',
 		options: [
+			{ option: '-j, --json', description: 'display results as JSON vs table' },
+			{ option: '-c, --current <current>', description: 'index from list to set as current bucket (i.e. buckets-current command)' },
+		],
+	},
+	{
+		name: 'version', action: ForgeDM.versionInfo,
+		description: 'get item version information (3legged)',
+		arguments: '[projectId] [versionId]',
+	},
+	{
+		name: 'version-manifest', action: ForgeDM.versionManifest,
+		description: 'get item version manifest (3legged)',
+		arguments: '[projectId] [versionId]',
+	},
+
+	{
+		name: 'hubs-search', action: ForgeDM.searchAndSet,
+		description: 'search for an item (regex) and setup defaults (3legged)',
+		arguments: '<projectId> <search>',
+		options: [
+			{ option: '-f, --force', description: 'request the hub/project content tree, can take a while (3legged)' },
 			{ option: '-j, --json', description: 'display results as JSON vs table' },
 			{ option: '-c, --current <current>', description: 'index from list to set as current bucket (i.e. buckets-current command)' },
 		],

@@ -67,9 +67,13 @@ class Forge_Other {
 	}
 
 	// svf/otg bubble
-	static bubble (urn, outputFolder, options) {
+	static async bubble (urn, outputFolder, options) {
+		await utils.settings();
 		let bucketKey = options.bucket || options.parent.bucket || null;
-		let key = options.key || options.parent.key || false;
+		let key = options.key || options.parent.key || (urn === '-') || false;
+
+		urn = urn === '-' ? undefined : urn;
+		urn = urn || utils.settings('objectKey', null, {});
 
 		console.log('Downloading Bubble for urn: ' + urn);
 		let _progress = {};
@@ -119,9 +123,13 @@ class Forge_Other {
 	}
 
 	// html/viewer
-	static htmlGet (urn, outputFilename, options) { // eslint-disable-line no-unused-vars
+	static async htmlGet (urn, outputFilename, options) { // eslint-disable-line no-unused-vars
+		await utils.settings();
 		let bucketKey = options.bucket || options.parent.bucket || null;
-		let key = options.key || options.parent.key || false;
+		let key = options.key || options.parent.key || (urn === '-') || false;
+
+		urn = urn === '-' ? undefined : urn;
+		urn = urn || utils.settings('objectKey', null, {});
 
 		let render = (data, _outputFilename) => { // eslint-disable-line no-unused-vars
 			return (new Promise((fulfill, reject) => {

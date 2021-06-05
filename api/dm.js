@@ -179,8 +179,10 @@ class Forge_DM {
 					});
 					console.table(output);
 				}
-				if (current !== null)
+				if (current !== null) {
+					utils.settings('rootid', folderItemsForTree[current].id, {});
 					utils.settings('folderid', folderItemsForTree[current].id, {});
+				}
 				return (utils.writeFile(utils.data('roots-' + projectId), folderItemsForTree));
 			})
 			.catch((error) => {
@@ -189,15 +191,17 @@ class Forge_DM {
 	}
 
 	static async projectsTree (hubId, projectId, options) {
+		options = options || { parent: {} };
+
 		await utils.settings();
 		hubId = hubId === '-' ? undefined : hubId;
 		hubId = hubId || utils.settings('hubid', null, {});
 		projectId = projectId || utils.settings('projectid', null, {});
 
-		let reformat = options.format || options.parent.format || false;
+		const reformat = options.format || options.parent.format || false;
 		console.log('Collecting data...');
 
-		let getContentVersions = (_projectId, itemId) => {
+		const getContentVersions = (_projectId, itemId) => {
 			return (new Promise((fulfill, reject) => {
 				let unsupported = Forge_DM.getUnsupported();
 				let tree = [];
@@ -236,7 +240,7 @@ class Forge_DM {
 			}));
 		};
 
-		let getFolderContents = (_projectId, folderId) => {
+		const getFolderContents = (_projectId, folderId) => {
 			return (new Promise((fulfill, reject) => {
 				let unsupported = Forge_DM.getUnsupported();
 				let tree = {};
@@ -287,42 +291,38 @@ class Forge_DM {
 			}));
 		};
 
-		let tree = {};
-		Forge_DM.oauth.getOauth3Legged()
-			.then((oa3Legged) => {
-				let projects = new ForgeAPI.ProjectsApi();
-				return (projects.getProjectTopFolders(hubId, projectId, oa3Legged, oa3Legged.credentials));
-			})
-			.then((folders) => {
-				let jobs = [];
-				folders.body.data.forEach((item) => {
-					tree[item.id] = {
-						id: item.id,
-						href: item.links.self.href,
-						name: item.attributes.displayName === null ? item.attributes.name : item.attributes.displayName,
-						type: item.type,
-						state: true
-					};
-					if (item.type === 'folders') {
-						let job = getFolderContents(projectId, item.id);
-						jobs.push(job);
-						tree[item.id].folders = {};
-					}
-				});
-				return (Promise.all(jobs));
-			})
-			.then((results) => {
-				results.forEach((item) => {
-					Object.keys(item).forEach((key) => {
-						tree[item[key].parentId].folders[key] = item[key];
-					});
-				});
-				console.log('Result saved in: ' + utils.data('tree-' + projectId));
-				return (utils.writeFile(utils.data('tree-' + projectId), reformat === true ? JSON.stringify(tree, null, 4) : tree));
-			})
-			.catch((error) => {
-				console.log(error);
+		try {
+			const oa3Legged = await Forge_DM.oauth.getOauth3Legged();
+			const projects = new ForgeAPI.ProjectsApi();
+			const folders = await projects.getProjectTopFolders(hubId, projectId, oa3Legged, oa3Legged.credentials);
+
+			const tree = {};
+			let jobs = [];
+			folders.body.data.forEach((item) => {
+				tree[item.id] = {
+					id: item.id,
+					href: item.links.self.href,
+					name: item.attributes.displayName === null ? item.attributes.name : item.attributes.displayName,
+					type: item.type,
+					state: true
+				};
+				if (item.type === 'folders') {
+					let job = getFolderContents(projectId, item.id);
+					jobs.push(job);
+					tree[item.id].folders = {};
+				}
 			});
+			const results = await Promise.all(jobs);
+			results.forEach((item) => {
+				Object.keys(item).forEach((key) => {
+					tree[item[key].parentId].folders[key] = item[key];
+				});
+			});
+			console.log('Result saved in: ' + utils.data('tree-' + projectId));
+			return (utils.writeFile(utils.data('tree-' + projectId), reformat === true ? JSON.stringify(tree, null, 4) : tree));
+		} catch (ex) {
+			console.error(ex);
+		}
 	}
 
 	// folders
@@ -429,11 +429,122 @@ class Forge_DM {
 			});
 	}
 
+	// version
+	static async versionInfo (projectId, versionId, options) {
+		await utils.settings();
+		projectId = projectId === '-' ? undefined : projectId;
+		projectId = projectId || utils.settings('projectid', null, {});
+		versionId = versionId || utils.settings('versionid', null, {});
+
+		Forge_DM.oauth.getOauth3Legged()
+			.then((oa3Legged) => {
+				let versions = new ForgeAPI.VersionsApi();
+				return (versions.getVersion2(projectId, versionId, {}, oa3Legged, oa3Legged.credentials));
+			})
+			.then((version) => {
+				console.log(JSON.stringify(version.body.data, null, 4));
+			})
+			.catch((error) => {
+				console.error('Something went wrong while requesting the version info!', error);
+			});
+	}
+
+	static async versionManifest (projectId, versionId, options) {
+		await utils.settings();
+		projectId = projectId === '-' ? undefined : projectId;
+		projectId = projectId || utils.settings('projectid', null, {});
+		versionId = versionId || utils.settings('versionid', null, {});
+
+		let _oa3Legged = null;
+		Forge_DM.oauth.getOauth3Legged()
+			.then((oa3Legged) => {
+				_oa3Legged = oa3Legged;
+				let versions = new ForgeAPI.VersionsApi();
+				return (versions.getVersion2(projectId, versionId, {}, oa3Legged, oa3Legged.credentials));
+			})
+			.then((version) => {
+				const urn = utils.safeBase64encode(version.body.data.id);
+				const derivatives = new ForgeAPI.DerivativesApi();
+				return (derivatives.getManifest(urn, {}, _oa3Legged, _oa3Legged.credentials));
+			})
+			.then((manifest) => {
+				console.log(JSON.stringify(manifest.body, null, 4));
+			})
+			.catch((error) => {
+				console.error('Something went wrong while requesting the manifest!', error);
+			});
+	}
+
+	static async searchAndSet (projectId, what, options) {
+		await utils.settings();
+		projectId = projectId === '-' ? undefined : projectId;
+		projectId = projectId || utils.settings('projectid', null, {});
+		const hubId = utils.settings('hubid', null, {});
+		const regex = new RegExp(what);
+
+		const json = options.json || options.parent.json || false;
+		const current = options.current || options.parent.current || null;
+		const tree = options.force || options.parent.force || false;
+
+		const iterate = (parent, obj, results) => {
+			Object.keys(obj).forEach((key) => {
+				const node = obj[key];
+				if (regex.test(node.name || node.filename))
+					results.push({
+						type: node.type,
+						name: (node.name || node.filename),
+						id: node.id,
+						state: node.state,
+						parent: parent,
+					});
+				const next = node.folders || node.items || node.versions || false;
+				if (next)
+					return (iterate({ node, parent }, next, results));
+			});
+		};
+
+		try {
+			const results = [];
+			let content = null;
+			if (tree || ! await utils.fileexists(utils.data('tree-' + projectId)))
+				content = await Forge_DM.projectsTree(hubId, projectId);
+			else
+				content = await utils.json('tree-' + projectId);
+			iterate({ node: { type: 'hub', id: hubId } }, content, results);
+
+			if (current !== null) {
+				utils.settings('projectid', projectId, {});
+				let node = results[current];
+				await utils.settings(node.type.replace(/s$/, '') + 'id', node.id, {});
+				let folder = false;
+				for (let parent = node.parent; parent; parent = parent.parent) {
+					node = parent.node;
+					if (node.type !== 'folders' || folder === false)
+						//console.log(node.type.replace(/s$/, '') + 'id', node.id);
+						await utils.settings(node.type.replace(/s$/, '') + 'id', node.id, {});
+					folder = node.type === 'folders' ? node.id : folder;
+				}
+				utils.settings('rootid', folder, {});
+			}
+
+			if (json) {
+				results.map((elt) => delete elt.parent);
+				console.log(JSON.stringify(results, null, 4));
+			} else {
+				results.map((elt) => delete elt.parent);
+				console.table(results);
+			}
+		} catch (ex) {
+			console.error(ex);
+		}
+	}
+
 	static getUnsupported () {
 		return ([
 			'bot@autodesk360.com'
 		]);
 	}
+
 }
 
 module.exports = Forge_DM;

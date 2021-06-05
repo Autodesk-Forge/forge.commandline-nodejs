@@ -243,6 +243,8 @@ class Forge_OSS {
 		!all && console.log('Listing from ' + (startAt || 'beginning') + ' to ' + limit);
 		all && console.log('List all bucket content');
 		let json = options.json || options.parent.json || false;
+		let current = options.current || options.parent.current || null;
+
 		Forge_OSS.readBucketKey(bucketKey)
 			.then((name) => {
 				bucketKey = name;
@@ -278,6 +280,8 @@ class Forge_OSS {
 					let _startAt = url_parts.query.startAt;
 					console.log('Your next search startAt is: ' + _startAt);
 				}
+				if (current !== null)
+					utils.settings('objectKey', items[current].objectKey, {});
 			})
 			.catch((error) => {
 				console.error('Something went wrong while listing your bucket content!', error);
@@ -285,7 +289,9 @@ class Forge_OSS {
 	}
 
 	// objects (2legged)
-	static objectsInfo (filename, options) {
+	static async objectsInfo (filename, options) {
+		await utils.settings();
+		filename = filename || utils.settings('objectKey', null, {});
 		let bucketKey = options.bucket || options.parent.bucket || null;
 		let key = options.key || options.parent.key || false;
 		if (key)
@@ -336,7 +342,10 @@ class Forge_OSS {
 		}));
 	}
 
-	static objectsGet (filename, outputFile, options) {
+	static async objectsGet (filename, outputFile, options) {
+		await utils.settings();
+		filename = filename === '-' ? undefined : hubId;
+		filename = filename || utils.settings('objectKey', null, {});
 		let bucketKey = options.bucket || options.parent.bucket || null;
 		let key = options.key || options.parent.key || false;
 		if (key)
@@ -585,7 +594,10 @@ class Forge_OSS {
 		}
 	}
 
-	static objectsCopy (filename, target, options) {
+	static async objectsCopy (filename, target, options) {
+		await utils.settings();
+		filename = filename === '-' ? undefined : hubId;
+		filename = filename || utils.settings('objectKey', null, {});
 		let bucketKey = options.bucket || options.parent.bucket || null;
 		let key = options.key || options.parent.key || false;
 		if (key) {
@@ -614,7 +626,9 @@ class Forge_OSS {
 			});
 	}
 
-	static objectsDelete (filename, options) {
+	static async objectsDelete (filename, options) {
+		await utils.settings();
+		filename = filename || utils.settings('objectKey', null, {});
 		let bucketKey = options.bucket || options.parent.bucket || null;
 		let key = options.key || options.parent.key || false;
 		if (key)
@@ -641,7 +655,9 @@ class Forge_OSS {
 			});
 	}
 
-	static signObject (filename, options) {
+	static async signObject (filename, options) {
+		await utils.settings();
+		filename = filename || utils.settings('objectKey', null, {});
 		let bucketKey = options.bucket || options.parent.bucket || null;
 		let key = options.key || options.parent.key || false;
 		if (key)
