@@ -349,6 +349,7 @@ let commands = [
 		name: 'hubs', action: ForgeDM.hubsLs, description: 'get list of hubs (3legged)',
 		options: [
 			{ option: '-j, --json', description: 'display results as JSON vs table' },
+			{ option: '-r, --raw', description: 'display results as raw JSON' },
 			{ option: '-c, --current <current>', description: 'index from list to set as current bucket (i.e. buckets-current command)' },
 		],
 	},
@@ -356,7 +357,16 @@ let commands = [
 		name: 'hubs-ls', action: ForgeDM.hubsLs, description: 'get list of hubs (3legged)',
 		options: [
 			{ option: '-j, --json', description: 'display results as JSON vs table' },
+			{ option: '-r, --raw', description: 'display results as raw JSON' },
 			{ option: '-c, --current <current>', description: 'index from list to set as current bucket (i.e. buckets-current command)' },
+		],
+	},
+	{
+		name: 'hubs-info', action: ForgeDM.hubInfo, description: 'get hub information (3legged)',
+		arguments: '[hubId]',
+		options: [
+			{ option: '-j, --json', description: 'display results as JSON vs table' },
+			{ option: '-r, --raw', description: 'display results as raw JSON' },
 		],
 	},
 
@@ -365,7 +375,10 @@ let commands = [
 		description: 'get list of projects (3legged)',
 		arguments: '[hubId]',
 		options: [
+			{ option: '-p, --page <page>', description: 'when using pagination specify the page number (default is 0)' },
+			{ option: '-l, --limit <limit>', description: 'when using pagination specify the number of item per page (default is 200)' },
 			{ option: '-j, --json', description: 'display results as JSON vs table' },
+			{ option: '-r, --raw', description: 'display results as raw JSON' },
 			{ option: '-c, --current <current>', description: 'index from list to set as current bucket (i.e. buckets-current command)' },
 		],
 	},
@@ -374,7 +387,10 @@ let commands = [
 		description: 'get list of projects (3legged)',
 		arguments: '[hubId]',
 		options: [
+			{ option: '-p, --page <page>', description: 'when using pagination specify the page number (default is 0)' },
+			{ option: '-l, --limit <limit>', description: 'when using pagination specify the number of item per page (default is 200)' },
 			{ option: '-j, --json', description: 'display results as JSON vs table' },
+			{ option: '-r, --raw', description: 'display results as raw JSON' },
 			{ option: '-c, --current <current>', description: 'index from list to set as current bucket (i.e. buckets-current command)' },
 		],
 	},

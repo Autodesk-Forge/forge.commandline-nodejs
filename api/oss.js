@@ -31,6 +31,7 @@ const _path = require('path');
 const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const utils = require('./utils');
+const { promisesAllLimit } = require('promises-all-limit')
 
 class Forge_OSS {
 
@@ -70,7 +71,7 @@ class Forge_OSS {
 		let region = options.region || options.parent.region || 'US';
 		let opts = { 'limit': limit, 'startAt': startAt, 'region': region };
 		let all = options.all || options.parent.all || false;
-		!all && console.log('Listing from ' + (startAt || 'beginning') + ' to ' + limit);
+		!all && console.log(`Listing from ${startAt || 'beginning'} to ${limit}`);
 		all && console.log('List all bucket content');
 		let json = options.json || options.parent.json || false;
 		let current = options.current || options.parent.current || null;
@@ -344,7 +345,7 @@ class Forge_OSS {
 
 	static async objectsGet (filename, outputFile, options) {
 		await utils.settings();
-		filename = filename === '-' ? undefined : hubId;
+		filename = filename === '-' ? undefined : filename;
 		filename = filename || utils.settings('objectKey', null, {});
 		let bucketKey = options.bucket || options.parent.bucket || null;
 		let key = options.key || options.parent.key || false;
@@ -423,29 +424,78 @@ class Forge_OSS {
 
 	// Example to u/l the file at once
 	static objectsPut_full (oa2legged, bucketKey, ossname, size, rstream) {
-		return (new Promise((fulfill, reject) => {
+		return (new Promise(async (fulfill, reject) => {
 			let ossObjects = new ForgeAPI.ObjectsApi();
-			ossObjects.uploadObject(bucketKey, ossname, size, rstream, {}, oa2legged, oa2legged.getCredentials())
+
+			const sha1 = await Forge_OSS.calculateSHA1(rstream);
+			rstream = _fs.createReadStream(rstream.path);
+
+			ossObjects.uploadObject(
+				bucketKey, ossname,
+				size,
+				rstream,
+				{ xAdsContentSha1: sha1 },
+				oa2legged, oa2legged.getCredentials()
+			)
 				.then((result) => {
+					if (result.body.sha1 !== sha1) // Should never happen if using xAdsContentSha1 in the request header (old way)
+						console.error('ERROR: SHA1 code computed on server is not equal to our SHA1');
 					fulfill(result);
 				})
 				.catch((error) => {
+					if (error.statusCode === 400)
+						console.error('ERROR: SHA1 code computed on server is not equal to our SHA1');
 					reject(error);
 				});
 		}));
 	}
 
 	static objectsPut_fullSigned (key, region, size, rstream) {
-		return (new Promise((fulfill, reject) => {
+		return (new Promise(async (fulfill, reject) => {
 			let ossObjects = new ForgeAPI.ObjectsApi();
-			ossObjects.uploadSignedResource(key, size, rstream, { xAdsRegion: region })
+
+			const sha1 = await Forge_OSS.calculateSHA1(rstream);
+			rstream = _fs.createReadStream(rstream.path);
+
+			ossObjects.uploadSignedResource(
+				key,
+				size,
+				rstream,
+				{ xAdsRegion: region, xAdsContentSha1: sha1 }
+			)
 				.then((result) => {
+					if (result.body.sha1 && result.body.sha1 !== sha1) // Should never happen if using xAdsContentSha1 in the request header (old way)
+						console.error('ERROR: SHA1 code computed on server is not equal to our SHA1');
 					fulfill(result);
 				})
 				.catch((error) => {
+					if (error.statusCode === 400)
+						console.error('ERROR: SHA1 code computed on server is not equal to our SHA1');
 					reject(error);
 				});
 		}));
+	}
+
+	static objectsPut_calculateChunks (size, data) {
+		let nb = Math.floor(size / Forge_OSS.chunkSize);
+		if ((size % Forge_OSS.chunkSize) !== 0)
+			nb++;
+		let arr = [];
+		let sessionId = uuidv4();
+		for (let i = 0; i < nb; i++) {
+			let start = i * Forge_OSS.chunkSize;
+			let end = start + Forge_OSS.chunkSize - 1;
+			if (end > size - 1)
+				end = size - 1;
+			let opts = {
+				ContentRange: 'bytes ' + start + '-' + end + '/' + size,
+				size: end - start + 1,
+				start: start,
+				end: end
+			};
+			arr.push({ opts, ...data, sessionId });
+		}
+		return (arr);
 	}
 
 	static objectsPut (filename, options) {
@@ -472,47 +522,38 @@ class Forge_OSS {
 						let rstream = _fs.createReadStream(filename);
 						return (Forge_OSS.objectsPut_fullSigned(signed, region, size, rstream));
 					}
-					let nb = Math.floor(size / Forge_OSS.chunkSize);
-					if ((size % Forge_OSS.chunkSize) !== 0)
-						nb++;
-					let arr = [];
-					let uuid = uuidv4();
-					for (let i = 0; i < nb; i++) {
-						let start = i * Forge_OSS.chunkSize;
-						let end = start + Forge_OSS.chunkSize - 1;
-						if (end > size - 1)
-							end = size - 1;
-						let opts = {
-							ContentRange: 'bytes ' + start + '-' + end + '/' + size,
-							size: end - start + 1,
-							start: start,
-							end: end
-						};
+					let arr = Forge_OSS.objectsPut_calculateChunks(size, { signed });
 
-						// Still in parallel, but results processed in series with 'utils.promiseSerie'
-						//arr.push (ossObjects.uploadSignedResourcesChunk (signed: signed, chunkSize, opts.ContentRange, sessionId, rstream, {}, oa2legged, oa2legged.getCredentials ())) ;
+					// Still in parallel, but results processed in series with 'promises-all-limit'
+					//arr.push (ossObjects.uploadSignedResourcesChunk (signed: signed, chunkSize, opts.ContentRange, sessionId, rstream, {}, oa2legged, oa2legged.getCredentials ())) ;
 
-						arr.push({ opts: opts, signed: signed, sessionId: uuid });
-					}
-
-					return (utils.promiseSerie(arr, (item, index) => { // eslint-disable-line no-unused-vars
-						return (new Promise((fulfill, reject) => {
-							// If still in parallel, but results processed in series with 'utils.promiseSerie', use item.then()
-
-							//console.log (JSON.stringify (item, null, 4)) ;
+					return (promisesAllLimit(
+						1, // How many to run concurrently? -1 = all / 1 = run in serie / 2..n = run in parallel with a limit
+						async (index) => {
+							if (index >= arr.length)
+								//return ({ done: true });
+								return (null);
+							const item = arr[index];
 							let rstream = _fs.createReadStream(filename, { start: item.opts.start, end: item.opts.end });
-							ossObjects.uploadSignedResourcesChunk(item.signed, item.opts.ContentRange, item.sessionId, rstream, { xAdsRegion: region })
-								.then((content) => {
-									console.log('Chunk ' + item.opts.ContentRange + ' accepted...');
-									if (content.statusCode === 202)
-										return (fulfill(item.opts.ContentRange));
-									fulfill(content);
-								})
-								.catch((error) => {
-									reject(error);
-								});
-						}));
-					}));
+							item.sha1 = await Forge_OSS.calculateSHA1(rstream);
+							rstream = _fs.createReadStream(filename, { start: item.opts.start, end: item.opts.end });
+							console.log(`Uploading Chunk ${item.opts.ContentRange}...`);
+							return (ossObjects.uploadSignedResourcesChunk(
+								item.signed,
+								item.opts.ContentRange,
+								item.sessionId,
+								rstream,
+								{ xAdsRegion: region, xAdsChunkSha1: item.sha1 }
+							));
+						},
+						false, // continue if any promise is rejected
+						(error, result, index) => {
+							if (error)
+								console.error();
+							if (result && result.headers['x-ads-chunk-sha1'] !== arr[index].sha1) // Should never happen if using xAdsChunkSha1 in the request header (old way)
+								console.error('ERROR: SHA1 code computed on server is not equal to our SHA1');
+						}
+					));
 				})
 				.then((info) => {
 					if (Array.isArray(info))
@@ -540,48 +581,43 @@ class Forge_OSS {
 						let rstream = _fs.createReadStream(filename);
 						return (Forge_OSS.objectsPut_full(oa2legged, bucketKey, ossname, size, rstream));
 					}
-					let nb = Math.floor(size / Forge_OSS.chunkSize);
-					if ((size % Forge_OSS.chunkSize) !== 0)
-						nb++;
-					let arr = [];
-					let uuid = uuidv4();
-					for (let i = 0; i < nb; i++) {
-						let start = i * Forge_OSS.chunkSize;
-						let end = start + Forge_OSS.chunkSize - 1;
-						if (end > size - 1)
-							end = size - 1;
-						let opts = {
-							ContentRange: 'bytes ' + start + '-' + end + '/' + size,
-							size: end - start + 1,
-							start: start,
-							end: end
-						};
+					let arr = Forge_OSS.objectsPut_calculateChunks(size, { bucketKey, ossname, oa2legged });
 
-						// Still in parallel, but results processed in series with 'utils.promiseSerie'
-						//arr.push (ossObjects.uploadChunk (bucketKey, ossname, chunkSize, opts.ContentRange, sessionId, rstream, {}, oa2legged, oa2legged.getCredentials ())) ;
+					// Still in parallel, but results processed in series with 'utils.promiseSerie'
+					//arr.push (ossObjects.uploadChunk (bucketKey, ossname, chunkSize, opts.ContentRange, sessionId, rstream, {}, oa2legged, oa2legged.getCredentials ())) ;
 
-						arr.push({ opts: opts, bucketKey: bucketKey, ossname: ossname, sessionId: uuid, oa2legged: oa2legged });
-					}
-
-					return (utils.promiseSerie(arr, (item, index) => { // eslint-disable-line no-unused-vars
-						return (new Promise((fulfill, reject) => {
-							// If still in parallel, but results processed in series with 'utils.promiseSerie', use item.then()
-
-							//console.log (JSON.stringify (item, null, 4)) ;
+					return (promisesAllLimit(
+						1, // How many to run concurrently? -1 = all / 1 = run in serie / 2..n = run in parallel with a limit
+						async (index) => {
+							if (index >= arr.length)
+								//return ({ done: true });
+								return (null);
+							const item = arr[index];
 							let rstream = _fs.createReadStream(filename, { start: item.opts.start, end: item.opts.end });
-							ossObjects.uploadChunk(item.bucketKey, item.ossname, item.opts.size, item.opts.ContentRange, item.sessionId, rstream, {}, item.oa2legged, item.oa2legged.getCredentials())
-								.then((content) => {
-									console.log('Chunk ' + item.opts.ContentRange + ' accepted...');
-									if (content.statusCode === 202)
-										return (fulfill(item.opts.ContentRange));
-									fulfill(content);
-								})
-								.catch((error) => {
-									reject(error);
-								});
-						}));
-					}));
-
+							item.sha1 = await Forge_OSS.calculateSHA1(rstream);
+							rstream = _fs.createReadStream(filename, { start: item.opts.start, end: item.opts.end });
+							console.log(`Uploading Chunk ${item.opts.ContentRange}...`);
+							//process.stdout.write(`Uploading Chunk ${item.opts.ContentRange}... `);
+							return (ossObjects.uploadChunk(
+								item.bucketKey,
+								item.ossname,
+								item.opts.size,
+								item.opts.ContentRange,
+								item.sessionId,
+								rstream,
+								{ xAdsChunkSha1: item.sha1 },
+								item.oa2legged,
+								item.oa2legged.getCredentials()
+							));
+						},
+						false, // continue if any promise is rejected
+						(error, result, index) => {
+							if (error)
+								console.error();
+							if (result && result.headers['x-ads-chunk-sha1'] !== arr[index].sha1) // Should never happen if using xAdsChunkSha1 in the request header (old way)
+								console.error('ERROR: SHA1 code computed on server is not equal to our SHA1');
+						}
+					));
 				})
 				.then((info) => {
 					if (Array.isArray(info))
@@ -712,16 +748,33 @@ class Forge_OSS {
 	}
 
 	static sha1 (filename, options) {
-		const shasum = crypto.createHash('sha1');
-		const s = _fs.ReadStream(filename);
-		s.on('data', (data) => shasum.update(data));
-		s.on('end', () => console.log(`${filename} sha1: ${shasum.digest('hex')}`));
+		return (new Promise((fulfill, reject) => {
+			const shasum = crypto.createHash('sha1');
+			const s = _fs.ReadStream(filename);
+			s.on('data', (data) => shasum.update(data));
+			s.on('end', () => {
+				const _sha1 = shasum.digest('hex');
+				console.log(`${filename} sha1: ${_sha1}`);
+				fulfill(_sha1);
+			});
+			s.on('error', (error) => reject(error));
+		}));
 	}
 
-	static _sha1 (strorbuffer) {
-		const shasum = crypto.createHash('sha1');
-		shasum.update(strorbuffer);
-		return (shasum.digest('hex'));
+	static calculateSHA1 (strorbuffer) {
+		return (new Promise((fulfill, reject) => {
+			const shasum = crypto.createHash('sha1');
+			if (strorbuffer.readable) { // this is a stream
+				strorbuffer.on('end', () => {
+					//shasum.end(); .read();
+					fulfill(shasum.digest('hex'));
+				});
+				strorbuffer.pipe(shasum);
+				return;
+			}
+			shasum.update(strorbuffer);
+			fulfill(shasum.digest('hex'));
+		}));
 	}
 
 	static readBucketKey (bucketKeyDefault) {

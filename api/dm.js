@@ -40,6 +40,7 @@ class Forge_DM {
 	// hubs (3legged)
 	static hubsLs (options) { // eslint-disable-line no-unused-vars
 		let json = options.json || options.parent.json || false;
+		let raw = options.raw || options.parent.raw || false;
 		let current = options.current || options.parent.current || null;
 
 		Forge_DM.oauth.getOauth3Legged()
@@ -55,27 +56,31 @@ class Forge_DM {
 					}
 				}
 				let hubsForTree = [];
-				hubs.body.data.forEach((hub) => {
-					let hubType = null;
-					switch (hub.attributes.extension.type) {
-						case 'hubs:autodesk.core:Hub':
-							hubType = 'hubs';
-							break;
-						case 'hubs:autodesk.a360:PersonalHub':
-							hubType = 'personalHub';
-							break;
-						case 'hubs:autodesk.bim360:Account':
-							hubType = 'bim360Hubs';
-							break;
-					}
-					hubsForTree.push({
-						id: hub.id,
-						href: hub.links.self.href,
-						name: hub.attributes.name,
-						type: hubType,
-						state: true
+				if ( json && raw ) {
+					hubsForTree = hubs;
+				} else {
+					hubs.body.data.forEach((hub) => {
+						let hubType = null;
+						switch (hub.attributes.extension.type) {
+							case 'hubs:autodesk.core:Hub':
+								hubType = 'hubs';
+								break;
+							case 'hubs:autodesk.a360:PersonalHub':
+								hubType = 'personalHub';
+								break;
+							case 'hubs:autodesk.bim360:Account':
+								hubType = 'bim360Hubs';
+								break;
+						}
+						hubsForTree.push({
+							id: hub.id,
+							href: hub.links.self.href,
+							name: hub.attributes.name,
+							type: hubType,
+							state: true
+						});
 					});
-				});
+				}
 				if (json) {
 					console.log(JSON.stringify(hubsForTree, null, 4));
 				} else {
@@ -95,38 +100,91 @@ class Forge_DM {
 			});
 	}
 
+	static async hubInfo (hubId, options) {
+		await utils.settings();
+		hubId = hubId || utils.settings('hubid', null, {});
+		let json = options.json || options.parent.json || false;
+		let raw = options.raw || options.parent.raw || false;
+		
+		Forge_DM.oauth.getOauth3Legged()
+			.then((oa3Legged) => {
+				let hubs = new ForgeAPI.HubsApi();
+				return (hubs.getHub(hubId, oa3Legged, oa3Legged.credentials));
+			})
+			.then((details) => {
+				let info = {};
+				if (json && raw) {
+					info = details;
+				} else {
+					info = details.body;
+				}
+				if (json) {
+					console.log(JSON.stringify(info, null, 4));
+				} else {
+					const output = {
+						id: info.data.id,
+						name: info.data.attributes.name,
+						region: info.data.attributes.region,
+						type: info.data.attributes.extension.type,
+						data: info.data.attributes.extension.data,
+					};
+					console.log(JSON.stringify(output, null, 4));
+				}
+				
+				return (utils.writeFile(utils.data('hub-' + hubId), details));
+			})
+			.catch((error) => {
+				console.log(error);
+			});
+	}
+
+
 	// projects
 	static async projectsLs (hubId, options) {
 		await utils.settings();
 		hubId = hubId || utils.settings('hubid', null, {});
 		let json = options.json || options.parent.json || false;
+		let raw = options.raw || options.parent.raw || false;
 		let current = options.current || options.parent.current || null;
+		let page = options.page || options.parent.page || 0;
+		let limit = options.limit || options.parent.limit || 200;
 
 		Forge_DM.oauth.getOauth3Legged()
 			.then((oa3Legged) => {
 				let projects = new ForgeAPI.ProjectsApi();
-				return (projects.getHubProjects(hubId, {}, oa3Legged, oa3Legged.credentials));
+				return (projects.getHubProjects(
+					hubId,
+					{
+						pageNumber: page,
+						pageLimit: limit
+					},
+					oa3Legged, oa3Legged.credentials
+				));
 			})
 			.then((projects) => {
 				let projectsForTree = [];
-				projects.body.data.forEach((project) => {
-					let projectType = 'projects';
-					switch (project.attributes.extension.type) {
-						case 'projects:autodesk.core:Project':
-							projectType = 'a360projects';
-							break;
-						case 'projects:autodesk.bim360:Project':
-							projectType = 'bim360projects';
-							break;
-					}
-					projectsForTree.push({
-						id: project.id,
-						href: project.links.self.href,
-						name: project.attributes.name,
-						type: projectType,
-						state: true
+				if ( json && raw ) {
+					projectsForTree = projects;
+				} else {
+					projects.body.data.forEach((project) => {
+						let projectType = 'projects';
+						switch (project.attributes.extension.type) {
+							case 'projects:autodesk.core:Project':
+								projectType = 'a360projects';
+								break;
+							case 'projects:autodesk.bim360:Project':
+								projectType = 'bim360projects';
+								break;
+						}
+						projectsForTree.push({
+							id: project.id,
+							href: project.links.self.href,
+							name: project.attributes.name,
+							type: projectType,
+							state: true
+						});
 					});
-				});
+				}
 				if (json) {
 					console.log(JSON.stringify(projectsForTree, null, 4));
 				} else {
