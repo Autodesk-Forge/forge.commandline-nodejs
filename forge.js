@@ -105,6 +105,18 @@ let commands = [
 	{ name: '3legged-logout', action: ForgeOauth._2leggedRelease, description: 'release the application access token (3legged)' },
 
 	{
+		name: 'buckets', action: ForgeOSS.bucketsList,
+		description: 'list buckets (2legged)',
+		options: [
+			{ option: '-s, --startAt <startAt>', description: 'startAt: where to start in the list [string, default: none]' },
+			{ option: '-l, --limit <limit>', description: 'limit: how many to return [integer, default: 10]' },
+			{ option: '-r, --region <region>', description: 'region: US or EMEA [string, default: US]' },
+			{ option: '-a, --all', description: 'get them all!' },
+			{ option: '-j, --json', description: 'display results as JSON vs table' },
+			{ option: '-c, --current <current>', description: 'index from list to set as current bucket (i.e. buckets-current command)' },
+		]
+	},
+	{
 		name: 'buckets-list', action: ForgeOSS.bucketsList,
 		description: 'list buckets (2legged)',
 		options: [
@@ -473,9 +485,26 @@ let commands = [
 		arguments: '[projectId] [versionId]',
 	},
 	{
+		name: 'version-status', action: ForgeDM.versionStatus,
+		description: 'get item version status (3legged)',
+		arguments: '[projectId] [versionId]',
+	},
+	{
 		name: 'version-manifest', action: ForgeDM.versionManifest,
 		description: 'get item version manifest (3legged)',
 		arguments: '[projectId] [versionId]',
+	},
+	{
+		name: 'version-metadata', action: ForgeDM.versionMetadata,
+		description: 'list of model view (metadata) IDs for a design model (3legged)',
+		arguments: '[projectId] [versionId]',
+		options: [
+			{ option: '-g, --guid <guid>', description: 'returns an object tree, i.e., a hierarchical list of objects for a model view' },
+			{ option: '-p, --properties', description: 'returns a list of properties for each object in an object tree. Properties are returned according to object ID and do not follow a hierarchical structure' },
+			{ option: '-x, --adsForce', description: 'force retrieve the object tree even though it failed to be extracted (got 404 with error message) previously' },
+			{ option: '-f, --forceget', description: 'to force get the large resource even if it exceeded the expected maximum length (20 MB)' },
+			{ option: '-i, --objectid <id>', description: 'object id which you want to query properties for' },
+		]
 	},
 
 	{

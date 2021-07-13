@@ -312,7 +312,10 @@ class Forge_MD {
 					console.log('Version: ' + manifest.version);
 				for (let i = 0; manifest.derivatives && i < manifest.derivatives.length; i++) {
 					let derivative = manifest.derivatives[i];
-					console.log('\t' + derivative.outputType + ': ' + derivative.status + ' - ' + derivative.progress);
+					if (derivative.overrideOutputType)
+						console.log(`\t${derivative.outputType} [${derivative.overrideOutputType}]: ${derivative.status} - ${derivative.progress}`);
+					else
+						console.log(`\t${derivative.outputType}: ${derivative.status} - ${derivative.progress}`);
 					for (let k = 0; derivative.children && k < derivative.children.length; k++) {
 						let child = derivative.children[k];
 						console.log('\t\t' + child.type + ', ' + child.role + ': ' + child.status + ' - ' + (child.progress || derivative.progress));
@@ -405,7 +408,6 @@ class Forge_MD {
 
 	static async objectsDerivatives (filename, derivativesURN, outputFile, options) {
 		await utils.settings();
-		filename = filename === '-' ? undefined : hubId;
 		filename = filename || utils.settings('objectKey', null, {});
 		let bucketKey = options.bucket || options.parent.bucket || null;
 		let key = options.key || options.parent.key || false;

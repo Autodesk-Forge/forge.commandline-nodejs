@@ -37,3 +37,11 @@ tmp/
 
 # sample output file
 Au.html
+*.rvt
+*.nwd
+*.ifc
+*.dwg
+*.iam
+*.ipt
+*.obj
+*.html

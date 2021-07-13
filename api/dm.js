@@ -507,6 +507,49 @@ class Forge_DM {
 			});
 	}
 
+	static async versionStatus (projectId, versionId, options) {
+		await utils.settings();
+		projectId = projectId === '-' ? undefined : projectId;
+		projectId = projectId || utils.settings('projectid', null, {});
+		versionId = versionId || utils.settings('versionid', null, {});
+
+		let _oa3Legged = null;
+		Forge_DM.oauth.getOauth3Legged()
+			.then((oa3Legged) => {
+				_oa3Legged = oa3Legged;
+				let versions = new ForgeAPI.VersionsApi();
+				return (versions.getVersion2(projectId, versionId, {}, oa3Legged, oa3Legged.credentials));
+			})
+			.then((version) => {
+				const urn = utils.safeBase64encode(version.body.data.id);
+				const derivatives = new ForgeAPI.DerivativesApi();
+				return (derivatives.getManifest(urn, {}, _oa3Legged, _oa3Legged.credentials));
+			})
+			.then((manifest) => {
+				//console.log (JSON.stringify (manifest.body, null, 4)) ;
+				manifest = manifest.body;
+				console.log(manifest.status + ' - ' + manifest.progress);
+				if (manifest.region)
+					console.log('Region: ' + manifest.region);
+				if (manifest.version)
+					console.log('Version: ' + manifest.version);
+				for (let i = 0; manifest.derivatives && i < manifest.derivatives.length; i++) {
+					let derivative = manifest.derivatives[i];
+					if ( derivative.overrideOutputType )
+						console.log(`\t${derivative.outputType} [${derivative.overrideOutputType}]: ${derivative.status} - ${derivative.progress}`);
+					else
+						console.log(`\t${derivative.outputType}: ${derivative.status} - ${derivative.progress}`);
+					for (let k = 0; derivative.children && k < derivative.children.length; k++) {
+						let child = derivative.children[k];
+						console.log('\t\t' + child.type + ', ' + child.role + ': ' + child.status + ' - ' + (child.progress || derivative.progress));
+					}
+				}
+			})
+			.catch((error) => {
+				console.error('Something went wrong while requesting the version info!', error);
+			});
+	}
+
 	static async versionManifest (projectId, versionId, options) {
 		await utils.settings();
 		projectId = projectId === '-' ? undefined : projectId;
@@ -524,6 +567,52 @@ class Forge_DM {
 				const urn = utils.safeBase64encode(version.body.data.id);
 				const derivatives = new ForgeAPI.DerivativesApi();
 				return (derivatives.getManifest(urn, {}, _oa3Legged, _oa3Legged.credentials));
+			})
+			.then((manifest) => {
+				console.log(JSON.stringify(manifest.body, null, 4));
+			})
+			.catch((error) => {
+				console.error('Something went wrong while requesting the manifest!', error);
+			});
+	}
+
+	static async versionMetadata (projectId, versionId, options) {
+		await utils.settings();
+		projectId = projectId === '-' ? undefined : projectId;
+		projectId = projectId || utils.settings('projectid', null, {});
+		versionId = versionId || utils.settings('versionid', null, {});
+
+		let guid = options.guid || options.parent.guid || null;
+		let properties = options.properties || options.parent.properties || false;
+		if (properties && !guid)
+			return (console.error('You must provide a guid reference!'));
+
+		let xAdsForce = options.adsForce || options.parent.adsForce || false;
+		let forceget = options.forceget || options.parent.forceget || false;
+		let mdOptions = {
+			xAdsForce: xAdsForce,
+			forceget: forceget
+		};
+		let objectid = options.objectid || options.parent.objectid || null;
+		if (objectid)
+			mdOptions.objectid = objectid;
+
+		let _oa3Legged = null;
+		Forge_DM.oauth.getOauth3Legged()
+			.then((oa3Legged) => {
+				_oa3Legged = oa3Legged;
+				let versions = new ForgeAPI.VersionsApi();
+				return (versions.getVersion2(projectId, versionId, {}, oa3Legged, oa3Legged.credentials));
+			})
+			.then((version) => {
+				const urn = utils.safeBase64encode(version.body.data.id);
+				const derivatives = new ForgeAPI.DerivativesApi();
+				if (properties)
+					return (derivatives.getModelviewProperties(urn, guid, mdOptions, _oa3Legged, _oa3Legged.credentials));
+				else if (guid)
+					return (derivatives.getModelviewMetadata(urn, guid, mdOptions, _oa3Legged, _oa3Legged.credentials));
+				else
+					return (derivatives.getMetadata(urn, {}, _oa3Legged, _oa3Legged.credentials));
 			})
 			.then((manifest) => {
 				console.log(JSON.stringify(manifest.body, null, 4));
