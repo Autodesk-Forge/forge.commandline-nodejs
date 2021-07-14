@@ -503,7 +503,142 @@ class Forge_DM {
 				console.log(JSON.stringify(version.body.data, null, 4));
 			})
 			.catch((error) => {
-				console.error('Something went wrong while requesting the version info!', error);
+				console.error('Something went wrong while requesting the version status!', error);
+			});
+	}
+
+	static async versionTranslate (projectId, versionId, options) {
+		await utils.settings();
+		projectId = projectId === '-' ? undefined : projectId;
+		projectId = projectId || utils.settings('projectid', null, {});
+		versionId = versionId || utils.settings('versionid', null, {});
+
+		let master = options.master || options.parent.master || null;
+		let force = options.force || options.parent.force || false;
+		let references = options.references || options.parent.references || false;
+		let region = options.region || options.parent.region || 'US';
+		//let compressed = (_path.extname(filename).toLowerCase() === '.zip' || _path.extname(filename).toLowerCase() === '.rar');
+		let compressed = false;
+		if (compressed && master === null)
+			return (console.error('You must provide a master file reference!'));
+
+
+		let _oa3Legged = null;
+		let jobs = null;
+		Forge_DM.oauth.getOauth3Legged()
+			.then((oa3Legged) => {
+				_oa3Legged = oa3Legged;
+				let versions = new ForgeAPI.VersionsApi();
+				return (versions.getVersion2(projectId, versionId, {}, oa3Legged, oa3Legged.credentials));
+			})
+			.then((version) => {
+				const urn = utils.safeBase64encode(version.body.data.id);
+				jobs = {
+					input: {
+						urn: urn
+					},
+					output: {
+						destination: {
+							region: region
+						},
+						formats: [
+						]
+					}
+				};
+				if (compressed) {
+					jobs.input.compressedUrn = compressed;
+					jobs.input.rootFilename = master;
+				}
+				if (references)
+					jobs.input.checkReferences = true;
+
+				let stl = options.stl || options.parent.stl || false;
+				let ascii = options.ascii || options.parent.ascii || false;
+				let fs = options.fs || options.parent.fs || false;
+				if (stl)
+					jobs.output.formats.push({
+						type: 'stl',
+						advanced: {
+							format: (ascii ? 'ascii' : 'binary'),
+							exportColor: (options.colors || options.parent.colors || false),
+							exportFileStructure: (fs ? 'multiple' : 'single')
+						}
+					});
+
+				let step = options.step || options.parent.step || false;
+				if (step)
+					jobs.output.formats.push({
+						type: 'step',
+						advanced: {
+							applicationProtocol: (options.protocol || options.parent.protocol || '214'),
+							tolerance: (options.tolerance || options.parent.tolerance || 0.001)
+						}
+					});
+
+				let iges = options.iges || options.parent.iges || false;
+				if (iges)
+					jobs.output.formats.push({
+						type: 'iges',
+						advanced: {
+							surfaceType: (options.surfaceType || options.parent.surfaceType || 'bounded'),
+							sheetType: (options.sheetType || options.parent.sheetType || 'surface'),
+							solidType: (options.solidType || options.parent.solidType || 'solid'),
+							tolerance: (options.tolerance || options.parent.tolerance || 0.001)
+						}
+					});
+
+				let fbx = options.fbx || options.parent.fbx || false;
+				if (fbx)
+					jobs.output.formats.push({
+						type: 'fbx'
+					});
+
+				let dwg = options.dwg || options.parent.dwg || false;
+				if (dwg)
+					jobs.output.formats.push({
+						type: 'dwg'
+					});
+
+				let ifc = options.ifc || options.parent.ifc || false;
+				if (ifc)
+					jobs.output.formats.push({
+						type: 'ifc'
+					});
+
+				let obj = options.obj || options.parent.obj || false;
+				let ids = options.ids || options.parent.ids || [-1];
+				if (!Array.isArray(ids)) {
+					ids = ids.split(',');
+					ids = ids.map(elt => parseInt(elt));
+				}
+				let unit = options.unit || options.parent.unit || null;
+				let guid = options.guid || options.parent.guid || null;
+				if (obj)
+					jobs.output.formats.push({
+						type: 'obj',
+						advanced: {
+							exportFileStructure: (fs ? 'multiple' : 'single'),
+							unit: unit,
+							modelGuid: guid,
+							objectIds: ids
+						}
+					});
+
+				//console.log (JSON.stringify (jobs, null, 2)) ;
+				return (jobs);
+			})
+			.then((_jobs) => {
+				if (_jobs.output.formats.length === 0)
+					throw new Error('Please specify an output format');
+
+				let md = new ForgeAPI.DerivativesApi();
+				return (md.translate(_jobs, { xAdsForce: force }, _oa3Legged, _oa3Legged.credentials));
+			})
+			.then((response) => {
+				console.log(JSON.stringify(response.body, null, 4));
+			})
+			.catch((error) => {
+				console.error('Something went wrong while requesting translation for your seed file!', error);
 			});
 	}
 
@@ -618,7 +753,43 @@ class Forge_DM {
 				console.log(JSON.stringify(manifest.body, null, 4));
 			})
 			.catch((error) => {
-				console.error('Something went wrong while requesting the manifest!', error);
+				console.error('Something went wrong while requesting the model metadata!', error);
+			});
+	}
+
+	static async versionDerivatives (projectId, versionId, derivativesURN, outputFile, options) {
+		await utils.settings();
+		projectId = projectId === '-' ? undefined : projectId;
+		projectId = projectId || utils.settings('projectid', null, {});
+		versionId = versionId || utils.settings('versionid', null, {});
+
+		let info = options.info || options.parent.info || false;
+		let uncompress = options.uncompress || options.parent.uncompress || false;
+
+		let _oa3Legged = null;
+		Forge_DM.oauth.getOauth3Legged()
+			.then((oa3Legged) => {
+				_oa3Legged = oa3Legged;
+				let versions = new ForgeAPI.VersionsApi();
+				return (versions.getVersion2(projectId, versionId, {}, oa3Legged, oa3Legged.credentials));
+			})
+			.then((version) => {
+				const urn = utils.safeBase64encode(version.body.data.id);
+				const derivatives = new ForgeAPI.DerivativesApi();
+				if (info)
+					return (derivatives.getDerivativeManifestInfo(urn, derivativesURN, {}, _oa3Legged, _oa3Legged.credentials));
+				else
+					return (derivatives.getDerivativeManifest(urn, derivativesURN, { acceptEncoding: 'gzip' }, _oa3Legged, _oa3Legged.credentials));
+			})
+			.then((response) => {
+				if (info) {
+					console.log(`Resource size: ${response.headers['content-length']} bytes`);
+					return (response.headers['content-length']);
+				} else
+					return (utils.writeFile(outputFile, response.body, null, true));
+			})
+			.catch((error) => {
+				console.error('Something went wrong while requesting the derivative file!', error);
 			});
 	}
 

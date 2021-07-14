@@ -335,8 +335,10 @@ class Forge_MD {
 		if (key)
 			filename = Forge_MD.key2filename(filename);
 		let deleteOption = options.delete || options.parent.delete || false;
+		let svf = options.svf || options.parent.svf || false;
 
 		let oa2legged = null;
+		let urn = '';
 		Forge_MD.readBucketKey(bucketKey)
 			.then((name) => {
 				bucketKey = name;
@@ -344,7 +346,7 @@ class Forge_MD {
 			})
 			.then((_oa2legged) => {
 				oa2legged = _oa2legged;
-				let urn = Forge_MD.createOSSURN(bucketKey, filename, true);
+				urn = Forge_MD.createOSSURN(bucketKey, filename, true);
 				let md = new ForgeAPI.DerivativesApi();
 				if (deleteOption)
 					return (md.deleteManifest(urn, oa2legged, oa2legged.getCredentials()));
@@ -352,7 +354,39 @@ class Forge_MD {
 					return (md.getManifest(urn, {}, oa2legged, oa2legged.getCredentials()));
 			})
 			.then((manifest) => {
-				console.log(JSON.stringify(manifest.body, null, 4));
+				manifest = manifest.body;
+				console.log(JSON.stringify(manifest, null, 4));
+
+				for (let i = 0; manifest.derivatives && i < manifest.derivatives.length; i++) {
+					let derivative = manifest.derivatives[i];
+					if (derivative.outputType === 'svf2' && svf ) {
+						let apiClient = ForgeAPI.ApiClient.instance;
+						return (apiClient.callApi(
+							'/derivativeservice/v2/manifest/{urn}', 'GET',
+							{ urn: urn }, {}, {}, {}, null,
+							['application/json'], ['application/vnd.api+json', 'application/json'], Object, oa2legged, oa2legged.getCredentials()
+						));
+					}
+				}
+				return (null);
+			})
+			.then((response) => {
+				if ( response === null )
+					return (null);
+				let manifest = response.body;
+				if (manifest.status !== 'success' || manifest.progress !== 'complete' || manifest.type !== 'design')
+					return (null); // hum, this is a shortcut, but if we have another job running such as OBJ export, it won't work (so be careful)
+				for (let i = 0; manifest.children && i < manifest.children.length; i++) {
+					let child = manifest.children[i];
+					if (child.role === 'viewable' && child.success === '100%' && child.progress === 'complete')
+						return (true);
+				}
+				return (null);
+			})
+			.then((response) => {
+				if (response === null)
+					return (null);
+				console.log('SVF is ready!');
 			})
 			.catch((error) => {
 				console.error('Something went wrong while requesting the seed file manifest!', error);
@@ -440,6 +474,71 @@ class Forge_MD {
 			})
 			.catch((error) => {
 				console.error('Something went wrong while requesting the derivative file!', error);
+			});
+	}
+
+	static async svf2ObjectIdMapping (filename, outputFile, options) {
+		await utils.settings();
+		filename = filename || utils.settings('objectKey', null, {});
+		let bucketKey = options.bucket || options.parent.bucket || null;
+		let key = options.key || options.parent.key || false;
+		if (key)
+			filename = Forge_MD.key2filename(filename);
+
+		let oa2legged = null;
+		let urn = '';
+		Forge_MD.readBucketKey(bucketKey)
+			.then((name) => {
+				bucketKey = name;
+				return (Forge_MD.oauth.getOauth2Legged());
+			})
+			.then((_oa2legged) => {
+				oa2legged = _oa2legged;
+				urn = Forge_MD.createOSSURN(bucketKey, filename, true);
+				let apiClient = new ForgeAPI.ApiClient('https://cdn.derivative.autodesk.com');
+				return (apiClient.callApi(
+					'/modeldata/manifest/{urn}', 'GET',
+					{ urn: urn }, {}, {}, {}, null,
+					['application/json'], ['application/vnd.api+json', 'application/json'], Object, oa2legged, oa2legged.getCredentials()
+				));
+			})
+			.then((manifest) => {
+				manifest = manifest.body;
+				if (manifest.status !== 'success' || manifest.progress !== 'complete' || manifest.type !== 'design')
+					return (null); // hum, this is a shortcut, but if we have another job running such as OBJ export, it won't work 9so be careful)
+				for (let i = 0; manifest.children && i < manifest.children.length; i++) {
+					let child = manifest.children[i];
+					if (child.role === 'viewable' && child.success === '100%' && child.progress === 'complete' && child.otg_manifest) {
+						const otg_manifest = child.otg_manifest;
+						const dbid_mapping_asset = otg_manifest.pdb_manifest.assets.filter((elt) => elt.type === 'DbIdMapping')[0];
+						let root_path = otg_manifest.paths.version_root;
+						let pdb_rel_path = otg_manifest.pdb_manifest.pdb_version_rel_path;
+						if ( dbid_mapping_asset.isShared ) {
+							root_path = otg_manifest.paths.shared_root;
+							pdb_rel_path = otg_manifest.pdb_manifest.pdb_shared_rel_path;
+						}
+
+						let apiClient = new ForgeAPI.ApiClient('https://cdn.derivative.autodesk.com');
+						return (apiClient.callApi(
+							'/modeldata/file/{root_path}{pdb_rel_path}{uri}', 'GET',
+							{ root_path: root_path, pdb_rel_path: pdb_rel_path, uri: dbid_mapping_asset.uri },
+							{ acmsession: urn }, {}, {}, null,
+							['application/json'], ['application/vnd.api+json', 'application/json'], null, oa2legged, oa2legged.getCredentials()
+						));
+					}
+				}
+				return (null);
+			})
+			.then((response) => {
+				if ( response === null )
+					return (null);
+				return (utils.writeFile(outputFile, response.body, null, true));
+			})
+			.then((response) => {
+				console.log(`Your SVF <-> SVF2 DB ID Mapping file was saved at: ${outputFile}`);
+			})
+			.catch((error) => {
+				console.error('Something went wrong while requesting the dbid.idx file!', error);
 			});
 	}
 

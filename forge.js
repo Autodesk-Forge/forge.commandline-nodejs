@@ -307,7 +307,8 @@ let commands = [
 		options: [
 			{ option: '-b, --bucket <bucket>', description: 'override bucket name to be used in this session' },
 			{ option: '-k, --key', description: 'filename represents the objectKey on OSS vs the filename' },
-			{ option: '-d, --delete', description: 'delete option' }
+			{ option: '-d, --delete', description: 'delete option' },
+			{ option: '-s, --svf', description: 'get the SVF manifest for a SVF2 payload' }
 		]
 	},
 	{
@@ -324,19 +325,6 @@ let commands = [
 			{ option: '-i, --objectid <id>', description: 'object id which you want to query properties for' },
 		]
 	},
-
-	// {
-	// 	name: 'objects-properties', action: ForgeMD.objectsMetadata,
-	// 	description: 'returns a list of properties for each object in an object tree. Properties are returned according to object ID and do not follow a hierarchical structure (2legged)',
-	// 	arguments: '<filename>',
-	// 	options: [
-	// 		{ option: '-b, --bucket <bucket>', description: 'override bucket name to be used in this session' },
-	// 		{ option: '-k, --key', description: 'filename represents the objectKey on OSS vs the filename' },
-	// 		{ option: '-g, --guid <guid>', description: 'returns an object tree, i.e., a hierarchical list of objects for a model view' },
-	// 		{ option: '-p, --properties', description: 'returns a list of properties for each object in an object tree. Properties are returned according to object ID and do not follow a hierarchical structure' },
-	// 	]
-	// },
-
 	{
 		name: 'objects-derivatives', action: ForgeMD.objectsDerivatives,
 		description: 'downloads the derivative specified by the derivativeurn URI parameter, which was generated from the source model specified by the urn URI parameter. To download the file, you need to specify the file’s URN, which you retrieve by calling the GET :urn/manifest endpoint.(2legged)',
@@ -485,6 +473,35 @@ let commands = [
 		arguments: '[projectId] [versionId]',
 	},
 	{
+		name: 'version-translate', action: ForgeDM.versionTranslate,
+		description: 'translate a seed file (2legged)',
+		arguments: '[projectId] [versionId]',
+		options: [
+			{ option: '-m, --master <master>', description: 'define the master file when using a compressed seed file' },
+			{ option: '-f, --force', description: 'force translation' },
+			{ option: '-c, --references', description: 'force using references configuration in the translation' },
+			{ option: '-r, --region <region>', description: 'region: US or EMEA [string, default: US]' },
+			{ option: '--step', description: 'translate to the STEP format' },
+			{ option: '--protocol <protocol>', description: '203 for configuration controlled design, 214 for core data for automotive mechanical design processes, 242 for managed model based 3D engineering. Default to 214.' },
+			{ option: '--tolerance <tolerance>', description: 'possible values: between 0 and 1 [float, default: 0.001]' },
+			{ option: '--stl', description: 'translate to the STL format' },
+			{ option: '--ascii', description: 'translate to the ASCII STL format (otherwise default to Binary)' },
+			{ option: '--colors', description: 'export colors during STL translation' },
+			{ option: '--fs', description: 'export file structure during translation (default to single file)' },
+			{ option: '--iges', description: 'translate to the IGES format' },
+			{ option: '--surfaceType <surfaceType>', description: 'possible values: bounded, trimmed, wireframe [string, default: bounded]' },
+			{ option: '--sheetType <sheetType>', description: 'export the sheet body to IGES open, shell, surface or wireframe [string, default: surface]' },
+			{ option: '--solidType <solidType>', description: 'export the solid body to IGES solid, surface or wireframe [string, default: solid]' },
+			{ option: '--fbx', description: 'translate to the Autodesk FBX format' },
+			{ option: '--dwg', description: 'translate to the AutoCAD dwg format' },
+			{ option: '--ifc', description: 'translate to the IFC format' },
+			{ option: '--obj', description: 'translate to the OBJ format' },
+			{ option: '--unit <unit>', description: 'possible values: meter, decimeter, centimeter, millimeter, micrometer, nanometer, yard, foot, inch, mil, microinch [string, default: none]' },
+			{ option: '--guid <guid>', description: 'required for geometry extractions. The model view ID (guid). Currently only valid for 3d views [string, default: none]' },
+			{ option: '--ids <ids>', description: 'list of DB IDs to export during tranlation (CSV format)' }
+		]
+	},
+	{
 		name: 'version-status', action: ForgeDM.versionStatus,
 		description: 'get item version status (3legged)',
 		arguments: '[projectId] [versionId]',
@@ -504,6 +521,26 @@ let commands = [
 			{ option: '-x, --adsForce', description: 'force retrieve the object tree even though it failed to be extracted (got 404 with error message) previously' },
 			{ option: '-f, --forceget', description: 'to force get the large resource even if it exceeded the expected maximum length (20 MB)' },
 			{ option: '-i, --objectid <id>', description: 'object id which you want to query properties for' },
+		]
+	},
+	{
+		name: 'version-derivatives', action: ForgeDM.versionDerivatives,
+		description: 'downloads the derivative specified by the derivativeurn URI parameter, which was generated from the source model specified by the urn URI parameter. To download the file, you need to specify the file’s URN, which you retrieve by calling the GET :urn/manifest endpoint.(3legged)',
+		arguments: '[projectId] [versionId] <derivativesURN> <outputFile>',
+		options: [
+			{ option: '-i, --info', description: 'information about the specified derivative, no download' },
+			{ option: '-u, --uncompress', description: 'dezip response after downloads' },
+		]
+	},
+
+	{
+		name: 'svf2-idmap', action: ForgeMD.svf2ObjectIdMapping,
+		description: 'downloads the dbid.idx file for SVF / SVF ObjectID mapping (2legged / 3legged)',
+		arguments: '<filename> <outputFile>',
+		options: [
+			{ option: '-b, --bucket <bucket>', description: 'override bucket name to be used in this session' },
+			{ option: '-k, --key', description: 'filename represents the objectKey on OSS vs the filename' },
+
 		]
 	},
 
