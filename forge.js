@@ -510,6 +510,9 @@ let commands = [
 		name: 'version-manifest', action: ForgeDM.versionManifest,
 		description: 'get item version manifest (3legged)',
 		arguments: '[projectId] [versionId]',
+		options: [
+			{ option: '-s, --svf', description: 'get the SVF manifest for a SVF2 payload' }
+		]
 	},
 	{
 		name: 'version-metadata', action: ForgeDM.versionMetadata,
@@ -542,6 +545,11 @@ let commands = [
 			{ option: '-k, --key', description: 'filename represents the objectKey on OSS vs the filename' },
 
 		]
+	},
+	{
+		name: 'version-svf2-idmap', action: ForgeDM.svf2ObjectIdMapping,
+		description: 'downloads the dbid.idx file for SVF / SVF ObjectID mapping (2legged / 3legged)',
+		arguments: '<projectId> <versionId> <outputFile>',
 	},
 
 	{

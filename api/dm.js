@@ -56,7 +56,7 @@ class Forge_DM {
 					}
 				}
 				let hubsForTree = [];
-				if ( json && raw ) {
+				if (json && raw) {
 					hubsForTree = hubs;
 				} else {
 					hubs.body.data.forEach((hub) => {
@@ -105,7 +105,7 @@ class Forge_DM {
 		hubId = hubId || utils.settings('hubid', null, {});
 		let json = options.json || options.parent.json || false;
 		let raw = options.raw || options.parent.raw || false;
-		
+
 		Forge_DM.oauth.getOauth3Legged()
 			.then((oa3Legged) => {
 				let hubs = new ForgeAPI.HubsApi();
@@ -130,14 +130,13 @@ class Forge_DM {
 					};
 					console.log(JSON.stringify(output, null, 4));
 				}
-				
+
 				return (utils.writeFile(utils.data('hub-' + hubId), details));
 			})
 			.catch((error) => {
 				console.log(error);
 			});
 	}
-
 
 	// projects
 	static async projectsLs (hubId, options) {
@@ -163,7 +162,7 @@ class Forge_DM {
 			})
 			.then((projects) => {
 				let projectsForTree = [];
-				if ( json && raw ) {
+				if (json && raw) {
 					projectsForTree = projects;
 				} else {
 					projects.body.data.forEach((project) => {
@@ -670,7 +669,7 @@ class Forge_DM {
 					console.log('Version: ' + manifest.version);
 				for (let i = 0; manifest.derivatives && i < manifest.derivatives.length; i++) {
 					let derivative = manifest.derivatives[i];
-					if ( derivative.overrideOutputType )
+					if (derivative.overrideOutputType)
 						console.log(`\t${derivative.outputType} [${derivative.overrideOutputType}]: ${derivative.status} - ${derivative.progress}`);
 					else
 						console.log(`\t${derivative.outputType}: ${derivative.status} - ${derivative.progress}`);
@@ -691,7 +690,10 @@ class Forge_DM {
 		projectId = projectId || utils.settings('projectid', null, {});
 		versionId = versionId || utils.settings('versionid', null, {});
 
+		let svf = options.svf || options.parent.svf || false;
+
 		let _oa3Legged = null;
+		let urn = '';
 		Forge_DM.oauth.getOauth3Legged()
 			.then((oa3Legged) => {
 				_oa3Legged = oa3Legged;
@@ -699,12 +701,44 @@ class Forge_DM {
 				return (versions.getVersion2(projectId, versionId, {}, oa3Legged, oa3Legged.credentials));
 			})
 			.then((version) => {
-				const urn = utils.safeBase64encode(version.body.data.id);
+				urn = utils.safeBase64encode(version.body.data.id);
 				const derivatives = new ForgeAPI.DerivativesApi();
 				return (derivatives.getManifest(urn, {}, _oa3Legged, _oa3Legged.credentials));
 			})
 			.then((manifest) => {
-				console.log(JSON.stringify(manifest.body, null, 4));
+				manifest = manifest.body;
+				console.log(JSON.stringify(manifest, null, 4));
+
+				for (let i = 0; manifest.derivatives && i < manifest.derivatives.length; i++) {
+					let derivative = manifest.derivatives[i];
+					if (derivative.outputType === 'svf2' && svf) {
+						let apiClient = ForgeAPI.ApiClient.instance;
+						return (apiClient.callApi(
+							'/derivativeservice/v2/manifest/{urn}', 'GET',
+							{ urn: urn }, {}, {}, {}, null,
+							['application/json'], ['application/vnd.api+json', 'application/json'], Object, oa2legged, oa2legged.getCredentials()
+						));
+					}
+				}
+				return (null);
+			})
+			.then((response) => {
+				if (response === null)
+					return (null);
+				let manifest = response.body;
+				if (manifest.status !== 'success' || manifest.progress !== 'complete' || manifest.type !== 'design')
+					return (null); // hum, this is a shortcut, but if we have another job running such as OBJ export, it won't work (so be careful)
+				for (let i = 0; manifest.children && i < manifest.children.length; i++) {
+					let child = manifest.children[i];
+					if (child.role === 'viewable' && child.success === '100%' && child.progress === 'complete')
+						return (true);
+				}
+				return (null);
+			})
+			.then((response) => {
+				if (response === null)
+					return (null);
+				console.log('SVF is ready!');
 			})
 			.catch((error) => {
 				console.error('Something went wrong while requesting the manifest!', error);
@@ -790,6 +824,70 @@ class Forge_DM {
 			})
 			.catch((error) => {
 				console.error('Something went wrong while requesting the derivative file!', error);
+			});
+	}
+
+	static async svf2ObjectIdMapping (projectId, versionId, outputFile, options) {
+		await utils.settings();
+		projectId = projectId === '-' ? undefined : projectId;
+		projectId = projectId || utils.settings('projectid', null, {});
+		versionId = versionId || utils.settings('versionid', null, {});
+
+		let _oa3Legged = null;
+		let urn = '';
+		Forge_DM.oauth.getOauth3Legged()
+			.then((oa3Legged) => {
+				_oa3Legged = oa3Legged;
+				let versions = new ForgeAPI.VersionsApi();
+				return (versions.getVersion2(projectId, versionId, {}, oa3Legged, oa3Legged.credentials));
+			})
+			.then((version) => {
+				urn = utils.safeBase64encode(version.body.data.id);
+				let apiClient = new ForgeAPI.ApiClient('https://cdn.derivative.autodesk.com');
+				return (apiClient.callApi(
+					'/modeldata/manifest/{urn}', 'GET',
+					{ urn: urn }, {}, {}, {}, null,
+					['application/json'], ['application/vnd.api+json', 'application/json'], Object, _oa3Legged, _oa3Legged.credentials
+				));
+			})
+			.then((manifest) => {
+				manifest = manifest.body;
+				if (manifest.status !== 'success' || manifest.progress !== 'complete' || manifest.type !== 'design')
+					return (null); // hum, this is a shortcut, but if we have another job running such as OBJ export, it won't work 9so be careful)
+				for (let i = 0; manifest.children && i < manifest.children.length; i++) {
+					let child = manifest.children[i];
+					if (child.role === 'viewable' && child.success === '100%' && child.progress === 'complete' && child.otg_manifest) {
+						const otg_manifest = child.otg_manifest;
+						const dbid_mapping_asset = otg_manifest.pdb_manifest.assets.filter((elt) => elt.type === 'DbIdMapping')[0];
+						let root_path = otg_manifest.paths.version_root;
+						let pdb_rel_path = otg_manifest.pdb_manifest.pdb_version_rel_path;
+						if (dbid_mapping_asset.isShared) {
+							root_path = otg_manifest.paths.shared_root;
+							pdb_rel_path = otg_manifest.pdb_manifest.pdb_shared_rel_path;
+						}
+
+						let apiClient = new ForgeAPI.ApiClient('https://cdn.derivative.autodesk.com');
+						return (apiClient.callApi(
+							'/modeldata/file/{root_path}{pdb_rel_path}{uri}', 'GET',
+							{ root_path: root_path, pdb_rel_path: pdb_rel_path, uri: dbid_mapping_asset.uri },
+							{ acmsession: urn }, {}, {}, null,
+							['application/json'], ['application/vnd.api+json', 'application/json'], null, _oa3Legged, _oa3Legged.credentials
+						));
+					}
+				}
+				return (null);
+			})
+			.then((response) => {
+				if (response === null)
+					return (null);
+				return (utils.writeFile(outputFile, response.body, null, true));
+			})
+			.then((response) => {
+				console.log(`Your SVF <-> SVF2 DB ID Mapping file was saved at: ${outputFile}`);
+			})
+
+			.catch((error) => {
+				console.error('Something went wrong while requesting the model metadata!', error);
 			});
 	}
 
