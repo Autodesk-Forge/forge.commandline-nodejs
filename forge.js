@@ -551,6 +551,11 @@ let commands = [
 		description: 'downloads the dbid.idx file for SVF / SVF ObjectID mapping (2legged / 3legged)',
 		arguments: '<projectId> <versionId> <outputFile>',
 	},
+	{
+		name: 'decode-svf2-idmap', action: ForgeMD.decodeSvf2ObjectIdMapping,
+		description: 'decode the dbid.idx file',
+		arguments: '<filename>',
+	},
 
 	{
 		name: 'hubs-search', action: ForgeDM.searchAndSet,

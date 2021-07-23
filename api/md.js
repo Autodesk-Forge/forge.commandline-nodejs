@@ -523,7 +523,7 @@ class Forge_MD {
 							'/modeldata/file/{root_path}{pdb_rel_path}{uri}', 'GET',
 							{ root_path: root_path, pdb_rel_path: pdb_rel_path, uri: dbid_mapping_asset.uri },
 							{ acmsession: urn }, {}, {}, null,
-							['application/json'], ['application/vnd.api+json', 'application/json'], null, oa2legged, oa2legged.getCredentials()
+							[], ['application/octet-stream'], null, oa2legged, oa2legged.getCredentials()
 						));
 					}
 				}
@@ -540,6 +540,21 @@ class Forge_MD {
 			.catch((error) => {
 				console.error('Something went wrong while requesting the dbid.idx file!', error);
 			});
+	}
+
+	static async decodeSvf2ObjectIdMapping (filename, options) { // eslint-disable-line no-unused-vars
+		let idx = await utils.readFile (filename);
+		// if (utils.isGZip (idx))
+		// 	idx = await utils.gunzip(idx, true);
+		try {
+			idx = await utils.gunzip(idx, true);
+		} catch (ex) {
+		}
+		const dbidIdx = new Uint32Array(idx.buffer, idx.byteOffset, idx.byteLength / Uint32Array.BYTES_PER_ELEMENT);
+		idx = [];
+		for (const value of dbidIdx.values()) //   array [ svf_id ] == svf2_id  //  array.indexOf ( svf2_id ) == svf_id
+			idx.push(value);
+		console.log(JSON.stringify(idx, null, 4));
 	}
 
 	static readBucketKey (bucketKeyDefault) {

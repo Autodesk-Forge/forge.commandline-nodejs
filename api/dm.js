@@ -831,6 +831,7 @@ class Forge_DM {
 		await utils.settings();
 		projectId = projectId === '-' ? undefined : projectId;
 		projectId = projectId || utils.settings('projectid', null, {});
+		versionId = versionId === '-' ? undefined : versionId;
 		versionId = versionId || utils.settings('versionid', null, {});
 
 		let _oa3Legged = null;
@@ -871,7 +872,7 @@ class Forge_DM {
 							'/modeldata/file/{root_path}{pdb_rel_path}{uri}', 'GET',
 							{ root_path: root_path, pdb_rel_path: pdb_rel_path, uri: dbid_mapping_asset.uri },
 							{ acmsession: urn }, {}, {}, null,
-							['application/json'], ['application/vnd.api+json', 'application/json'], null, _oa3Legged, _oa3Legged.credentials
+							[], ['application/octet-stream'], null, _oa3Legged, _oa3Legged.credentials
 						));
 					}
 				}
