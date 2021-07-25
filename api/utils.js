@@ -333,6 +333,12 @@ class utils {
 		return (buf[0] === 0x78 && (buf[1] === 1 || buf[1] === 0x9c || buf[1] === 0xda));
 	}
 
+	static isGZip (buf) {
+		if (!buf || buf.length < 2)
+			return (false);
+		return (buf[0] === 0x1f && buf[1] === 0x8b);
+	}
+
 	static _Base64encode (st) {
 		return (st
 			.replace(/\+/g, '-') // Convert '+' to '-'

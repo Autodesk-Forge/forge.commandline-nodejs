@@ -46,7 +46,9 @@ class Forge_oauth {
 	}
 
 	static localToken (token, refreshToken, options) { // eslint-disable-line no-unused-vars
-		utils.json('credentials')
+		const is3legged = refreshToken !== undefined && refreshToken !== null;
+		const filename = is3legged ? 'credentials3' : 'credentials2';
+		utils.json(filename)
 			.then((credentials) => {
 				if (token)
 					credentials.access_token = token;
@@ -59,8 +61,8 @@ class Forge_oauth {
 				let dt = moment().add(credentials.expires_in, 'seconds');
 				if (token) {
 					credentials.expires_at = dt.toString();
-					console.log(utils.data('credentials'));
-					return (utils.writeFile(utils.data('credentials'), credentials));
+					console.log(utils.data(filename));
+					return (utils.writeFile(utils.data(filename), credentials));
 				} else {
 					return (credentials);
 				}
@@ -79,7 +81,7 @@ class Forge_oauth {
 	}
 
 	static _2leggedRelease (options) { // eslint-disable-line no-unused-vars
-		utils.unlink(utils.data('credentials'));
+		utils.unlink(utils.data('credentials2'));
 		console.log('Your 2 legged token has been released!');
 	}
 
@@ -90,20 +92,20 @@ class Forge_oauth {
 			.then((oa2legged) => {
 				_oa2legged = oa2legged;
 				// 	//let oa2Legged = new ForgeAPI.AuthClientTwoLegged(Forge_oauth.settings.clientId, Forge_oauth.settings.clientSecret, Forge_oauth.settings.opts.scope.split(' '), true);
-				// 	//return (ossBuckets.getBuckets(opts, oa2legged, oa2legged.getCredentials()));
+				// 	//return (ossBuckets.getBuckets(opts, oa2legged, oa2legged.getCredentials('2 legged')));
 				// 	const ModelDerivative = new ForgeAPI.DerivativesApi();
 				// 	return (ModelDerivative.apiClient.callApi(
 				// 		'/authentication/v2/keys', 'GET',
 				// 		{}, {}, {},
 				// 		{}, null,
 				// 		[], ['application/vnd.api+json', 'application/json'], null,
-				// 		oa2legged, oa2legged.getCredentials()
+				// 		oa2legged, oa2legged.getCredentials('2 legged')
 				// 	));
 				// })
 				// .then((result) => {
 				// https://forge.autodesk.com/en/docs/oauth/v2/developers_guide/asymmetric-encryption/#validate-access-token
 
-				const token = _oa2legged.getCredentials().access_token;
+				const token = _oa2legged.getCredentials('2 legged').access_token;
 				const well_known_jwks_url = 'https://developer.api.autodesk.com/authentication/v2/keys';
 				const decoded = jwt.decode(token, { complete: true });
 				//console.log(`decoded ${JSON.stringify(decoded, null, 4)}`);
@@ -161,7 +163,8 @@ class Forge_oauth {
 		if (implicit) {
 			uri = uri.replace('response_type=code', 'response_type=token');
 		}
-		//console.log (uri);
+		
+		console.log (`Opening ${uri}`);
 		await opn(
 			uri
 			/*, { app: [
@@ -221,7 +224,7 @@ class Forge_oauth {
 
 	static _3legged_refresh () {
 		let oa3Legged = new ForgeAPI.AuthClientThreeLegged(Forge_oauth.settings.clientId, Forge_oauth.settings.clientSecret, Forge_oauth.settings.callback, Forge_oauth.settings.opts.scope.split(' '), true);
-		Forge_oauth.getCredentials()
+		Forge_oauth.getCredentials('3 legged')
 			.then((credentials) => {
 				return (oa3Legged.refreshToken(credentials));
 			})
@@ -229,7 +232,7 @@ class Forge_oauth {
 				return (Forge_oauth.setCredentials(credentials, '3 legged'));
 			})
 			.catch((error) => {
-				//utils.unlink (utils.data ('credentials')) ;
+				//utils.unlink (utils.data ('credentials3')) ;
 				console.error('Failed to refresh your credentials', error);
 			});
 	}
@@ -246,7 +249,7 @@ class Forge_oauth {
 					fulfill(oa3Legged);
 				})
 				.catch((error) => {
-					//utils.unlink (utils.data ('credentials')) ;
+					//utils.unlink (utils.data ('credentials3')) ;
 					console.error('Failed to get your credentials', error);
 					reject(error);
 				});
@@ -307,7 +310,7 @@ class Forge_oauth {
 	}
 
 	static _3legged_release (options) { // eslint-disable-line no-unused-vars
-		utils.unlink(utils.data('credentials'));
+		utils.unlink(utils.data('credentials3'));
 		console.error('Your 3 legged token has been released!');
 	}
 
@@ -332,17 +335,23 @@ class Forge_oauth {
 		}
 	}
 
-	static getCredentials () {
-		return (utils.json('credentials'));
+	static getCredentials (type) {
+		type = type || '2 legged';
+		const is3legged = type === '3 legged';
+		const filename = is3legged ? 'credentials3' : 'credentials2';
+		return (utils.json(filename));
 	}
 
 	static setCredentials (credentials, type) {
 		type = type || '2 legged';
+		const is3legged = type === '3 legged';
+		const filename = is3legged ? 'credentials3' : 'credentials2';
+
 		let token = credentials.token_type + ' ' + credentials.access_token;
 		console.log('Your new ' + type + ' access token is: ' + token);
 		let dt = moment().add(credentials.expires_in, 'seconds');
 		console.log('Expires at: ' + dt.format('MM/DD/YYYY, hh:mm:ss a'));
-		return (utils.writeFile(utils.data('credentials'), credentials));
+		return (utils.writeFile(utils.data(filename), credentials));
 	}
 
 	static expired (expires_at) {
@@ -361,7 +370,7 @@ class Forge_oauth {
 					fulfill(oa2Legged);
 				})
 				.catch((error) => {
-					//utils.unlink (utils.data ('credentials')) ;
+					//utils.unlink (utils.data ('credentials2')) ;
 					console.error('Failed to get your new access token', error);
 					reject(error);
 				});
@@ -370,7 +379,7 @@ class Forge_oauth {
 
 	static getOauth2Legged () {
 		return (new Promise((fulfill, reject) => {
-			Forge_oauth.getCredentials()
+			Forge_oauth.getCredentials('2 legged')
 				.then((credentials) => {
 					if (credentials.refresh_token)
 						throw new Error('This is a 3 legged token!'); // Get a new 2 legged one instead!
@@ -386,7 +395,7 @@ class Forge_oauth {
 							fulfill(client);
 						})
 						.catch((err2) => {
-							//utils.unlink (utils.data ('credentials')) ;
+							//utils.unlink (utils.data ('credentials2')) ;
 							reject(err2);
 						});
 				});
@@ -395,7 +404,7 @@ class Forge_oauth {
 
 	static getOauth3Legged () {
 		return (new Promise((fulfill, reject) => {
-			Forge_oauth.getCredentials()
+			Forge_oauth.getCredentials('3 legged')
 				.then((credentials) => {
 					if (!credentials.refresh_token)
 						throw new Error('This is a 2 legged token!');
@@ -410,7 +419,7 @@ class Forge_oauth {
 								fulfill(oa3Legged);
 							})
 							.catch((error) => {
-								//utils.unlink (utils.data ('credentials')) ;
+								//utils.unlink (utils.data ('credentials3')) ;
 								console.error('Failed to refresh your credentials', error);
 								reject(error);
 							});
