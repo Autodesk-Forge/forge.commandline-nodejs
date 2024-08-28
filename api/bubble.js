@@ -42,7 +42,7 @@ const https = require('https');
 
 class svfBubble {
 
-	constructor (progress) {
+	constructor(progress) {
 		this._outPath = './';
 		this._token = null;
 		this._progress = progress;
@@ -53,7 +53,7 @@ class svfBubble {
 		this._errors = []; // ''
 	}
 
-	downloadBubble (urn, outPath, token) {
+	downloadBubble(urn, outPath, token) {
 		let self = this;
 		if (token) {
 			self._token = new ForgeAPI.AuthClientTwoLegged('__', '__', ['data:read']);
@@ -99,11 +99,11 @@ class svfBubble {
 		}));
 	}
 
-	listAllDerivativeFiles (bubble, callback) {
+	listAllDerivativeFiles(bubble, callback) {
 		let self = this;
 		// First get all the root derivative files from the bubble
 		let res = [];
-		(function traverse (node, parent) {
+		(function traverse(node, parent) {
 			if (node.role === 'Autodesk.CloudPlatform.PropertyDatabase' // eslint-disable-line no-multi-spaces
 				|| node.role === 'Autodesk.CloudPlatform.DesignDescription'
 				|| node.role === 'Autodesk.CloudPlatform.IndexableContent'
@@ -194,7 +194,7 @@ class svfBubble {
 		let countedPropDb = {};
 
 		let processOne = () => {
-			function onProgress () {
+			function onProgress() {
 				done++;
 				console.log('Manifests done ', done);
 				if (done === res.length) {
@@ -325,7 +325,7 @@ class svfBubble {
 			processOne();
 	}
 
-	downloadAllDerivativeFiles (fileList, destDir, callback) {
+	downloadAllDerivativeFiles(fileList, destDir, callback) {
 		let self = this;
 		let succeeded = 0;
 		let failed = 0;
@@ -389,7 +389,7 @@ class svfBubble {
 			downloadOneItem();
 	}
 
-	extractPathsFromGraphicsUrn (urn, result) {
+	extractPathsFromGraphicsUrn(urn, result) {
 		// This needs to be done for encoded OSS URNs, because the paths
 		// in there are url encoded and lose the / character.
 		urn = decodeURIComponent(urn);
@@ -407,7 +407,7 @@ class svfBubble {
 		result.rootFileName = urn.slice(urn.lastIndexOf('/') + 1);
 	}
 
-	getManifest (urn) {
+	getManifest(urn) {
 		if (urn === undefined || urn === null)
 			return (Promise.reject('Missing the required parameter {urn} when calling getManifest'));
 		let ModelDerivative = new ForgeAPI.DerivativesApi();
@@ -420,7 +420,7 @@ class svfBubble {
 		));
 	}
 
-	downloadItem (urn) {
+	downloadItem(urn) {
 		if (urn === undefined || urn === null)
 			return (Promise.reject('Missing the required parameter {urn} when calling getManifest'));
 		let ModelDerivative = new ForgeAPI.DerivativesApi();
@@ -433,7 +433,7 @@ class svfBubble {
 		));
 	}
 
-	openWriteStream (outFile) {
+	openWriteStream(outFile) {
 		let wstream = null;
 		if (outFile) {
 			try {
@@ -446,7 +446,7 @@ class svfBubble {
 		return (wstream);
 	}
 
-	getItem (itemUrn, outFile, callback) {
+	getItem(itemUrn, outFile, callback) {
 		let self = this;
 		this.downloadItem(itemUrn)
 			.then((response) => {
@@ -469,7 +469,7 @@ class svfBubble {
 			});
 	}
 
-	getThumbnail (urn, guid, sz, outFile, callback) {
+	getThumbnail(urn, guid, sz, outFile, callback) {
 		let self = this;
 		let ModelDerivative = new ForgeAPI.DerivativesApi();
 		//console.log ('Thumbnail URN: ', urn, 'GUID: ', guid) ;
@@ -586,7 +586,7 @@ class svfBubble {
 
 class otgBubble {
 
-	constructor (progress) {
+	constructor(progress) {
 		this._urn = '';
 		this._outPath = './';
 		this._token = null;
@@ -599,51 +599,51 @@ class otgBubble {
 		this._urns = [];
 	}
 
-	get host () { return ('https://otg.autodesk.com'); }
+	get host() { return ('https://otg.autodesk.com'); }
 
-	get urn () { return (this._urn); }
-	set urn (urn) { this._urn = urn; }
+	get urn() { return (this._urn); }
+	set urn(urn) { this._urn = urn; }
 
-	get manifest () { return (this._manifest); }
-	set manifest (manifest) { this._manifest = manifest; }
+	get manifest() { return (this._manifest); }
+	set manifest(manifest) { this._manifest = manifest; }
 
-	get otg_manifest () { return (this._otg_manifest); }
-	set otg_manifest (manifest) { this._otg_manifest = manifest; }
+	get otg_manifest() { return (this._otg_manifest); }
+	set otg_manifest(manifest) { this._otg_manifest = manifest; }
 
-	get account_id () { return (this.otg_manifest.account_id); }
-	get project_id () { return (this.otg_manifest.project_id); }
+	get account_id() { return (this.otg_manifest.account_id); }
+	get project_id() { return (this.otg_manifest.project_id); }
 
-	get global_root () { return (this.otg_manifest.paths.global_root); }
-	get global_sharding () { return (this.otg_manifest.paths.global_sharding); }
-	get version_root () { return (this.otg_manifest.paths.version_root); }
-	get shared_root () { return (this.otg_manifest.paths.shared_root); }
-	get region () { return (this.otg_manifest.paths.region); }
+	get global_root() { return (this.otg_manifest.paths.global_root); }
+	get global_sharding() { return (this.otg_manifest.paths.global_sharding); }
+	get version_root() { return (this.otg_manifest.paths.version_root); }
+	get shared_root() { return (this.otg_manifest.paths.shared_root); }
+	get region() { return (this.otg_manifest.paths.region); }
 
-	get local_version_root () { return (path.join(this._outPath, this.otg_manifest.paths.version_root.substring(this.otg_manifest.paths.shared_root.length))); }
-	get local_shared_root () { return (this._outPath); }
-	set local_shared_root (outPath) { this._outPath = outPath; }
-	get remote_root_path () { return (this.otg_manifest.paths.version_root.substring(this.otg_manifest.paths.shared_root.length)); }
+	get local_version_root() { return (path.join(this._outPath, this.otg_manifest.paths.version_root.substring(this.otg_manifest.paths.shared_root.length))); }
+	get local_shared_root() { return (this._outPath); }
+	set local_shared_root(outPath) { this._outPath = outPath; }
+	get remote_root_path() { return (this.otg_manifest.paths.version_root.substring(this.otg_manifest.paths.shared_root.length)); }
 
-	geometry_urn (viewId) { return (this.OTG_models[viewId].manifest.shared_assets.geometry); }
-	materials_urn (viewId) { return (this.OTG_models[viewId].manifest.shared_assets.materials); }
-	textures_urn (viewId) { return (this.OTG_models[viewId].manifest.shared_assets.textures); }
+	geometry_urn(viewId) { return (this.OTG_models[viewId].manifest.shared_assets.geometry); }
+	materials_urn(viewId) { return (this.OTG_models[viewId].manifest.shared_assets.materials); }
+	textures_urn(viewId) { return (this.OTG_models[viewId].manifest.shared_assets.textures); }
 
-	local_geometry_root (viewId) { return (path.join(this._outPath, 'cdn', this.geometry_urn(viewId).substring(this.global_root.length))); }
-	local_materials_root (viewId) { return (path.join(this._outPath, 'cdn', this.materials_urn(viewId).substring(this.global_root.length))); }
-	local_textures_root (viewId) { return (path.join(this._outPath, 'cdn', this.textures_urn(viewId).substring(this.global_root.length))); }
+	local_geometry_root(viewId) { return (path.join(this._outPath, 'cdn', this.geometry_urn(viewId).substring(this.global_root.length))); }
+	local_materials_root(viewId) { return (path.join(this._outPath, 'cdn', this.materials_urn(viewId).substring(this.global_root.length))); }
+	local_textures_root(viewId) { return (path.join(this._outPath, 'cdn', this.textures_urn(viewId).substring(this.global_root.length))); }
 
-	numFragments (viewId) { return (this.OTG_models[viewId].stats.num_fragments); }
-	numPolys (viewId) { return (this.OTG_models[viewId].stats.num_polys); }
-	numMaterials (viewId) { return (this.OTG_models[viewId].stats.num_materials); }
-	numGeoms (viewId) { return (this.OTG_models[viewId].stats.num_geoms); }
-	numTextures (viewId) { return (this.OTG_models[viewId].stats.num_textures); }
+	numFragments(viewId) { return (this.OTG_models[viewId].stats.num_fragments); }
+	numPolys(viewId) { return (this.OTG_models[viewId].stats.num_polys); }
+	numMaterials(viewId) { return (this.OTG_models[viewId].stats.num_materials); }
+	numGeoms(viewId) { return (this.OTG_models[viewId].stats.num_geoms); }
+	numTextures(viewId) { return (this.OTG_models[viewId].stats.num_textures); }
 
 	// get OTG_models () { views.map ((elt) => { return (elt.urn) ; }) }
 	// get OTG_models_keys () { Object.keys (otg_manifest.views) }
-	get OTG_models () { return (this._otg_models); }
-	set OTG_models (val) { this._otg_models = val; }
+	get OTG_models() { return (this._otg_models); }
+	set OTG_models(val) { this._otg_models = val; }
 
-	downloadBubble (urn, outPath, token) {
+	downloadBubble(urn, outPath, token) {
 		let self = this;
 		self.local_shared_root = outPath;
 		self.urn = urn;
@@ -799,7 +799,7 @@ class otgBubble {
 		}));
 	}
 
-	getManifest (urn) {
+	getManifest(urn) {
 		if (urn === undefined || urn === null)
 			return (Promise.reject('Missing the required parameter {urn} when calling getManifest'));
 		let ModelDerivative = new ForgeAPI.DerivativesApi();
@@ -814,7 +814,7 @@ class otgBubble {
 		));
 	}
 
-	getViewModelManifest (fileurn, elt, modelurn, outPath) {
+	getViewModelManifest(fileurn, elt, modelurn, outPath) {
 		const host = this.host;
 		return (new Promise((fulfill, reject) => {
 			if (!fileurn || !modelurn)
@@ -847,11 +847,11 @@ class otgBubble {
 	}
 
 	// Reference: https://zenhax.com/viewtopic.php?t=27
-	static isGzip (buf) {
+	static isGzip(buf) {
 		return (buf[0] === 0x1f /*31*/ && buf[1] === 0x8b /*139*/);
 	}
 
-	getViewModelBinary (fileurn, key, elt, modelurn, outFile) {
+	getViewModelBinary(fileurn, key, elt, modelurn, outFile) {
 		const host = this.host;
 		return (new Promise((fulfill, reject) => {
 			if (!fileurn || !modelurn)
@@ -911,7 +911,7 @@ class otgBubble {
 		}));
 	}
 
-	getViewModelJson (fileurn, key, elt, modelurn, outFile) {
+	getViewModelJson(fileurn, key, elt, modelurn, outFile) {
 		const host = this.host;
 		return (new Promise((fulfill, reject) => {
 			if (!fileurn || !modelurn)
@@ -942,14 +942,14 @@ class otgBubble {
 		}));
 	}
 
-	getViewModelFile (fileurn, key, elt, modelurn, outFile) {
+	getViewModelFile(fileurn, key, elt, modelurn, outFile) {
 		if (path.extname(outFile) === '.json')
 			return (this.getViewModelJson(fileurn, key, elt, modelurn, path.resolve(outFile)));
 		else
 			return (this.getViewModelBinary(fileurn, key, elt, modelurn, path.resolve(outFile)));
 	}
 
-	decomposeHashFile (content, sharding) {
+	decomposeHashFile(content, sharding) {
 		let byteStride = content[1] << 8 | content[0];
 		if (byteStride % 4) {
 			console.error(`Expected byte size to be multiple of 4, but got ${byteStride}`);
@@ -972,7 +972,7 @@ class otgBubble {
 		return (results);
 	}
 
-	getSharedAssetFile (fileurn, elt, modelurn, outPath) {
+	getSharedAssetFile(fileurn, elt, modelurn, outPath) {
 		let parts = fileurn.split('/');
 		let account_id = parts[1];
 		let type = parts[2];
@@ -1046,7 +1046,7 @@ class otgBubble {
 		}));
 	}
 
-	getSharedAssetJson (fileurn, elt, modelurn, outPath) {
+	getSharedAssetJson(fileurn, elt, modelurn, outPath) {
 		let parts = fileurn.split('/');
 		let account_id = parts[1];
 		let type = parts[2];
@@ -1084,7 +1084,7 @@ class otgBubble {
 		}));
 	}
 
-	static gunzip (res, bRaw = false) {
+	static gunzip(res, bRaw = false) {
 		return (new Promise((fulfill, reject) => { // eslint-disable-line no-unused-vars
 			zlib.gunzip(res, (err, dezipped) => {
 				if (err)
@@ -1105,7 +1105,7 @@ class otgBubble {
 
 class svf2Bubble {
 
-	constructor (progress, region = 'US') {
+	constructor(progress, region = 'US') {
 		this._urn = '';
 		this._outPath = './';
 		this._token = null;
@@ -1120,53 +1120,53 @@ class svf2Bubble {
 	}
 
 	//get host () { return ('https://cdn.derivative.autodesk.com' + (this._region === 'EMEA' ? '/regions/eu' : '')); }
-	get host () { return ('https://cdn.derivative.autodesk.com'); }
+	get host() { return ('https://cdn.derivative.autodesk.com'); }
 
-	get urn () { return (this._urn); }
-	set urn (urn) { this._urn = urn; }
+	get urn() { return (this._urn); }
+	set urn(urn) { this._urn = urn; }
 
-	get manifest () { return (this._manifest); }
-	set manifest (manifest) { this._manifest = manifest; }
+	get manifest() { return (this._manifest); }
+	set manifest(manifest) { this._manifest = manifest; }
 
-	get otg_manifest () { return (this._otg_manifest); }
-	set otg_manifest (manifest) { this._otg_manifest = manifest; }
+	get otg_manifest() { return (this._otg_manifest); }
+	set otg_manifest(manifest) { this._otg_manifest = manifest; }
 
-	get account_id () { return (this.otg_manifest.account_id); }
-	get project_id () { return (this.otg_manifest.project_id); }
+	get account_id() { return (this.otg_manifest.account_id); }
+	get project_id() { return (this.otg_manifest.project_id); }
 
-	get global_root () { return (this.otg_manifest.paths.global_root); }
-	get global_sharding () { return (this.otg_manifest.paths.global_sharding); }
-	get version_root () { return (this.otg_manifest.paths.version_root); }
-	get shared_root () { return (this.otg_manifest.paths.shared_root); }
-	get region () { return (this.otg_manifest.paths.region); }
+	get global_root() { return (this.otg_manifest.paths.global_root); }
+	get global_sharding() { return (this.otg_manifest.paths.global_sharding); }
+	get version_root() { return (this.otg_manifest.paths.version_root); }
+	get shared_root() { return (this.otg_manifest.paths.shared_root); }
+	get region() { return (this.otg_manifest.paths.region); }
 
-	get local_version_root () { return (path.join(this._outPath, this.otg_manifest.paths.version_root.substring(this.otg_manifest.paths.shared_root.length))); }
-	get local_shared_root () { return (this._outPath); }
-	set local_shared_root (outPath) { this._outPath = outPath; }
-	get remote_root_path () { return (this.otg_manifest.paths.version_root.substring(this.otg_manifest.paths.shared_root.length)); }
+	get local_version_root() { return (path.join(this._outPath, this.otg_manifest.paths.version_root.substring(this.otg_manifest.paths.shared_root.length))); }
+	get local_shared_root() { return (this._outPath); }
+	set local_shared_root(outPath) { this._outPath = outPath; }
+	get remote_root_path() { return (this.otg_manifest.paths.version_root.substring(this.otg_manifest.paths.shared_root.length)); }
 
-	geometry_urn (viewId) { return (this.OTG_models[viewId].manifest.shared_assets.geometry); }
-	materials_urn (viewId) { return (this.OTG_models[viewId].manifest.shared_assets.materials); }
-	textures_urn (viewId) { return (this.OTG_models[viewId].manifest.shared_assets.textures); }
+	geometry_urn(viewId) { return (this.OTG_models[viewId].manifest.shared_assets.geometry); }
+	materials_urn(viewId) { return (this.OTG_models[viewId].manifest.shared_assets.materials); }
+	textures_urn(viewId) { return (this.OTG_models[viewId].manifest.shared_assets.textures); }
 
-	local_geometry_root (viewId) { return (path.join(this._outPath, 'cdn', this.geometry_urn(viewId).substring(this.global_root.length))); }
-	local_materials_root (viewId) { return (path.join(this._outPath, 'cdn', this.materials_urn(viewId).substring(this.global_root.length))); }
-	local_textures_root (viewId) { return (path.join(this._outPath, 'cdn', this.textures_urn(viewId).substring(this.global_root.length))); }
+	local_geometry_root(viewId) { return (path.join(this._outPath, 'cdn', this.geometry_urn(viewId).substring(this.global_root.length))); }
+	local_materials_root(viewId) { return (path.join(this._outPath, 'cdn', this.materials_urn(viewId).substring(this.global_root.length))); }
+	local_textures_root(viewId) { return (path.join(this._outPath, 'cdn', this.textures_urn(viewId).substring(this.global_root.length))); }
 
-	numFragments (viewId) { return (this.OTG_models[viewId].stats.num_fragments); }
-	numPolys (viewId) { return (this.OTG_models[viewId].stats.num_polys); }
-	numMaterials (viewId) { return (this.OTG_models[viewId].stats.num_materials); }
-	numGeoms (viewId) { return (this.OTG_models[viewId].stats.num_geoms); }
-	numTextures (viewId) { return (this.OTG_models[viewId].stats.num_textures); }
+	numFragments(viewId) { return (this.OTG_models[viewId].stats.num_fragments); }
+	numPolys(viewId) { return (this.OTG_models[viewId].stats.num_polys); }
+	numMaterials(viewId) { return (this.OTG_models[viewId].stats.num_materials); }
+	numGeoms(viewId) { return (this.OTG_models[viewId].stats.num_geoms); }
+	numTextures(viewId) { return (this.OTG_models[viewId].stats.num_textures); }
 
 	// get OTG_models () { views.map ((elt) => { return (elt.urn) ; }) }
 	// get OTG_models_keys () { Object.keys (otg_manifest.views) }
-	get OTG_models () { return (this._otg_models); }
-	set OTG_models (val) { this._otg_models = val; }
+	get OTG_models() { return (this._otg_models); }
+	set OTG_models(val) { this._otg_models = val; }
 
-	regionalizeURL (url) { return ((this._region === 'EMEA' ? '/regions/eu' : '') + url); }
+	regionalizeURL(url) { return ((this._region === 'EMEA' ? '/regions/eu' : '') + url); }
 
-	downloadBubble (urn, outPath, token) {
+	downloadBubble(urn, outPath, token) {
 		let self = this;
 		self.local_shared_root = outPath;
 		self.urn = urn;
@@ -1322,7 +1322,7 @@ class svf2Bubble {
 		}));
 	}
 
-	getManifest (urn) {
+	getManifest(urn) {
 		if (urn === undefined || urn === null)
 			return (Promise.reject('Missing the required parameter {urn} when calling getManifest'));
 		let ModelDerivative = new ForgeAPI.DerivativesApi();
@@ -1337,7 +1337,7 @@ class svf2Bubble {
 		));
 	}
 
-	getViewModelManifest (fileurn, elt, modelurn, outPath) {
+	getViewModelManifest(fileurn, elt, modelurn, outPath) {
 		const self = this;
 		const host = this.host;
 		return (new Promise((fulfill, reject) => {
@@ -1352,8 +1352,13 @@ class svf2Bubble {
 				[], [ /*'application/vnd.api+json', 'application/json'*/], null,
 				self._token, this._token.getCredentials()
 			)
+				// .then((res) => {
+				// 	return (utils.gunzip(res.body));
+				// })
 				.then((res) => {
-					return (utils.gunzip(res.body));
+					if (utils.isBufferCompressed(res.body))
+						return (utils.gunzip(res.body));
+					return (res.body);
 				})
 				.then((json) => {
 					json.__dirname__ = path.dirname(elt);
@@ -1372,11 +1377,11 @@ class svf2Bubble {
 	}
 
 	// Reference: https://zenhax.com/viewtopic.php?t=27
-	static isGzip (buf) {
+	static isGzip(buf) {
 		return (buf[0] === 0x1f /*31*/ && buf[1] === 0x8b /*139*/);
 	}
 
-	getViewModelBinary (fileurn, key, elt, modelurn, outFile) {
+	getViewModelBinary(fileurn, key, elt, modelurn, outFile) {
 		const self = this;
 		const host = this.host;
 		return (new Promise((fulfill, reject) => {
@@ -1437,7 +1442,7 @@ class svf2Bubble {
 		}));
 	}
 
-	getViewModelJson (fileurn, key, elt, modelurn, outFile) {
+	getViewModelJson(fileurn, key, elt, modelurn, outFile) {
 		const self = this;
 		const host = this.host;
 		return (new Promise((fulfill, reject) => {
@@ -1453,9 +1458,13 @@ class svf2Bubble {
 				self._token, self._token.getCredentials()
 			)
 				.then((res) => {
-					return (utils.gunzip(res.body, true));
+					if (utils.isBufferCompressed(res.body))
+						return (utils.gunzip(res.body, true));
+					return (res.body);
 				})
 				.then((data) => {
+					if (Array.isArray(data))
+						data = JSON.stringify(data);
 					return (utils.writeFile(outFile, data, 'binary', true));
 				})
 				.then((data) => {
@@ -1469,14 +1478,14 @@ class svf2Bubble {
 		}));
 	}
 
-	getViewModelFile (fileurn, key, elt, modelurn, outFile) {
+	getViewModelFile(fileurn, key, elt, modelurn, outFile) {
 		if (path.extname(outFile) === '.json')
 			return (this.getViewModelJson(fileurn, key, elt, modelurn, path.resolve(outFile)));
 		else
 			return (this.getViewModelBinary(fileurn, key, elt, modelurn, path.resolve(outFile)));
 	}
 
-	decomposeHashFile (content, sharding) {
+	decomposeHashFile(content, sharding) {
 		let byteStride = content[1] << 8 | content[0];
 		if (byteStride % 4) {
 			console.error(`Expected byte size to be multiple of 4, but got ${byteStride}`);
@@ -1499,7 +1508,7 @@ class svf2Bubble {
 		return (results);
 	}
 
-	getSharedAssetFile (fileurn, elt, modelurn, outPath) {
+	getSharedAssetFile(fileurn, elt, modelurn, outPath) {
 		const self = this;
 		const host = this.host;
 		let parts = fileurn.split('/');
@@ -1574,7 +1583,7 @@ class svf2Bubble {
 		}));
 	}
 
-	getSharedAssetJson (fileurn, elt, modelurn, outPath) {
+	getSharedAssetJson(fileurn, elt, modelurn, outPath) {
 		const self = this;
 		const host = this.host;
 		let parts = fileurn.split('/');
@@ -1598,7 +1607,9 @@ class svf2Bubble {
 						self._token, self._token.getCredentials()
 					)
 						.then((res) => {
-							return (utils.gunzip(res.body));
+							if (utils.isBufferCompressed(res.body))
+								return (utils.gunzip(res.body));
+							return (res.body);
 						})
 						.then((json) => {
 							fulfill(json);
@@ -1613,7 +1624,7 @@ class svf2Bubble {
 		}));
 	}
 
-	static gunzip (res, bRaw = false) {
+	static gunzip(res, bRaw = false) {
 		return (new Promise((fulfill, reject) => { // eslint-disable-line no-unused-vars
 			try {
 				zlib.gunzip(res, (err, dezipped) => {

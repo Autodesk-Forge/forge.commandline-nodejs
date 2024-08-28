@@ -41,7 +41,7 @@
     "archiver": "^4.0.2",
     "commander": "^5.1.0",
     "ejs": "^3.1.5",
-    "forge-apis": "^0.8.5",
+    "forge-apis": "^0.9.10",
     "forge-server-utils": "^8.1.7",
     "jsonwebtoken": "^8.5.1",
     "jwks-rsa": "^2.0.3",
