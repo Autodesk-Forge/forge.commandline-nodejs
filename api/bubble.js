@@ -426,10 +426,11 @@ class svfBubble {
 		let ModelDerivative = new ForgeAPI.DerivativesApi();
 		return (ModelDerivative.apiClient.callApi(
 			'/derivativeservice/v2/derivatives/{urn}', 'GET',
-			{ 'urn': urn }, {}, { 'Accept-Encoding': 'gzip, deflate' },
+			{ 'urn': urn }, { }, { 'Accept-Encoding': 'gzip, deflate' },
 			{}, null,
 			[], [], null,
-			this._token, this._token.getCredentials()
+			this._token, this._token.getCredentials(),
+			'arraybuffer'
 		));
 	}
 
