@@ -1466,6 +1466,8 @@ class svf2Bubble {
 				.then((data) => {
 					if (Array.isArray(data))
 						data = JSON.stringify(data);
+					else if (path.extname(outFile) === '.json' && typeof data === 'object')
+						data = JSON.stringify(data);
 					return (utils.writeFile(outFile, data, 'binary', true));
 				})
 				.then((data) => {

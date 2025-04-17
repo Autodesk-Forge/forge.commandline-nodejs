@@ -29,10 +29,10 @@ process.setMaxListeners(100);
 const program = require('commander');
 
 const ForgeSettings = {
-	clientId: process.env.FORGE_CLIENT_ID || 'your_client_id',
-	clientSecret: process.env.FORGE_CLIENT_SECRET || 'your_client_secret',
+	clientId: process.env.APS_CLIENT_ID || 'your_client_id',
+	clientSecret: process.env.APS_CLIENT_SECRET || 'your_client_secret',
 	PORT: process.env.PORT || '3000',
-	callback: process.env.FORGE_CALLBACK || ('http://localhost:' + (process.env.PORT || '3000') + '/oauth'),
+	callback: process.env.APS_CALLBACK || ('http://localhost:' + (process.env.PORT || '3000') + '/oauth'),
 
 	grantType: 'client_credentials',
 	opts: { 'scope': 'data:read data:write data:create data:search bucket:create bucket:read bucket:update bucket:delete viewables:read' },
